@@ -1,0 +1,94 @@
+----------------------------------------------------------
+ADDED RULES:
+----------------------------------------------------------
+CR0: IA 107 LeadsTo IA 106
+CR1: IA 106 Exists
+CR2: IA 101 Exists
+CR3: IA 104 Precedes IA 111
+CR4: IA 110 LeadsTo IA 107
+CR5: IA 108 Exists
+CR6: IA 112 LeadsTo IA 108
+CR7: IA 103 LeadsTo IA 110
+CR8: IA 109 Exists
+CR9: IA 105 Universal
+CR10: IA 111 Exists
+CR11: IA 107 Exists
+CR12: IA 109 Universal
+CR13: IA 107 LeadsTo IA 102
+CR14: IA 100 Exists
+CR15: IA 112 LeadsTo IA 109
+CR16: IA 111 LeadsTo IA 109
+CR17: IA 102 Universal
+CR18: IA 112 Exists
+CR19: IA 103 Universal
+CR20: IA 110 Precedes IA 104
+CR22: IA 100 Precedes IA 109
+CR24: IA 114 LeadsTo IA 105
+CR25: IA 112 Universal
+CR26: IA 104 Universal
+CR28: IA 110 Precedes IA 105
+----------------------------------------------------------
+CONFLICTED RULES:
+----------------------------------------------------------
+CR21: IA 100 Exists
+CR23: IA 107 Exists
+CR27: IA 109 Universal
+CR29: IA 109 LeadsTo IA 103
+----------------------------------------------------------
+ORDER DEPENDENCIES:
+----------------------------------------------------------
+Key : IA 111 Value : [IA 109]
+Key : IA 110 Value : [IA 107, IA 104, IA 105]
+Key : IA 112 Value : [IA 108, IA 109]
+Key : IA 104 Value : [IA 111]
+Key : IA 114 Value : [IA 105]
+Key : IA 100 Value : [IA 109]
+Key : IA 107 Value : [IA 106, IA 102]
+Key : IA 103 Value : [IA 110]
+----------------------------------------------------------
+UNIVERSAL IAs:
+----------------------------------------------------------
+[IA 105] [IA 109] [IA 102] [IA 103] [IA 112] [IA 104] [IA 106] [IA 101] [IA 108] [IA 111] [IA 107] [IA 100] 
+----------------------------------------------------------
+EXISTS IAs:
+----------------------------------------------------------
+[IA 106] [IA 101] [IA 108] [IA 109] [IA 111] [IA 107] [IA 100] [IA 112] 
+----------------------------------------------------------
+INTERACTION ORDER:
+----------------------------------------------------------
+Interaction: IA 103 - related rules: CR7 CR19 
+Interaction: IA 110 - related rules: CR4 CR7 CR20 CR28 
+Interaction: IA 107 - related rules: CR0 CR4 CR13 
+Interaction: IA 100 - related rules: CR22 
+Interaction: IA 104 - related rules: CR3 CR20 CR26 
+Interaction: IA 111 - related rules: CR3 CR16 
+Interaction: IA 112 - related rules: CR6 CR15 CR25 
+Interaction: IA 109 - related rules: CR12 CR15 CR16 CR22 
+Interaction: IA 108 - related rules: CR6 
+Interaction: IA 114 - related rules: CR24 
+Interaction: IA 105 - related rules: CR9 CR24 CR28 
+Interaction: IA 106 - related rules: CR0 
+Interaction: IA 102 - related rules: CR13 CR17 
+----------------------------------------------------------
+INTERACTIONS:
+----------------------------------------------------------
+IA 103: P_1 -> P_0 Message: P_1 to P_0 c1a2b22c-a880-4ddc-a194-f804442685c8
+IA 110: P_0 -> P_1 Message: P_0 to P_1 9374292b-4d73-42bb-896d-5c06e842f30f
+IA 107: P_1 -> P_2 Message: P_1 to P_2 f7204280-9bab-48a0-adf7-1808c66a318a
+IA 114: P_1 -> P_3 Message: P_1 to P_3 a98197b2-cdeb-414b-91a6-9044be0e54d2
+IA 101: P_1 -> P_3 Message: P_1 to P_3 e699f419-482d-4d14-ab87-8b9db2d0a838
+IA 104: P_2 -> P_1 Message: P_2 to P_1 9655e4cc-93dd-45a3-98cb-ea1a661baffa
+IA 111: P_1 -> P_3 Message: P_1 to P_3 f4a10320-d4a7-4ac4-8906-797f63600bc3
+IA 112: P_3 -> P_1 Message: P_3 to P_1 714773b6-054d-4832-8561-372e89661165
+IA 109: P_1 -> P_2 Message: P_1 to P_2 5e2399d8-9719-4e08-8248-12bfd92f015f
+IA9: P_2 -> P_3 Message: P_2 to P_3 1e176412-d56c-467f-930f-bb967115d740
+IA10: P_2 -> P_1 Message: P_2 to P_1 a237620f-d266-47f9-8a07-9951103e64f1
+IA11: P_1 -> P_2 Message: P_1 to P_2 a7d241e6-53b0-4f9d-9c42-603b211a0dd6
+IA12: P_3 -> P_2 Message: P_3 to P_2 8388685c-2682-4199-a97f-d2d5323cb6d4
+IA 108: P_2 -> P_1 Message: P_2 to P_1 c5b0da8e-41c9-4cd0-832f-132018aadcf9
+IA 105: P_1 -> P_3 Message: P_1 to P_3 a9c5301a-08c1-4ec2-9d0a-cbd029207966
+IA 106: P_3 -> P_2 Message: P_3 to P_2 3f78e12d-7225-438d-bdcf-dc1a566e599b
+IA 102: P_2 -> P_0 Message: P_2 to P_0 e5b7304e-036e-446f-8fed-2eb489c9456b
+IA17: P_0 -> P_1 Message: P_0 to P_1 b231b838-28e3-4fe1-ba41-bd7d5998cac0
+IA18: P_1 -> P_2 Message: P_1 to P_2 e9d48caa-fbfd-4d66-8bbd-c1612d0a8bbb
+IA 100: P_3 -> P_2 Message: P_3 to P_2 c4679384-c556-46c5-b075-31b46dfc1e5c

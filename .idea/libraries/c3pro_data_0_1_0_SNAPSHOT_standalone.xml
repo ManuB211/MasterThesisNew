@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="c3pro-data-0.1.0-SNAPSHOT-standalone">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/c3pro-data/target/c3pro-data-0.1.0-SNAPSHOT-standalone.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

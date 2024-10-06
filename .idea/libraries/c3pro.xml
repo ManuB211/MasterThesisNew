@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="c3pro">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/c3pro.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

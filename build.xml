@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. --><project basedir="." default="build" name="Version1">
+    <property environment="env"/>
+    <property name="ECLIPSE_HOME" value="../../../../../Applications/eclipse"/>
+    <property name="junit.output.dir" value="junit"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
+    <path id="JUnit 4.libraryclasspath">
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.junit_4.10.0.v4_10_0_v20120426-0900/junit.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.hamcrest.core_1.1.0.v20090501071000.jar"/>
+    </path>
+    <path id="Version1.classpath">
+        <pathelement location="bin"/>
+        <path refid="JUnit 4.libraryclasspath"/>
+        <pathelement location="lib/jbpt-0.2.348.jar"/>
+        <pathelement location="lib/org.json.jar"/>
+        <pathelement location="lib/log4j-1.2.15.jar"/>
+        <pathelement location="lib/jdom.jar"/>
+        <pathelement location="lib/collections-generic-4.01.jar"/>
+        <pathelement location="lib/colt-1.2.0.jar"/>
+        <pathelement location="lib/jung-algorithms-2.0.1.jar"/>
+        <pathelement location="lib/jung-api-2.0.1.jar"/>
+        <pathelement location="lib/jung-graph-impl-2.0.1.jar"/>
+        <pathelement location="lib/jxl.jar"/>
+        <pathelement location="lib/opencsv-2.3.jar"/>
+    </path>
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects"/>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="Version1.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+        <copy todir="${ant.library.dir}">
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </copy>
+        <unzip dest="${ant.library.dir}">
+            <patternset includes="jdtCompilerAdapter.jar"/>
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </unzip>
+    </target>
+    <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+        <antcall target="build"/>
+    </target>
+    <target name="bpmn2ChoreographyModelTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.bpmn2ChoreographyModelTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="Bpmn2ChoreographyTest.bpmn2chortest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr" showoutput="true">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.Bpmn2ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="Bpmn2ChoreographyTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.Bpmn2ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="Bpmn2ChoreographyTest.test">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.Bpmn2ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="Bpmn2CollaborationTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.Bpmn2CollaborationTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="Bpmn2PrivateModelTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.Bpmn2PrivateModelTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyModelTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyModelTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.assertIntersectTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.assertleftRightTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.ChangeOperationsGenratorTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.changePropagationReplaceInsertTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.changePropagationReplaceReplaceTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.deleteTrivialTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.fragmentEqualityTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.fragmentProjectionTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.generateCloneModelFromFragmentTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.preSetPrivateTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.preSetPublicTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.projectionReturnsReducedGraphTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.SeveralChangeScenariosTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="ChoreographyTest.Transitivepreset">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="NodeTests">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.NodeTests" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="PrivateModelTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.PrivateModelTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="PublicModelTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.PublicModelTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="Version1">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="at.ac.c3pro.tests.Bpmn2ChoreographyTest" todir="${junit.output.dir}"/>
+            <test name="at.ac.c3pro.tests.Bpmn2CollaborationTest" todir="${junit.output.dir}"/>
+            <test name="at.ac.c3pro.tests.Bpmn2PrivateModelTest" todir="${junit.output.dir}"/>
+            <test name="at.ac.c3pro.tests.ChoreographyModelTest" todir="${junit.output.dir}"/>
+            <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
+            <test name="at.ac.c3pro.tests.NodeTests" todir="${junit.output.dir}"/>
+            <test name="at.ac.c3pro.tests.PrivateModelTest" todir="${junit.output.dir}"/>
+            <test name="at.ac.c3pro.tests.PublicModelTest" todir="${junit.output.dir}"/>
+            <test name="at.ac.c3pro.tests.Rpsttest" todir="${junit.output.dir}"/>
+            <test name="at.ac.c3pro.tests.bpmn2ChoreographyModelTest" todir="${junit.output.dir}"/>
+            <classpath refid="Version1.classpath"/>
+        </junit>
+    </target>
+    <target name="junitreport">
+        <junitreport todir="${junit.output.dir}">
+            <fileset dir="${junit.output.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${junit.output.dir}"/>
+        </junitreport>
+    </target>
+</project>

@@ -3,23 +3,19 @@ package at.ac.c3pro.chormodel.compliance;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Formatter;
 
-import at.ac.c3pro.chormodel.compliance.CompliancePattern.PatternType;
 import at.ac.c3pro.chormodel.generation.Branch;
-import at.ac.c3pro.chormodel.generation.ChorModelGenerator.NodeType;
 import at.ac.c3pro.chormodel.generation.Split;
 import at.ac.c3pro.node.AndGateway;
 import at.ac.c3pro.node.Event;
 import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
-import at.ac.c3pro.node.Node;
 import at.ac.c3pro.node.XorGateway;
 
 public class CoExists extends CompliancePattern {
 	private Interaction q;
 	private HashMap<Interaction, ArrayList<Interaction>> possibleAssignments = new HashMap<Interaction, ArrayList<Interaction>>();
-	
+
 	public CoExists(String label, Interaction p, Interaction q) {
 		super(label, p);
 		this.q = q;
@@ -27,10 +23,8 @@ public class CoExists extends CompliancePattern {
 	}
 
 	/*
-	 * possible P assignments:
-	 * - any interaction
-	 * possible Q assignments:
-	 * - any reachable interaction on path before and after P
+	 * possible P assignments: - any interaction possible Q assignments: - any
+	 * reachable interaction on path before and after P
 	 */
 	@Override
 	public void findPossibleAssignments() {
@@ -46,22 +40,21 @@ public class CoExists extends CompliancePattern {
 						possibleQs.remove(interaction);
 						possibleAssignments.put(interaction, possibleQs);
 					}
-	 			}
+				}
 			}
 		}
 	}
-	
+
 	@Override
 	public void clearAssignments() {
 		possibleAssignments.clear();
 	}
-	
+
 	private ArrayList<Interaction> getPossibleQs(IChoreographyNode node, ArrayList<Interaction> possibleQs) {
 		possibleQs = preceedingPath(node, possibleQs);
-		
+
 		return possibleQs;
 	}
-	
 
 	@Override
 	public void printAssignments() {
@@ -69,7 +62,7 @@ public class CoExists extends CompliancePattern {
 			System.out.println("Key : " + entry.getKey() + " Value : " + entry.getValue());
 		}
 	}
-	
+
 	private ArrayList<Interaction> insideBranch(Branch branch, ArrayList<Interaction> possibleQs) {
 		for (IChoreographyNode node : branch.getNodes()) {
 			System.out.println("Print" + node);
@@ -84,7 +77,7 @@ public class CoExists extends CompliancePattern {
 		}
 		return possibleQs;
 	}
-	
+
 	private ArrayList<Interaction> preceedingPath(IChoreographyNode node, ArrayList<Interaction> possibleQs) {
 		Branch currentBranch = splitTracking.getBranchByNode(node);
 		IChoreographyNode splitNode = currentBranch.getSplit().getSpiltNode();
@@ -97,23 +90,21 @@ public class CoExists extends CompliancePattern {
 					possibleQs = insideBranch(branch, possibleQs);
 				}
 			}
-			
+
 			currentBranch = splitTracking.getBranchByNode(splitNode);
 			splitNode = currentBranch.getSplit().getSpiltNode();
 			System.out.println("currentBranch: " + currentBranch.getNodes());
 			System.out.println("splitNode: " + splitNode);
 		}
-		
+
 		currentBranch = splitTracking.getMainBranch();
 		possibleQs = insideBranch(currentBranch, possibleQs);
-		
+
 		return possibleQs;
 	}
 
 	public Interaction getQ() {
 		return q;
 	}
-		
-	
 
 }

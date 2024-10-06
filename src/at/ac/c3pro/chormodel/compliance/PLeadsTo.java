@@ -4,31 +4,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hamcrest.core.Is;
-
-import at.ac.c3pro.chormodel.compliance.CompliancePattern.PatternType;
 import at.ac.c3pro.chormodel.generation.Branch;
 import at.ac.c3pro.chormodel.generation.Split;
 import at.ac.c3pro.node.AndGateway;
 import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
-import at.ac.c3pro.node.XorGateway;
 
 public class PLeadsTo extends OrderPattern {
-	
+
 	private HashMap<Interaction, ArrayList<Interaction>> possibleAssignments = new HashMap<Interaction, ArrayList<Interaction>>();
 	private boolean allowInsideAndSplit = false;
-	
+
 	public PLeadsTo(String label, Interaction p, Interaction q) {
 		super(label, p, q);
 		this.type = PatternType.ORDER;
 	}
-	
+
 	/*
-	 * possible P assignments:
-	 * - every interaction on main branch (not inside any Split)
-	 * possible Q assignments:
-	 * - every interaction directly followed by P
+	 * possible P assignments: - every interaction on main branch (not inside any
+	 * Split) possible Q assignments: - every interaction directly followed by P
 	 */
 //	@Override
 //	public void findPossibleAssignments() {
@@ -44,7 +38,7 @@ public class PLeadsTo extends OrderPattern {
 //			}
 //		}
 //	}
-	
+
 	@Override
 	public void findPossibleAssignments() {
 		IChoreographyNode succeedingNode = null;
@@ -60,8 +54,8 @@ public class PLeadsTo extends OrderPattern {
 					IChoreographyNode node = branchNodes.get(i);
 					if (node instanceof Interaction) {
 						if (i + 1 != branchNodes.size()) {
-							succeedingNode = branchNodes.get(i+1);
-							if (succeedingNode instanceof Interaction) { 
+							succeedingNode = branchNodes.get(i + 1);
+							if (succeedingNode instanceof Interaction) {
 								ArrayList<Interaction> possibleQs = new ArrayList<Interaction>();
 								possibleQs.add((Interaction) succeedingNode);
 								possibleAssignments.put((Interaction) node, possibleQs);
@@ -81,7 +75,8 @@ public class PLeadsTo extends OrderPattern {
 							if (mergeNode instanceof AndGateway) {
 								// get directly succeeding Interaction after merge
 								ArrayList<Interaction> succeedingInteractions = new ArrayList<Interaction>();
-								succeedingInteractions = splitTracking.getInteractionsAfterMerge(mergeNode, succeedingInteractions);
+								succeedingInteractions = splitTracking.getInteractionsAfterMerge(mergeNode,
+										succeedingInteractions);
 								if (!succeedingInteractions.isEmpty()) {
 									possibleAssignments.put((Interaction) node, succeedingInteractions);
 								}
@@ -92,13 +87,12 @@ public class PLeadsTo extends OrderPattern {
 			}
 		}
 	}
-	
+
 	@Override
 	public void clearAssignments() {
 		possibleAssignments.clear();
 	}
-	
-	
+
 	private ArrayList<Interaction> getPossibleQs(Branch branch, ArrayList<Interaction> possibleQs) {
 		IChoreographyNode firstNode = branch.getNodes().get(0);
 		if (firstNode instanceof Interaction) {
@@ -111,7 +105,6 @@ public class PLeadsTo extends OrderPattern {
 		}
 		return possibleQs;
 	}
-			
 
 	@Override
 	public void printAssignments() {
@@ -123,6 +116,5 @@ public class PLeadsTo extends OrderPattern {
 	public HashMap<Interaction, ArrayList<Interaction>> getPossibleAssignments() {
 		return possibleAssignments;
 	}
-	
 
 }

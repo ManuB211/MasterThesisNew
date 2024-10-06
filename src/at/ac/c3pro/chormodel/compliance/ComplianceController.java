@@ -3,22 +3,17 @@ package at.ac.c3pro.chormodel.compliance;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 import java.util.concurrent.ThreadLocalRandom;
 
-
-import at.ac.c3pro.chormodel.MultiDirectedGraph;
 import at.ac.c3pro.chormodel.generation.SplitTracking;
-import at.ac.c3pro.node.Edge;
-import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
 
 public class ComplianceController {
-	
-	public enum PositionStatus { 
+
+	public enum PositionStatus {
 		FREE, RESERVED
 	}
-	
+
 	private SplitTracking splitTracking;
 	private ArrayList<CompliancePattern> complianceRules = new ArrayList<CompliancePattern>();
 	private ArrayList<Interaction> existInteractions = new ArrayList<Interaction>();
@@ -29,13 +24,11 @@ public class ComplianceController {
 	private HashMap<Interaction, ArrayList<Interaction>> possibleAssignments = new HashMap<Interaction, ArrayList<Interaction>>();
 	private HashMap<Interaction, ArrayList<Interaction>> interactionHierarchy = new HashMap<Interaction, ArrayList<Interaction>>();
 	private HashMap<Interaction, Interaction> graphAssignments = new HashMap<Interaction, Interaction>();
-	
-	
+
 	public ComplianceController() {
 		this.splitTracking = SplitTracking.getInstance();
 	}
-	
-	
+
 	public boolean assign() {
 		determinePossibleAssignments();
 		orderInteractions();
@@ -56,14 +49,13 @@ public class ComplianceController {
 					return false;
 			}
 		}
-		
+
 		return true;
 	}
-	
+
 	/*
-	 * Add Rule
-	 * - check if rule is in conflict with already added rules:
-	 * -- is there a rule that defines that q -> p? (hence that p -> q not possible anymore)
+	 * Add Rule - check if rule is in conflict with already added rules: -- is there
+	 * a rule that defines that q -> p? (hence that p -> q not possible anymore)
 	 */
 //	public void addRule(CompliancePattern rule) {
 //		Interaction p = rule.getP();
@@ -104,7 +96,7 @@ public class ComplianceController {
 //			}
 //		}
 //	}
-	
+
 //	private boolean conflictCheck(CompliancePattern rule, Interaction p, Interaction q) {
 //		if (rule instanceof OrderPattern) {
 //			if (orderConflictCheck(rule, p, q)) {
@@ -116,18 +108,17 @@ public class ComplianceController {
 //
 //		return false;
 //	}
-	
+
 	/*
-	 * Check Conflict:
-	 * - check the succeeding interactions of q and their succeeding interactions:
-	 * -- conflict: if one of them has p as succeeding interaction
+	 * Check Conflict: - check the succeeding interactions of q and their succeeding
+	 * interactions: -- conflict: if one of them has p as succeeding interaction
 	 */
 	private boolean orderConflictCheck(CompliancePattern rule, Interaction p, Interaction q) {
 		if (orderDependencies.containsKey(q)) {
 			for (Interaction q2 : orderDependencies.get(q)) {
 				if (q2 == p) {
 					return true;
-				} else if (orderConflictCheck(rule, p, q2)){
+				} else if (orderConflictCheck(rule, p, q2)) {
 					return true;
 				}
 			}
@@ -136,7 +127,7 @@ public class ComplianceController {
 	}
 
 //	private boolean occurenceConflictCheck();
-	
+
 	public ArrayList<CompliancePattern> getComplianceRules() {
 		return complianceRules;
 	}
@@ -144,22 +135,22 @@ public class ComplianceController {
 	public void setComplianceRules(ArrayList<CompliancePattern> complianceRules) {
 		this.complianceRules = complianceRules;
 	}
-	
+
 	public void determinePossibleAssignments() {
 		for (CompliancePattern cr : complianceRules) {
 			System.out.println(cr);
 			cr.findPossibleAssignments();
 		}
 	}
-	 
+
 	public void orderInteractions() {
 		int iaCount = getInteractionCount();
 		interactionOrder.clear();
 		while (interactionOrder.size() < iaCount) {
-				interactionOrder.add(getNextInteraction());
+			interactionOrder.add(getNextInteraction());
 		}
 	}
-	
+
 	private Interaction getNextInteraction() {
 		ArrayList<Interaction> possibleInteractions = new ArrayList<Interaction>();
 		for (Map.Entry<Interaction, ArrayList<Interaction>> entry : orderDependencies.entrySet()) {
@@ -176,10 +167,9 @@ public class ComplianceController {
 		int index = ThreadLocalRandom.current().nextInt(possibleInteractions.size());
 		return possibleInteractions.get(index);
 	}
-	
+
 	/*
-	 * (1) get all affected CRs
-	 * (2) 
+	 * (1) get all affected CRs (2)
 	 */
 	public boolean assignInteraction(Interaction ia) {
 		System.out.println("INTERACTION: " + ia);
@@ -191,7 +181,7 @@ public class ComplianceController {
 					affectedCRs.add(cr);
 				else if (((OrderPattern) cr).getQ() == ia) {
 					affectedCRs.add(cr);
-				}	
+				}
 			} else if (cr instanceof Universal) {
 				if (cr.getP() == ia)
 					affectedCRs.add(cr);
@@ -206,22 +196,24 @@ public class ComplianceController {
 			System.out.println(cr.getLabel());
 			if (cr.getP() == ia) {
 				if (cr instanceof LeadsTo) {
-					for (Map.Entry<Interaction, ArrayList<Interaction>> entry : ((LeadsTo) cr).getPossibleAssignments().entrySet()) {
+					for (Map.Entry<Interaction, ArrayList<Interaction>> entry : ((LeadsTo) cr).getPossibleAssignments()
+							.entrySet()) {
 						tempPossibleAssignments.add(entry.getKey());
 					}
 				} else if (cr instanceof Precedes) {
-					for (Map.Entry<Interaction, ArrayList<Interaction>> entry : ((Precedes) cr).getPossibleAssignments().entrySet()) {
+					for (Map.Entry<Interaction, ArrayList<Interaction>> entry : ((Precedes) cr).getPossibleAssignments()
+							.entrySet()) {
 						tempPossibleAssignments.add(entry.getKey());
 					}
 				} else if (cr instanceof Universal) {
 					tempPossibleAssignments.addAll(((Universal) cr).getPossibleAssignments());
 				} else if (cr instanceof Exists) {
-					tempPossibleAssignments.addAll(((Exists) cr).getPossibleAssignments());					
+					tempPossibleAssignments.addAll(((Exists) cr).getPossibleAssignments());
 				}
 			} else {
 				if (cr instanceof LeadsTo) {
 					Interaction pAssignment = graphAssignments.get(cr.getP());
-					tempPossibleAssignments.addAll(((LeadsTo) cr).getPossibleAssignments().get(pAssignment));						
+					tempPossibleAssignments.addAll(((LeadsTo) cr).getPossibleAssignments().get(pAssignment));
 				} else if (cr instanceof Precedes) {
 					Interaction pAssignment = graphAssignments.get(cr.getP());
 					tempPossibleAssignments.addAll(((Precedes) cr).getPossibleAssignments().get(pAssignment));
@@ -245,25 +237,26 @@ public class ComplianceController {
 		possibleAssignments.put(ia, commonPossibleAssignments);
 		return true;
 	}
-	
+
 	private Interaction getInteractionWithMostSucceedingIAs(ArrayList<Interaction> possibleAssignments) {
 		Interaction selectedInteraction = null;
 		int succeedingIACount = 0;
-			for (Interaction ia : possibleAssignments) {
-				System.out.println(ia);
-				if (!graphAssignments.containsValue(ia)) {
-					if (interactionHierarchy.get(ia) != null) {
-						if (interactionHierarchy.get(ia).size() > succeedingIACount) {
-							succeedingIACount = interactionHierarchy.get(ia).size();
-							selectedInteraction = ia;
-						}
+		for (Interaction ia : possibleAssignments) {
+			System.out.println(ia);
+			if (!graphAssignments.containsValue(ia)) {
+				if (interactionHierarchy.get(ia) != null) {
+					if (interactionHierarchy.get(ia).size() > succeedingIACount) {
+						succeedingIACount = interactionHierarchy.get(ia).size();
+						selectedInteraction = ia;
 					}
 				}
 			}
+		}
 		return selectedInteraction;
 	}
-	
-	private ArrayList<Interaction> getCommonAssignments(HashMap<CompliancePattern, ArrayList<Interaction>> crPossibleAssignments) {
+
+	private ArrayList<Interaction> getCommonAssignments(
+			HashMap<CompliancePattern, ArrayList<Interaction>> crPossibleAssignments) {
 		ArrayList<Interaction> commonAssignments = new ArrayList<Interaction>();
 		for (Map.Entry<CompliancePattern, ArrayList<Interaction>> entry : crPossibleAssignments.entrySet()) {
 			commonAssignments = entry.getValue();
@@ -273,8 +266,7 @@ public class ComplianceController {
 		}
 		return commonAssignments;
 	}
-	
-	
+
 	private boolean hasUnrankedPredecessors(Interaction ia) {
 		for (Map.Entry<Interaction, ArrayList<Interaction>> entry : orderDependencies.entrySet()) {
 			for (Interaction interaction : entry.getValue()) {
@@ -285,7 +277,7 @@ public class ComplianceController {
 		}
 		return false;
 	}
-	
+
 	private int getInteractionCount() {
 		ArrayList<Interaction> interactions = new ArrayList<Interaction>();
 		for (Map.Entry<Interaction, ArrayList<Interaction>> entry : orderDependencies.entrySet()) {
@@ -298,14 +290,13 @@ public class ComplianceController {
 		}
 		return interactions.size();
 	}
-	
-	
+
 	public void printPossibleIAAssignments() {
 		for (Map.Entry<Interaction, ArrayList<Interaction>> entry : possibleAssignments.entrySet()) {
 			System.out.println("Key : " + entry.getKey() + " Value : " + entry.getValue());
 		}
 	}
-	
+
 	public ArrayList<CompliancePattern> getAffectedRules(Interaction ia) {
 		ArrayList<CompliancePattern> affectedCRs = new ArrayList<CompliancePattern>();
 		for (CompliancePattern cr : complianceRules) {
@@ -314,7 +305,7 @@ public class ComplianceController {
 					affectedCRs.add(cr);
 				else if (((OrderPattern) cr).getQ() == ia) {
 					affectedCRs.add(cr);
-				}	
+				}
 			} else if (cr instanceof Universal) {
 				if (cr.getP() == ia)
 					affectedCRs.add(cr);
@@ -322,7 +313,7 @@ public class ComplianceController {
 		}
 		return affectedCRs;
 	}
-	
+
 	public ArrayList<CompliancePattern> getAffectedRulesSucceeding(Interaction ia) {
 		ArrayList<CompliancePattern> affectedCRs = new ArrayList<CompliancePattern>();
 		for (CompliancePattern cr : complianceRules) {
@@ -334,7 +325,7 @@ public class ComplianceController {
 		}
 		return affectedCRs;
 	}
-	
+
 	public void printInteractionOrderWithAffectedRules() {
 		for (Interaction ia : interactionOrder) {
 			System.out.print("Interaction: " + ia + " - related rules: ");
@@ -344,7 +335,7 @@ public class ComplianceController {
 			System.out.print("\n");
 		}
 	}
-	
+
 	public void printComplianceData() {
 		System.out.println("ADDED RULES:");
 		for (CompliancePattern cr : complianceRules) {
@@ -368,16 +359,16 @@ public class ComplianceController {
 		System.out.println("INTERACTION ASSIGNMENT:");
 		for (Map.Entry<Interaction, Interaction> entry : graphAssignments.entrySet()) {
 			System.out.println("Key : " + entry.getKey() + " Value : " + entry.getValue());
-		} 
+		}
 	}
-	
+
 	public void clearPossibleAssignments() {
 		for (CompliancePattern cr : complianceRules) {
 			System.out.println(cr);
 			cr.clearAssignments();
 		}
 	}
-	
+
 	public void loadInteractionHierarchy() {
 		interactionHierarchy = splitTracking.getInteractionHierarchy();
 	}
@@ -389,7 +380,7 @@ public class ComplianceController {
 	public ArrayList<Interaction> getUniversalInteractions() {
 		return universalInteractions;
 	}
-	
+
 	public HashMap<Interaction, ArrayList<Interaction>> getOrderDependencies() {
 		return orderDependencies;
 	}
@@ -401,25 +392,25 @@ public class ComplianceController {
 	public ArrayList<CompliancePattern> getConflictedRules() {
 		return conflictedRules;
 	}
-	
+
 	public void reloadSplitTracking() {
 		this.splitTracking = SplitTracking.getInstance();
 		for (CompliancePattern cr : complianceRules) {
 			cr.reloadSplitTracking();
 		}
 	}
-	
+
 	public void printInteractionAssignment() {
 		System.out.println("INTERACTION ASSIGNMENT:");
 		for (Map.Entry<Interaction, Interaction> entry : graphAssignments.entrySet()) {
 			System.out.println("Key : " + entry.getKey() + " Value : " + entry.getValue());
-		} 
+		}
 	}
 
 	public HashMap<Interaction, Interaction> getGraphAssignments() {
 		return graphAssignments;
 	}
-	
+
 	public String printRule(CompliancePattern cr) {
 		if (cr instanceof LeadsTo) {
 			return cr.getLabel() + ": " + cr.getP().getName() + " LeadsTo " + ((OrderPattern) cr).getQ();
@@ -436,8 +427,5 @@ public class ComplianceController {
 	public ArrayList<Interaction> getExistInteractions() {
 		return existInteractions;
 	}
-	
-	
-	
-	
+
 }

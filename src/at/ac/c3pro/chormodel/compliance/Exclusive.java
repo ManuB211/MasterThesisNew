@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import at.ac.c3pro.chormodel.compliance.CompliancePattern.PatternType;
 import at.ac.c3pro.chormodel.generation.Branch;
 import at.ac.c3pro.chormodel.generation.ChorModelGenerator.NodeType;
 import at.ac.c3pro.chormodel.generation.Split;
@@ -39,12 +38,12 @@ public class Exclusive extends CompliancePattern {
 			}
 		}
 	}
-	
+
 	@Override
 	public void clearAssignments() {
 		possibleAssignments.clear();
 	}
-	
+
 	private ArrayList<Interaction> getPossibleQs(IChoreographyNode node, ArrayList<Interaction> possibleQs) {
 		Branch currentBranch = splitTracking.getBranchByNode(node);
 		IChoreographyNode splitNode = currentBranch.getSplit().getSpiltNode();
@@ -57,19 +56,20 @@ public class Exclusive extends CompliancePattern {
 					}
 				}
 			}
-			
+
 			currentBranch = splitTracking.getBranchByNode(preceedingSplit.getSpiltNode());
 			preceedingSplit = currentBranch.getSplit();
 		}
-		
+
 		return possibleQs;
 	}
-	
+
 	private ArrayList<Interaction> insideBranch(Branch branch, ArrayList<Interaction> possibleQs) {
 		for (IChoreographyNode node : branch.getNodes()) {
 			if (node instanceof Interaction)
 				possibleQs.add((Interaction) node);
-			if ((node instanceof AndGateway || node instanceof XorGateway) && splitTracking.getSplitMap().containsKey(node)) {
+			if ((node instanceof AndGateway || node instanceof XorGateway)
+					&& splitTracking.getSplitMap().containsKey(node)) {
 				for (Branch splitBranch : splitTracking.getSplitMap().get(node).getBranches()) {
 					possibleQs = insideBranch(splitBranch, possibleQs);
 				}
@@ -77,7 +77,6 @@ public class Exclusive extends CompliancePattern {
 		}
 		return possibleQs;
 	}
-	
 
 	@Override
 	public void printAssignments() {
@@ -89,7 +88,5 @@ public class Exclusive extends CompliancePattern {
 	public Interaction getQ() {
 		return q;
 	}
-	
-	
-	
+
 }

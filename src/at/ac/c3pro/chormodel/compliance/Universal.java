@@ -2,25 +2,22 @@ package at.ac.c3pro.chormodel.compliance;
 
 import java.util.ArrayList;
 
-import at.ac.c3pro.chormodel.compliance.CompliancePattern.PatternType;
 import at.ac.c3pro.chormodel.generation.Branch;
-import at.ac.c3pro.chormodel.generation.Split;
 import at.ac.c3pro.chormodel.generation.ChorModelGenerator.NodeType;
-import at.ac.c3pro.node.AndGateway;
+import at.ac.c3pro.chormodel.generation.Split;
 import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
 
 public class Universal extends OccurrencePattern {
 	private ArrayList<Interaction> possibleAssignments = new ArrayList<Interaction>();
-	
+
 	public Universal(String label, Interaction p) {
 		super(label, p);
 		this.type = PatternType.OCCURRENCE;
 	}
-	
+
 	/*
-	 * possible P assignments:
-	 * - any interaction not inside a XOR-Split
+	 * possible P assignments: - any interaction not inside a XOR-Split
 	 */
 	@Override
 	public void findPossibleAssignments() {
@@ -36,7 +33,7 @@ public class Universal extends OccurrencePattern {
 			}
 		}
 	}
-	
+
 	@Override
 	public void clearAssignments() {
 		possibleAssignments.clear();
@@ -50,7 +47,5 @@ public class Universal extends OccurrencePattern {
 	public ArrayList<Interaction> getPossibleAssignments() {
 		return possibleAssignments;
 	}
-	
-	
 
 }

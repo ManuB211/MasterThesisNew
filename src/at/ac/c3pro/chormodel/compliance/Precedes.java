@@ -1,35 +1,29 @@
 package at.ac.c3pro.chormodel.compliance;
 
-import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Formatter;
 
 import at.ac.c3pro.chormodel.generation.Branch;
-import at.ac.c3pro.chormodel.generation.Split;
 import at.ac.c3pro.chormodel.generation.ChorModelGenerator.NodeType;
+import at.ac.c3pro.chormodel.generation.Split;
 import at.ac.c3pro.node.AndGateway;
 import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
 
 public class Precedes extends OrderPattern {
-	
+
 	private HashMap<Interaction, ArrayList<Interaction>> possibleAssignments = new HashMap<Interaction, ArrayList<Interaction>>();
 	private HashMap<Interaction, ArrayList<Interaction>> possibleAssignments2 = new HashMap<Interaction, ArrayList<Interaction>>();
-	
 
 	public Precedes(String label, Interaction p, Interaction q) {
 		super(label, p, q);
 		this.type = PatternType.ORDER;
 	}
-	
-	
+
 	/*
-	 * possible Q assignments:
-	 * - any interaction, except first one
-	 * possible P assignments:
-	 * - any interaction on preceding path of Q
+	 * possible Q assignments: - any interaction, except first one possible P
+	 * assignments: - any interaction on preceding path of Q
 	 */
 	@Override
 	public void findPossibleAssignments() {
@@ -49,25 +43,27 @@ public class Precedes extends OrderPattern {
 		}
 		ArrayList<Interaction> preceedingIAs = new ArrayList<Interaction>();
 		for (Map.Entry<Interaction, ArrayList<Interaction>> entry : possibleAssignments.entrySet()) {
-			//System.out.println("Key : " + entry.getKey() + " Value : " + entry.getValue());
+			// System.out.println("Key : " + entry.getKey() + " Value : " +
+			// entry.getValue());
 			for (Interaction ia : entry.getValue()) {
 				preceedingIAs.add(ia);
 			}
-		} 
+		}
 		for (Interaction preceedingIA : preceedingIAs) {
 			possibleAssignments2.put(preceedingIA, getSucceedingIAs(preceedingIA));
 		}
 	}
-	
+
 	@Override
 	public void clearAssignments() {
 		possibleAssignments.clear();
 	}
-	
+
 	private ArrayList<Interaction> getSucceedingIAs(Interaction interaction) {
 		ArrayList<Interaction> succeedingIAs = new ArrayList<Interaction>();
 		for (Map.Entry<Interaction, ArrayList<Interaction>> entry : possibleAssignments.entrySet()) {
-			//System.out.println("Key : " + entry.getKey() + " Value : " + entry.getValue());
+			// System.out.println("Key : " + entry.getKey() + " Value : " +
+			// entry.getValue());
 			for (Interaction ia : entry.getValue()) {
 				if (ia == interaction)
 					succeedingIAs.add(entry.getKey());
@@ -75,7 +71,7 @@ public class Precedes extends OrderPattern {
 		}
 		return succeedingIAs;
 	}
-	
+
 	private ArrayList<Interaction> getPossibleInteractions(IChoreographyNode node, Branch currentBranch) {
 		ArrayList<Interaction> possiblePs = new ArrayList<Interaction>();
 		NodeType splitType = null;
@@ -88,7 +84,8 @@ public class Precedes extends OrderPattern {
 					IChoreographyNode precedingNode = branchNodes.get(i - 1);
 					if (precedingNode instanceof Interaction) {
 						possiblePs.add((Interaction) precedingNode);
-					} else if (precedingNode instanceof AndGateway && !splitTracking.getSplitMap().containsKey(precedingNode)) {
+					} else if (precedingNode instanceof AndGateway
+							&& !splitTracking.getSplitMap().containsKey(precedingNode)) {
 						Split split = splitTracking.getSplitByMergeNode(precedingNode);
 						for (Branch innerBranch : split.getBranches()) {
 							possiblePs = getPossibleInteractionsOfBranch(innerBranch, possiblePs);
@@ -101,14 +98,14 @@ public class Precedes extends OrderPattern {
 		}
 		return possiblePs;
 	}
-	
+
 	private ArrayList<Interaction> getPossibleInteractionsOfBranch(Branch branch, ArrayList<Interaction> possibleQs) {
 		ArrayList<IChoreographyNode> branchNodes = branch.getNodes();
 		int size = branchNodes.size();
 		for (int i = 0; i < size; i++) {
 			IChoreographyNode branchNode = branchNodes.get(i);
 			if (branchNode instanceof Interaction) {
-				possibleQs.add((Interaction) branchNode); 
+				possibleQs.add((Interaction) branchNode);
 			} else if (branchNode instanceof AndGateway && splitTracking.getSplitMap().containsKey(branchNode)) {
 				for (Branch innerBranch : splitTracking.getSplitMap().get(branchNode).getBranches()) {
 					if (!innerBranch.getNodes().isEmpty()) {
@@ -122,7 +119,7 @@ public class Precedes extends OrderPattern {
 		}
 		return possibleQs;
 	}
-	
+
 	@Override
 	public void printAssignments() {
 		for (Map.Entry<Interaction, ArrayList<Interaction>> entry : possibleAssignments.entrySet()) {
@@ -133,11 +130,9 @@ public class Precedes extends OrderPattern {
 			System.out.println("Key : " + entry.getKey() + " Value : " + entry.getValue());
 		}
 	}
-	
+
 	public HashMap<Interaction, ArrayList<Interaction>> getPossibleAssignments() {
 		return possibleAssignments2;
 	}
-	
 
-	
 }

@@ -4,12 +4,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Map;
-import at.ac.c3pro.util.*;
 
 import org.jbpt.utils.IOUtils;
 
@@ -19,35 +17,21 @@ import at.ac.c3pro.chormodel.IPrivateModel;
 import at.ac.c3pro.chormodel.IPublicModel;
 import at.ac.c3pro.chormodel.MultiDirectedGraph;
 import at.ac.c3pro.chormodel.PrivateModel;
-import at.ac.c3pro.chormodel.PublicModel;
 import at.ac.c3pro.chormodel.Role;
-import at.ac.c3pro.chormodel.compliance.CoAbsent;
-import at.ac.c3pro.chormodel.compliance.CoExists;
-import at.ac.c3pro.chormodel.compliance.CoRequisite;
 import at.ac.c3pro.chormodel.compliance.ComplianceController;
 import at.ac.c3pro.chormodel.compliance.CompliancePattern;
-import at.ac.c3pro.chormodel.compliance.ComplianceRulesGenerator;
-import at.ac.c3pro.chormodel.compliance.Exclusive;
-import at.ac.c3pro.chormodel.compliance.Exists;
-import at.ac.c3pro.chormodel.compliance.LeadsTo;
-import at.ac.c3pro.chormodel.compliance.PLeadsTo;
-import at.ac.c3pro.chormodel.compliance.Precedes;
-import at.ac.c3pro.chormodel.compliance.Universal;
-import at.ac.c3pro.chormodel.compliance.XLeadsTo;
 import at.ac.c3pro.io.ChoreographyModel2Bpmn;
 import at.ac.c3pro.io.Collaboration2Bpmn;
 import at.ac.c3pro.io.PrivateModel2Bpmn;
 import at.ac.c3pro.node.Edge;
 import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
-import at.ac.c3pro.tests.PrivateModel2BpmnTest;
 import at.ac.c3pro.util.ChoreographyGenerator;
 
 public class ChoreopraphyController {
-	
+
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
 	private static String lineSep = "----------------------------------------------------------\n";
-
 
 	public static void main(String[] args) throws IOException {
 		MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> graph = new MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode>();
@@ -57,11 +41,11 @@ public class ChoreopraphyController {
 		ArrayList<CompliancePattern> complianceRules = new ArrayList<>();
 
 		// MODEL GENERATOR PARAMETERS
-		int interactionCount = 28;		// number of interactions
-		int participantCount = 3;		// number of participants
-		int xorSplitCount = 3;			// number of XOR gateways
-		int andSplitCount = 5;			// number of AND gateways
-		int loopCount = 0;				// number of loops
+		int interactionCount = 28; // number of interactions
+		int participantCount = 3; // number of participants
+		int xorSplitCount = 3; // number of XOR gateways
+		int andSplitCount = 5; // number of AND gateways
+		int loopCount = 0; // number of loops
 		int maxBranching = 3;
 
 		// DEFINE INTERACTIONS FOR COMPLIANCE RULES
@@ -93,30 +77,24 @@ public class ChoreopraphyController {
 		i.setName("IA I");
 
 		ArrayList<Interaction> interactions = new ArrayList<Interaction>();
-		for (int x = 0; x < 10; x++ ) {
+		for (int x = 0; x < 10; x++) {
 			interactions.add(new Interaction());
 		}
 
-
-
 		/*
-		 * DEFINE COMPLIANCE RULES:
-		 * - P leadsTo Q
-		 * - P precedes Q
-		 * - P Exists
-		 * - P Universal
+		 * DEFINE COMPLIANCE RULES: - P leadsTo Q - P precedes Q - P Exists - P
+		 * Universal
 		 */
 //		complianceRules.add(new LeadsTo("r1", a, b));
-		//complianceRules.add(new LeadsTo("r2", a, c));
+		// complianceRules.add(new LeadsTo("r2", a, c));
 //		complianceRules.add(new LeadsTo("r3", b, f));
-		//complianceRules.add(new Precedes("r4", d, h));
+		// complianceRules.add(new Precedes("r4", d, h));
 //		complianceRules.add(new LeadsTo("r5", g, d));
-		//complianceRules.add(new Precedes("r6", b, c));
-		//complianceRules.add(new Universal("r7", b));
+		// complianceRules.add(new Precedes("r6", b, c));
+		// complianceRules.add(new Universal("r7", b));
 //		complianceRules.add(new Precedes("r8", c, a));
 //		complianceRules.add(new Universal("r9", e));
-		//complianceRules.add(new Exists("r10", i));
-
+		// complianceRules.add(new Exists("r10", i));
 
 		ChorModelGenerator modelGen;
 		SplitTracking splitTracking = SplitTracking.getInstance();
@@ -131,23 +109,18 @@ public class ChoreopraphyController {
 
 		while (!buildSuccess) {
 			long startTime = System.currentTimeMillis();
-			modelGen = new ChorModelGenerator(
-					participantCount,
-					interactionCount,
-					xorSplitCount,
-					andSplitCount,
-					loopCount,
-					maxBranching);
+			modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,
+					loopCount, maxBranching);
 			modelGen.setEarlyBranchClosing(false);
 			modelGen.setStartWithInteraction(false);
-
 
 			buildIterationCount++;
 
 			// build choreography model
 			graph = modelGen.build();
 			IOUtils.toFile("finished_graph_preCompliance.dot", graph.toDOT()); // first build
-			IOUtils.toFile("finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched with message flow
+			IOUtils.toFile("finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched with message
+																								// flow
 
 			// if compliance rules are defined, do interaction assignment
 			if (complianceRules.isEmpty()) {
@@ -164,15 +137,16 @@ public class ChoreopraphyController {
 				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 				String timeString = timestamp.toString();
 
-				//create output folder
+				// create output folder
 				File dir = new File("target/" + timeString);
 				dir.mkdir();
 				String folder = dir.toString();
 
+				IOUtils.toFile(timeString + "/" + sdf.format(timestamp) + "_choreo_model.dot",
+						modelGen.getEnrichedGraph().toDOT()); // assigned with compliance rules interactions
 
-				IOUtils.toFile(timeString + "/" + sdf.format(timestamp) + "_choreo_model.dot", modelGen.getEnrichedGraph().toDOT()); // assigned with compliance rules interactions
-
-				try (BufferedWriter bw = new BufferedWriter(new FileWriter(folder + "/autogen_choreo_info_" + timeString + ".txt"))) {
+				try (BufferedWriter bw = new BufferedWriter(
+						new FileWriter(folder + "/autogen_choreo_info_" + timeString + ".txt"))) {
 					bw.write(lineSep);
 					bw.write("ADDED RULES:\n");
 					bw.write(lineSep);
@@ -190,7 +164,8 @@ public class ChoreopraphyController {
 					bw.write(lineSep);
 					bw.write("ORDER DEPENDENCIES:\n");
 					bw.write(lineSep);
-					for (Map.Entry<Interaction, ArrayList<Interaction>> entry : complianceController.getOrderDependencies().entrySet()) {
+					for (Map.Entry<Interaction, ArrayList<Interaction>> entry : complianceController
+							.getOrderDependencies().entrySet()) {
 						bw.write("Key : " + entry.getKey() + " Value : " + entry.getValue());
 						bw.newLine();
 					}
@@ -216,7 +191,8 @@ public class ChoreopraphyController {
 						for (CompliancePattern cr : complianceController.getAffectedRules(ia)) {
 							bw.write(cr.getLabel() + " ");
 						}
-						bw.newLine();;
+						bw.newLine();
+						;
 					}
 					bw.write(lineSep);
 					bw.write("INTERACTIONS:\n");
@@ -233,7 +209,8 @@ public class ChoreopraphyController {
 							System.out.println(ia.getMessage());
 							System.out.println(ia.getMessage().getId());
 
-							bw.write(ia.getName() + ": " + ia.getSender().name + " -> " + ia.getReceiver().name + " " + ia.getMessage().name + " " + ia.getMessage());
+							bw.write(ia.getName() + ": " + ia.getSender().name + " -> " + ia.getReceiver().name + " "
+									+ ia.getMessage().name + " " + ia.getMessage());
 							bw.newLine();
 						}
 					}
@@ -246,14 +223,13 @@ public class ChoreopraphyController {
 					bw.write(lineSep);
 					System.out.println("Done");
 
-
-
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
 
 				ChoreographyModel choreoModel = new ChoreographyModel(modelGen.getEnrichedGraph());
-				ChoreographyModel2Bpmn choreo2bpmnIO = new ChoreographyModel2Bpmn(choreoModel, "autogen_choreo_model_" + sdf.format(timestamp), folder);
+				ChoreographyModel2Bpmn choreo2bpmnIO = new ChoreographyModel2Bpmn(choreoModel,
+						"autogen_choreo_model_" + sdf.format(timestamp), folder);
 
 				// Generate Choreography (incl. all public models / private models)
 
@@ -263,7 +239,8 @@ public class ChoreopraphyController {
 				// Export public model graphs
 				for (Role role : choreo.collaboration.roles) {
 					IPublicModel puModel = choreo.collaboration.R2PuM.get(role);
-					IOUtils.toFile(timeString + "/" + sdf.format(timestamp) + "_puModel_" + role.name + ".dot", puModel.getdigraph().toDOT()); // assigned with compliance rules interactions
+					IOUtils.toFile(timeString + "/" + sdf.format(timestamp) + "_puModel_" + role.name + ".dot",
+							puModel.getdigraph().toDOT()); // assigned with compliance rules interactions
 				}
 
 				FragmentGenerator fragGen = null;
@@ -274,26 +251,26 @@ public class ChoreopraphyController {
 					fragGen = new FragmentGenerator((PrivateModel) prModel);
 					prModel = fragGen.enhance();
 
-					IOUtils.toFile(timeString + "/" + sdf.format(timestamp) + "_prModel_" + role.name + ".dot", prModel.getdigraph().toDOT()); // assigned with compliance rules interactions
+					IOUtils.toFile(timeString + "/" + sdf.format(timestamp) + "_prModel_" + role.name + ".dot",
+							prModel.getdigraph().toDOT()); // assigned with compliance rules interactions
 				}
 
 				//
-				Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration, "autogen_collab_" + sdf.format(timestamp), folder);
-
-
+				Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
+						"autogen_collab_" + sdf.format(timestamp), folder);
 
 				for (Role role : choreo.collaboration.roles) {
 					IPrivateModel prModel = choreo.R2PrM.get(role);
-					PrivateModel2Bpmn prModel2bpmn = new PrivateModel2Bpmn(prModel, "autogen_prModel_" + role.name + "_" + sdf.format(timestamp) + ".bpmn", folder);
+					PrivateModel2Bpmn prModel2bpmn = new PrivateModel2Bpmn(prModel,
+							"autogen_prModel_" + role.name + "_" + sdf.format(timestamp) + ".bpmn", folder);
 					prModel2bpmn.buildXML();
 				}
-
 
 				choreo2bpmnIO.buildXML();
 				collab2bpmnIO.buildXML();
 
-
-				// if interaction assignment failed, increase interactionCount by one every 10 iterations
+				// if interaction assignment failed, increase interactionCount by one every 10
+				// iterations
 			} else if (!buildSuccess && (buildIterationCount % 10 == 0)) {
 				interactionCount = (int) (interactionCount * 1.1);
 			}
@@ -308,12 +285,10 @@ public class ChoreopraphyController {
 			System.out.println("buildIterationCount: " + buildIterationCount);
 			modelGen.printInteractions();
 
-
 			splitTracking.terminate();
 		}
 
 	}
-
 
 	private static void writeAnalysis(BuildAnaylse buildAnaylse) {
 		BufferedWriter bw = null;
@@ -323,8 +298,11 @@ public class ChoreopraphyController {
 
 			fw = new FileWriter("/Users/fb/Documents/test.txt", true);
 			bw = new BufferedWriter(fw);
-			//bw.write("iterations,interactions,actinteractions,xors,ands,maxBranching,cr_ias,crs,success,duration\n");
-			bw.write(buildAnaylse.iterations + "," + buildAnaylse.interactions + "," + buildAnaylse.actInteractions + "," + buildAnaylse.xors + "," + buildAnaylse.ands + "," + buildAnaylse.maxBranching + "," + buildAnaylse.crIas + "," + buildAnaylse.crs + "," + buildAnaylse.success + "," + buildAnaylse.duration + "\n");
+			// bw.write("iterations,interactions,actinteractions,xors,ands,maxBranching,cr_ias,crs,success,duration\n");
+			bw.write(buildAnaylse.iterations + "," + buildAnaylse.interactions + "," + buildAnaylse.actInteractions
+					+ "," + buildAnaylse.xors + "," + buildAnaylse.ands + "," + buildAnaylse.maxBranching + ","
+					+ buildAnaylse.crIas + "," + buildAnaylse.crs + "," + buildAnaylse.success + ","
+					+ buildAnaylse.duration + "\n");
 
 			System.out.println("Done");
 
@@ -616,5 +594,3 @@ public class ChoreopraphyController {
 //		return buildAnaylse;
 //	}
 }
-
-

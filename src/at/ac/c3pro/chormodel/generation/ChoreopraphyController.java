@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Map;
 
 import org.jbpt.utils.IOUtils;
@@ -33,6 +34,8 @@ public class ChoreopraphyController {
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
 	private static String lineSep = "----------------------------------------------------------\n";
 
+	private static String formattedDate = getTimestampFormatted();
+
 	public static void main(String[] args) throws IOException {
 		MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> graph = new MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode>();
 		Boolean buildSuccess = false;
@@ -40,11 +43,13 @@ public class ChoreopraphyController {
 		BuildAnaylse buildAnaylse = null;
 		ArrayList<CompliancePattern> complianceRules = new ArrayList<>();
 
+		File dir = createOutputFolder();
+
 		// MODEL GENERATOR PARAMETERS
-		int interactionCount = 28; // number of interactions
-		int participantCount = 3; // number of participants
-		int xorSplitCount = 3; // number of XOR gateways
-		int andSplitCount = 5; // number of AND gateways
+		int interactionCount = 5; // number of interactions
+		int participantCount = 2; // number of participants
+		int xorSplitCount = 1; // number of XOR gateways
+		int andSplitCount = 2; // number of AND gateways
 		int loopCount = 0; // number of loops
 		int maxBranching = 3;
 
@@ -110,17 +115,19 @@ public class ChoreopraphyController {
 		while (!buildSuccess) {
 			long startTime = System.currentTimeMillis();
 			modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,
-					loopCount, maxBranching);
+					loopCount, maxBranching, formattedDate);
 			modelGen.setEarlyBranchClosing(false);
 			modelGen.setStartWithInteraction(false);
 
 			buildIterationCount++;
 
 			// build choreography model
-			graph = modelGen.build();
-			IOUtils.toFile("finished_graph_preCompliance.dot", graph.toDOT()); // first build
-			IOUtils.toFile("finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched with message
-																								// flow
+			graph = modelGen.build(formattedDate);
+			IOUtils.toFile(formattedDate + "/finished_graph_preCompliance.dot", graph.toDOT()); // first build
+			IOUtils.toFile(formattedDate + "/finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched
+																													// with
+																													// message
+			// flow
 
 			// if compliance rules are defined, do interaction assignment
 			if (complianceRules.isEmpty()) {
@@ -134,19 +141,13 @@ public class ChoreopraphyController {
 				long stopTime = System.currentTimeMillis();
 				long elapsedTime = stopTime - startTime;
 
-				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-				String timeString = timestamp.toString();
-
-				// create output folder
-				File dir = new File("target/" + timeString);
-				dir.mkdir();
 				String folder = dir.toString();
 
-				IOUtils.toFile(timeString + "/" + sdf.format(timestamp) + "_choreo_model.dot",
+				IOUtils.toFile(formattedDate + "/" + formattedDate + "_choreo_model.dot",
 						modelGen.getEnrichedGraph().toDOT()); // assigned with compliance rules interactions
 
 				try (BufferedWriter bw = new BufferedWriter(
-						new FileWriter(folder + "/autogen_choreo_info_" + timeString + ".txt"))) {
+						new FileWriter(folder + "/autogen_choreo_info_" + formattedDate + ".txt"))) {
 					bw.write(lineSep);
 					bw.write("ADDED RULES:\n");
 					bw.write(lineSep);
@@ -229,7 +230,7 @@ public class ChoreopraphyController {
 
 				ChoreographyModel choreoModel = new ChoreographyModel(modelGen.getEnrichedGraph());
 				ChoreographyModel2Bpmn choreo2bpmnIO = new ChoreographyModel2Bpmn(choreoModel,
-						"autogen_choreo_model_" + sdf.format(timestamp), folder);
+						"autogen_choreo_model_" + formattedDate, folder);
 
 				// Generate Choreography (incl. all public models / private models)
 
@@ -239,7 +240,7 @@ public class ChoreopraphyController {
 				// Export public model graphs
 				for (Role role : choreo.collaboration.roles) {
 					IPublicModel puModel = choreo.collaboration.R2PuM.get(role);
-					IOUtils.toFile(timeString + "/" + sdf.format(timestamp) + "_puModel_" + role.name + ".dot",
+					IOUtils.toFile(formattedDate + "/" + formattedDate + "_puModel_" + role.name + ".dot",
 							puModel.getdigraph().toDOT()); // assigned with compliance rules interactions
 				}
 
@@ -248,21 +249,21 @@ public class ChoreopraphyController {
 				// Export private model graps
 				for (Role role : choreo.collaboration.roles) {
 					IPrivateModel prModel = choreo.R2PrM.get(role);
-					fragGen = new FragmentGenerator((PrivateModel) prModel);
+					fragGen = new FragmentGenerator((PrivateModel) prModel, formattedDate);
 					prModel = fragGen.enhance();
 
-					IOUtils.toFile(timeString + "/" + sdf.format(timestamp) + "_prModel_" + role.name + ".dot",
+					IOUtils.toFile(formattedDate + "/" + formattedDate + "_prModel_" + role.name + ".dot",
 							prModel.getdigraph().toDOT()); // assigned with compliance rules interactions
 				}
 
 				//
 				Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
-						"autogen_collab_" + sdf.format(timestamp), folder);
+						"autogen_collab_" + formattedDate, folder);
 
 				for (Role role : choreo.collaboration.roles) {
 					IPrivateModel prModel = choreo.R2PrM.get(role);
 					PrivateModel2Bpmn prModel2bpmn = new PrivateModel2Bpmn(prModel,
-							"autogen_prModel_" + role.name + "_" + sdf.format(timestamp) + ".bpmn", folder);
+							"autogen_prModel_" + role.name + "_" + formattedDate + ".bpmn", folder);
 					prModel2bpmn.buildXML();
 				}
 
@@ -593,4 +594,39 @@ public class ChoreopraphyController {
 //
 //		return buildAnaylse;
 //	}
+
+	/**
+	 * Returns a string depicting the current timestamp as a string, applicable for
+	 * all OS. This is used to have a similar naming convention for all the output
+	 * files for a single run of the algorithm
+	 * 
+	 * @return the current timestamp as a formatted String
+	 */
+	private static String getTimestampFormatted() {
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Date date = new Date();
+		date.setTime(timestamp.getTime());
+		return new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(date);
+	}
+
+	/**
+	 * @throws Exception
+	 * 
+	 */
+	private static File createOutputFolder() throws IOException {
+		File dir = new File("target/" + formattedDate);
+
+		if (!dir.exists()) {
+			boolean created = dir.mkdir();
+			if (created) {
+				System.out.println("Directory created successfully!");
+			} else {
+				throw new IOException("Failed to create the directory.");
+			}
+		} else {
+			System.out.println("Directory already exists.");
+		}
+
+		return dir;
+	}
 }

@@ -42,9 +42,13 @@ public class FragmentGenerator {
 	private static final int MAX_BRANCHES = 3;
 	private ArrayList<PrivateActivity> prActivities = new ArrayList<PrivateActivity>();
 
-	public FragmentGenerator(PrivateModel prModel) {
+	// For ensuring uniform naming scheme
+	String formattedDate;
+
+	public FragmentGenerator(PrivateModel prModel, String formattedDate) {
 		this.privateModel = prModel;
 		// iaCount = determineInteractionCount(prModel);
+		this.formattedDate = formattedDate;
 	}
 
 	public PrivateModel enhance() {
@@ -86,7 +90,7 @@ public class FragmentGenerator {
 //				
 //		}
 
-		IOUtils.toFile("Insert_autogen_" + i + ".dot", privateModel.getdigraph().toDOT());
+		IOUtils.toFile(formattedDate + "/Insert_autogen_" + i + ".dot", privateModel.getdigraph().toDOT());
 
 		return privateModel;
 	}

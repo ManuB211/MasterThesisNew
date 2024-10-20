@@ -15,7 +15,7 @@ import at.ac.c3pro.node.XorGateway;
 public class Branch {
 
 	public enum BranchState {
-		OPEN, CLOSED, SPLITED
+		OPEN, CLOSED, SPLIT
 	}
 
 	private Split split = null;

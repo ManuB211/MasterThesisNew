@@ -70,4 +70,9 @@ public class Interaction extends ChoreographyNode {
 	public Interaction clone() {
 		return new Interaction(this.getName(), this.sender, this.receiver, this.message);
 	}
+
+	public String toString() {
+		return this.getName() + ": " + this.getSender().toString() + " -> " + this.getReceiver().toString() + " "
+				+ this.getMessage().toString() + " " + this.getMessage().getId();
+	}
 }

@@ -1,6 +1,5 @@
 package at.ac.c3pro.chormodel.generation;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -95,13 +94,19 @@ public class ChorModelGenerator {
 		Branch currentBranch = null;
 		int loopCounter = 1;
 
+		//@formatter:off
 		/*
-		 * Build algorithm: (1) select random non closed branch (2) close branch
-		 * possible? (2.1) true -> choose to close branch by random (maybe some
-		 * parameterized solution) (2.1.1) close branch? (2.1.1.1) true -> close branch
-		 * (add new merge node) return to (1) (2.1.1.2) false -> go to step (3) (2.2)
-		 * false -> go to step (3) (3) add new random node -> return to (1)
+		 * Build algorithm: 
+		 * 	(1) select random non closed branch 
+		 * 	(2) close branch possible? 
+		 * 		(2.1) true -> choose to close branch by random (maybe some parameterized solution) 
+		 * 			(2.1.1) close branch? 
+		 * 				(2.1.1.1) true -> close branch (add merge node) -> GOTO (1)
+		 *				(2.1.1.2) false -> GOTO step (3) 
+		 *		(2.2) false -> GOTO (3) 
+		 *	(3) add new random node -> GOTO (1)
 		 */
+		//@formatter:on
 		do {
 			System.out.println("--------- LOOP: " + loopCounter + " ------------");
 
@@ -158,13 +163,13 @@ public class ChorModelGenerator {
 			// currentGraphToDot(loopCounter);
 
 			if (nextNode instanceof XorGateway) {
-				currentBranch.setState(BranchState.SPLITED);
+				currentBranch.setState(BranchState.SPLIT);
 				printCurrentBranching();
 				Split xorSplit = new Split(nextNode, NodeType.XOR, getRandomPossibleBranchCount(NodeType.XOR));
 				remainingNodeCounts.put(NodeType.XOR, remainingNodeCounts.get(NodeType.XOR) - 1);
 				splitTracking.addSplit(nextNode, xorSplit);
 			} else if (nextNode instanceof AndGateway) {
-				currentBranch.setState(BranchState.SPLITED);
+				currentBranch.setState(BranchState.SPLIT);
 				printCurrentBranching();
 				Split andSplit = new Split(nextNode, NodeType.AND, getRandomPossibleBranchCount(NodeType.AND));
 				remainingNodeCounts.put(NodeType.AND, remainingNodeCounts.get(NodeType.AND) - 1);
@@ -174,7 +179,7 @@ public class ChorModelGenerator {
 				interactions.add((Interaction) nextNode);
 
 			} else {
-				// not possible
+				throw new IllegalStateException("Node given, that is not any of the allowed types");
 			}
 
 			currentNode = nextNode;
@@ -232,7 +237,6 @@ public class ChorModelGenerator {
 		currentGraphToDot(loopCounter++);
 		addMessageFlow();
 		buildFinishedGraph();
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		IOUtils.toFile(formattedDate + "/enriched_graph" + ".dot", enrichedGraph.toDOT());
 		insertLoops(loops);
 
@@ -289,12 +293,9 @@ public class ChorModelGenerator {
 		List<NodeType> possibleNodeTypes = new ArrayList<NodeType>();
 
 		int freeInteractions = determineFreeInteractions();
-		int resInteractionsBuild = determineResInteractionsBuild();
 
 		printCurrentInteractionState();
 
-		// System.out.println("Free: " + freeInteractions + " Res. build: " +
-		// resInteractionsBuild);
 		if (freeInteractions > 0 || this.getResInteractionsGateways() == 0)
 			possibleNodeTypes.add(NodeType.INTERACTION);
 		if (remainingNodeCounts.get(NodeType.XOR) > 0)
@@ -312,6 +313,13 @@ public class ChorModelGenerator {
 		return selectedNodeType;
 	}
 
+	/**
+	 * Creates a new node of the given node type and returns it
+	 * 
+	 * @param nodeType: The node type that the created node will have
+	 * 
+	 * @return the created node
+	 */
 	private IChoreographyNode getNextNode(NodeType nodeType) {
 		IChoreographyNode node = null;
 		switch (nodeType) {
@@ -343,44 +351,6 @@ public class ChorModelGenerator {
 		return node;
 	}
 
-	/*
-	 * Returns a random selected, non closed branch TODO favor deeper branches over
-	 * main branch.
-	 * 
-	 * private Branch getRandomBranch(NodeType nodeType) { // considers number of
-	 * remaining interactions / branches without interactions
-	 * System.out.println("» Random branch selection: [ " + nodeType + " ]"); Branch
-	 * ranBranch = null; List<Branch> possibleBranches = new ArrayList<Branch>();
-	 * for (Split split : splitTracking.getSplits()) { for (Branch branch :
-	 * split.getBranches()) { if (branch.isOpen()) { possibleBranches.add(branch); }
-	 * } }
-	 * 
-	 * System.out.println("- possible Branches (before removal):"); for (Branch
-	 * branch : possibleBranches) { System.out.println("SplitNode: " +
-	 * branch.getSplit().getSpiltNode() + " Nodes: " + branch.getNodes()); }
-	 * 
-	 * this.printCurrentInteractionState(); this.printCurrentBranching();
-	 * 
-	 * // if nodeType = IA -> check if free interaction > possible Branches if
-	 * (nodeType.equals(NodeType.INTERACTION)) { List<Branch> branchRemoves = new
-	 * ArrayList<Branch>(); if (determineFreeInteractions() < 1) { for (Branch
-	 * branch : possibleBranches) { if (!branch.resInteraction())
-	 * branchRemoves.add(branch); } }
-	 * 
-	 * for (Branch branch : branchRemoves) { possibleBranches.remove(branch); } }
-	 * 
-	 * 
-	 * 
-	 * System.out.println("- possible Branches (after removal):"); for (Branch
-	 * branch : possibleBranches) { System.out.println("SplitNode: " +
-	 * branch.getSplit().getSpiltNode() + " Nodes: " + branch.getNodes()); }
-	 * 
-	 * int index = ThreadLocalRandom.current().nextInt(possibleBranches.size());
-	 * ranBranch = possibleBranches.get(index);
-	 * 
-	 * return ranBranch; }
-	 */
-
 	private Branch getRandomBranch() { // considers number of remaining interactions / branches without interactions
 		// System.out.println("» Random branch selection: [ " + nodeType + " ]");
 		Branch ranBranch = null;
@@ -397,7 +367,7 @@ public class ChorModelGenerator {
 		} else { // only not closable branches
 			for (Split split : splitTracking.getSplits()) {
 				for (Branch branch : split.getBranches()) {
-					if (!branch.isClosable() && branch.getState() != BranchState.SPLITED) {
+					if (!branch.isClosable() && branch.getState() != BranchState.SPLIT) {
 						possibleBranches.add(branch);
 					}
 				}
@@ -425,22 +395,6 @@ public class ChorModelGenerator {
 	 * the number of interactions needed, if all remaining splits are nested inside
 	 * one branch and max branching is 2.
 	 */
-	private int determineResInteractions(Branch currentBranch) {
-		int resInteractionsRemaining = 0;
-		int resInteractionsBuild = 0;
-
-		int remSplits = this.getRemainingSplits() + 1; // + 1 because current split not in calculation
-
-		if (remSplits > 0)
-			resInteractionsRemaining = remSplits + 1;
-		resInteractionsBuild = splitTracking.getResInteractions();
-
-		if (currentBranch.resInteraction())
-			resInteractionsBuild--;
-
-		return resInteractionsRemaining + resInteractionsBuild;
-	}
-
 	private int determineResInteractions() {
 		int resInteractionsGateways = 0;
 		int resInteractionsBuild = 0;
@@ -507,10 +461,6 @@ public class ChorModelGenerator {
 		return branchCount;
 	}
 
-	private int getRandomPossibleBranchCount() {
-		return 2;
-	}
-
 	private int getRemainingSplits() {
 		return remainingNodeCounts.get(NodeType.XOR) + remainingNodeCounts.get(NodeType.AND);
 	}
@@ -521,10 +471,6 @@ public class ChorModelGenerator {
 
 	private int getRemainingAND() {
 		return remainingNodeCounts.get(NodeType.AND);
-	}
-
-	private int determineFreeInteractions(Branch currentBranch) {
-		return remainingNodeCounts.get(NodeType.INTERACTION) - determineResInteractions(currentBranch);
 	}
 
 	private int determineFreeInteractions() {
@@ -615,16 +561,32 @@ public class ChorModelGenerator {
 		this.maxBranching = maxBranching;
 	}
 
+	/**
+	 * Prints the current interaction state, containing, i.e. remaining interaction
+	 * nodes, reserved amounts, free amounts
+	 */
 	private void printCurrentInteractionState() {
-		System.out.println("-- Current interaction state:");
+		System.out.println("-------------------------------");
+		System.out.println("Printing Current Interaction State");
+		System.out.println("-------------------------------");
 		System.out.println("Remaining: " + remainingNodeCounts.get(NodeType.INTERACTION));
 		System.out.println("ResTotal: " + determineResInteractions() + " ResGateways: " + getResInteractionsGateways()
 				+ " ResBuild: " + determineResInteractionsBuild());
 		System.out.println("Free: " + determineFreeInteractions());
+		System.out.println("-------------------------------");
+		System.out.println();
 	}
 
+	/**
+	 * Prints the current branching, containing the following information for all
+	 * splits: Split-Node, Merge-Node, State, Nodes, Reserved Interactions
+	 * 
+	 */
 	private void printCurrentBranching() {
-		System.out.println("-- Current branches:");
+		System.out.println("-------------------------------");
+		System.out.println("Printing Current Branches");
+		System.out.println("-------------------------------");
+
 		for (Split split : this.splitTracking.getSplits()) {
 			System.out.println("SplitNode: " + split.getSpiltNode() + " MergeNode: " + split.getMergeNode());
 			for (Branch branch : split.getBranches()) {
@@ -632,90 +594,122 @@ public class ChorModelGenerator {
 						+ " Res. IA: " + branch.resInteraction());
 			}
 		}
+
+		System.out.println("-------------------------------");
+		System.out.println();
 	}
 
+	/**
+	 * Prints the interactions
+	 */
 	public void printInteractions() {
-		System.out.println(interactions.size());
+
+		System.out.println("-------------------------------");
+		System.out.println("Printing Interactions, Size: " + interactions.size());
+		System.out.println("-------------------------------");
+
 		for (Interaction ia : interactions) {
-			System.out.println(ia);
-			System.out.println(ia.getName());
-			/*
-			 * System.out.println(ia.getSender().name);
-			 * System.out.println(ia.getReceiver().name);
-			 * System.out.println(ia.getMessage().name);
-			 * System.out.println(ia.getMessage().getId()); System.out.println(ia.getName()
-			 * + ": " + ia.getSender().name + " -> " + ia.getReceiver().name + " " +
-			 * ia.getMessage().name + " " + ia.getMessage().getId());
-			 */
+			System.out.println(ia.toString());
 		}
+		System.out.println("-------------------------------");
+		System.out.println();
 	}
 
+	/**
+	 * Adds the message flow to the generatedModel
+	 */
 	private void addMessageFlow() {
+		System.out.println("----------------------------------------------------------------------");
+		System.out.println("Start adding message flow");
+		System.out.println("----------------------------------------------------------------------");
 		Split startSplit = splitTracking.getMainBranch().getSplit();
 		addMessageFlow(startSplit);
 
 	}
 
-	/*
-	 * Enrich Interactions with Sender & Receiver & Message
+	/**
+	 * Enriches Interactions with Sender & Receiver & Message
+	 * 
+	 * @param split: The split to use as an entry point of the addition of the
+	 *               message flow
 	 */
 	private void addMessageFlow(Split split) {
 		if (split.getSpiltNode() instanceof Event) {
 			split.setFirstSender(getRandomParticipant());
 		}
+
 		System.out.println("SPLIT: " + split.getSpiltNode());
 		System.out.println("Number of Branches: " + split.getNumberBranches());
+		System.out.println("-------------------");
+		System.out.println("");
+
+		System.out.println("Iterate over the Branches");
+		System.out.println("-------------------");
+		System.out.println("");
+		// Iterate over branches of the split
 		for (Branch branch : split.getBranches()) {
 			branch.setLastReceiver(split.getFirstSender());
+
 			System.out.println("Branch: " + branch.getNodes());
+
 			if (branch.getNodes().isEmpty()) {
-				System.out.println("branch state: " + branch.getState());
-				System.out.println("branch closbale: " + branch.isClosable());
+				System.out.println(" Branch state: " + branch.getState());
+				System.out.println("Branch closable: " + branch.isClosable());
 			}
-			System.out.println(" - lR: " + branch.getLastReceiver());
+
+			System.out.println("-------------------");
+			System.out.println("");
+			System.out.println("Last Receiver: " + branch.getLastReceiver());
+			System.out.println("-------------------");
+			System.out.println("");
+
+			System.out.println("Iterate over nodes in the branch");
+			System.out.println("-------------------");
+			System.out.println("");
+			// Iterate over nodes of the branch
 			int listsize = branch.getNodes().size();
 			for (int i = 0; i < listsize; i++) {
+
 				IChoreographyNode currentNode = branch.getNodes().get(i);
 				Role sender = branch.getLastReceiver();
 				System.out.println("Node: " + currentNode);
 				Role receiver;
+
 				if (currentNode instanceof Interaction) {
-					if (i + 1 == listsize) { // last node of branch
-						if (split.getLastReceiver() == null) { // first worked branch of split determines lastReceiver
-							((Interaction) currentNode).setSender(sender);
-							receiver = getRandomReceiver(sender);
-							((Interaction) currentNode).setReceiver(receiver);
-							Message message = new Message("Message: " + sender.name + " to " + receiver.name,
-									UUID.randomUUID().toString());
-							((Interaction) currentNode).setMessage(message);
+
+					// Current node is the last node of the branch
+					if (i + 1 == listsize) {
+
+						// If Split has no last receiver (), first worked branch of split determines it
+						// Else another branch ofthe split already determined receiver for the
+						// interaction
+						if (split.getLastReceiver() == null) {
+
+							receiver = setSenderAndRandomReceiver(((Interaction) currentNode), sender);
+							createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode));
+
 							branch.setLastReceiver(receiver);
 							split.setLastReceiver(receiver); // set binding receiver for last interaction of all
 																// branches
 							System.out.println("(Interaction) set last receiver: " + split.getLastReceiver());
-						} else { // other branch of split already determined receiver for last interaction
+
+						} else {
 							receiver = split.getLastReceiver();
 							System.out.println("(Interaction) got last receiver: " + split.getLastReceiver());
-							if (sender.equals(receiver)) { // one additional interaction needed -> 1st splitLastReceiver
-															// to random Part ; 2nd lastReceiver to splitLastReceiver
-								((Interaction) currentNode).setSender(sender);
-								receiver = getRandomReceiver(sender);
-								((Interaction) currentNode).setReceiver(receiver);
-								Message message = new Message("Message: " + sender.name + " to " + receiver.name,
-										UUID.randomUUID().toString());
-								((Interaction) currentNode).setMessage(message);
+
+							// one additional interaction needed -> 1st splitLastReceiver to random Part ;
+							// 2nd lastReceiver to splitLastReceiver
+							if (sender.equals(receiver)) {
+								receiver = setSenderAndRandomReceiver(((Interaction) currentNode), sender);
+								createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode));
 
 								branch.setLastReceiver(receiver);
 								sender = branch.getLastReceiver();
 								receiver = split.getLastReceiver();
 
-								Interaction ia = new Interaction();
-								ia.setName(String.valueOf("IA" + interactions.size()));
-								ia.setId(UUID.randomUUID().toString());
-								ia.setSender(sender);
-								ia.setReceiver(receiver);
-								message = new Message("Message: " + sender.name + " to " + receiver.name,
-										UUID.randomUUID().toString());
-								ia.setMessage(message);
+								Interaction ia = createInteraction(interactions.size(), sender, receiver);
+								createMessageAndSetToCurrNode(sender, receiver, ia);
+
 								interactions.add(ia);
 								branch.addNode(ia);
 								branch.setLastReceiver(receiver);
@@ -723,49 +717,53 @@ public class ChorModelGenerator {
 							} else {
 								((Interaction) currentNode).setSender(sender);
 								((Interaction) currentNode).setReceiver(receiver);
-								Message message = new Message("Message: " + sender.name + " to " + receiver.name,
-										UUID.randomUUID().toString());
-								((Interaction) currentNode).setMessage(message);
+								createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode));
 							}
 						}
 					} else {
-						((Interaction) currentNode).setSender(sender);
-						receiver = getRandomReceiver(sender);
-						((Interaction) currentNode).setReceiver(receiver);
-						Message message = new Message("Message: " + sender.name + " to " + receiver.name,
-								UUID.randomUUID().toString());
-						((Interaction) currentNode).setMessage(message);
+						receiver = setSenderAndRandomReceiver(((Interaction) currentNode), sender);
+
+						createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode));
+
 						branch.setLastReceiver(receiver);
 					}
 					System.out.println("Sender: " + ((Interaction) currentNode).getSender());
 					System.out.println("Receiver: " + ((Interaction) currentNode).getReceiver());
+
 				} else if (currentNode instanceof Gateway) {
-					if (splitTracking.isSplit(currentNode)) { // if gateway is split -> set first sender of that split
-																// with lastReceiver of branch
+
+					// If gateway is split -> set first sender of that split as last receiver of
+					// corresp. branch
+					// Else (gateway is merge) -> set last receiver of that split as last receiver
+					// of corresp. branch
+					if (splitTracking.isSplit(currentNode)) {
+
 						Split innerSplit = splitTracking.getSplit(currentNode);
 						innerSplit.setFirstSender(branch.getLastReceiver());
+
+						// Recursive Call
 						addMessageFlow(innerSplit);
-					} else { // gateway is merge -> set lastReceiver of branch
+
+					} else {
 						Split splitOfMerge = splitTracking.getSplitByMergeNode(currentNode);
 						branch.setLastReceiver(splitOfMerge.getLastReceiver());
+
 						System.out.println("(Merge): set last receiver branch " + branch.getLastReceiver());
-						if (i + 1 == listsize) { // merge is last node of branch
+
+						// Merge is last node of branch
+						if (i + 1 == listsize) {
 							if (split.getLastReceiver() == null) {
 								split.setLastReceiver(branch.getLastReceiver());
+
 								System.out.println("(Merge) set last receiver: " + split.getLastReceiver());
 							} else {
 								if (!branch.getLastReceiver().equals(split.getLastReceiver())) {
 									sender = branch.getLastReceiver();
 									receiver = split.getLastReceiver();
 
-									Interaction ia = new Interaction();
-									ia.setName(String.valueOf("IA" + interactions.size()));
-									ia.setId(UUID.randomUUID().toString());
-									ia.setSender(sender);
-									ia.setReceiver(receiver);
-									Message message = new Message("Message: " + sender.name + " to " + receiver.name,
-											UUID.randomUUID().toString());
-									ia.setMessage(message);
+									Interaction ia = createInteraction(interactions.size(), sender, receiver);
+									createMessageAndSetToCurrNode(sender, receiver, ia);
+
 									interactions.add(ia);
 									branch.addNode(ia);
 									branch.setLastReceiver(receiver);
@@ -776,6 +774,53 @@ public class ChorModelGenerator {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Creates a new Interaction
+	 * 
+	 * @param interactionId: The next free id to identify the IA
+	 * @param sender:        The sending part of the interaction
+	 * @param receiver:      The receiving part of the interaction
+	 * 
+	 * @returns the newly created interaction
+	 */
+	private Interaction createInteraction(int interactionId, Role sender, Role receiver) {
+		Interaction ia = new Interaction();
+		ia.setName(String.valueOf("IA" + interactions.size()));
+		ia.setId(UUID.randomUUID().toString());
+		ia.setSender(sender);
+		ia.setReceiver(receiver);
+
+		return ia;
+	}
+
+	/**
+	 * Creates a new message and sets it as the message for the current node
+	 * 
+	 * @param sender:   the sender of the message
+	 * @param receiver: the receiver of the message
+	 * @param node:     the node
+	 */
+	private void createMessageAndSetToCurrNode(Role sender, Role receiver, Interaction node) {
+		Message message = new Message("Message: " + sender.name + " to " + receiver.name, UUID.randomUUID().toString());
+		(node).setMessage(message);
+	}
+
+	/**
+	 * Sets the (given) sender and the (random receiver)
+	 * 
+	 * @param node:   The node the sender and receiver are added to
+	 * @param sender: The sender that is added to the node
+	 * 
+	 * @return The randomly selected receiver, that was added to the node
+	 */
+	private Role setSenderAndRandomReceiver(Interaction node, Role sender) {
+		node.setSender(sender);
+		Role receiver = getRandomReceiver(sender);
+		node.setReceiver(receiver);
+
+		return receiver;
 	}
 
 	private void buildFinishedGraph() {

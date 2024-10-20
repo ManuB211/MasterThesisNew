@@ -193,10 +193,10 @@ public class ChoreographyGenerator {
 			} else if (node instanceof Interaction) {
 				if (((Interaction) node).getSender().name.equals(currentRole.name))
 					C2Pnode.put(node, new Send(((Interaction) node).getReceiver(), ((Interaction) node).getMessage(),
-							((Interaction) node).getName()));
+							((Interaction) node).getName() + " (s)"));
 				else if (((Interaction) node).getReceiver().name.equals(currentRole.name))
 					C2Pnode.put(node, new Receive(((Interaction) node).getSender(), ((Interaction) node).getMessage(),
-							((Interaction) node).getName()));
+							((Interaction) node).getName() + " (r)"));
 				else
 					System.out.println("currentrole " + currentRole + "not identified in interaction " + node);
 

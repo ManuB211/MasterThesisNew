@@ -68,8 +68,4 @@ public class PublicModelsGenerator {
 		Receive receiveNode = new Receive(sender, msg, ia.getName());
 	}
 
-	private void addNodeToGraph(IPublicNode node, Role role) {
-
-	}
-
 }

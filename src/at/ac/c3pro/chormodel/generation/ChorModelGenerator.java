@@ -590,8 +590,8 @@ public class ChorModelGenerator {
 		for (Split split : this.splitTracking.getSplits()) {
 			System.out.println("SplitNode: " + split.getSpiltNode() + " MergeNode: " + split.getMergeNode());
 			for (Branch branch : split.getBranches()) {
-				System.out.println("State: " + branch.getState().toString() + " Nodes: " + branch.getNodes()
-						+ " Res. IA: " + branch.resInteraction());
+				System.out.println("State: " + branch.getState() + " Nodes: " + branch.getNodes() + " Res. IA: "
+						+ branch.resInteraction());
 			}
 		}
 
@@ -773,6 +773,7 @@ public class ChorModelGenerator {
 					}
 				}
 			}
+			System.out.println("-------------------");
 		}
 	}
 
@@ -849,6 +850,8 @@ public class ChorModelGenerator {
 						nextNode = split.getMergeNode();
 					}
 					enrichedGraph.addEdge(currentNode, nextNode);
+					// interactions.get(interactions.indexOf(currentNode));
+
 				}
 			}
 		}

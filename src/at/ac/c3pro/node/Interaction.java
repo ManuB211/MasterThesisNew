@@ -72,7 +72,6 @@ public class Interaction extends ChoreographyNode {
 	}
 
 	public String toString() {
-		return this.getName() + ": " + this.getSender().toString() + " -> " + this.getReceiver().toString() + " "
-				+ this.getMessage().toString() + " " + this.getMessage().getId();
+		return this.getName() + ": " + this.getSender() + " -> " + this.getReceiver() + " " + this.getMessage();
 	}
 }

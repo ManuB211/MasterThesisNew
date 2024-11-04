@@ -137,14 +137,14 @@ public class ChoreographyModel2Bpmn {
 				// id / name 
 				choreoTask.setAttribute(new Attribute("id", "sid-" + node.getId()));
 				choreoTask.setAttribute(new Attribute("name", node.getName()));
-				choreoTask.setAttribute(new Attribute("initiatingParticipantRef", "sid-" + ((Interaction) node).getSender().id));
+				choreoTask.setAttribute(new Attribute("initiatingParticipantRef", "sid-" + ((Interaction) node).getParticipant1().id));
 				
 				// incoming and outgoing through nodes
 				choreoTask.addContent(this.getIncomingEdges(node));
 				choreoTask.addContent(this.getOutgoingEdges(node));
 				//partRef
-				choreoTask.addContent(new Element("participantRef", BPMN2NS).setText("sid-" + ((Interaction) node).getSender().id));
-				choreoTask.addContent(new Element("participantRef", BPMN2NS).setText("sid-" + ((Interaction) node).getReceiver().id));
+				choreoTask.addContent(new Element("participantRef", BPMN2NS).setText("sid-" + ((Interaction) node).getParticipant1().id));
+				choreoTask.addContent(new Element("participantRef", BPMN2NS).setText("sid-" + ((Interaction) node).getParticipant2().id));
 				
 				// XML:messageFLow				
 				if (node.getMessage() != null) {
@@ -156,8 +156,8 @@ public class ChoreographyModel2Bpmn {
 					Element msgFlow = new Element("messageFlow", BPMN2NS);
 					msgFlow.setAttribute(new Attribute("id","sid-" + msgFlowId.toString()));
 					msgFlow.setAttribute(new Attribute("messageRef", "sid-" + node.getMessage().id));
-					msgFlow.setAttribute(new Attribute("sourceRef", "sid-" + ((Interaction) node).getSender().id));
-					msgFlow.setAttribute(new Attribute("targetRef", "sid-" + ((Interaction) node).getReceiver().id));
+					msgFlow.setAttribute(new Attribute("sourceRef", "sid-" + ((Interaction) node).getParticipant1().id));
+					msgFlow.setAttribute(new Attribute("targetRef", "sid-" + ((Interaction) node).getParticipant2().id));
 					messageFlows.add(msgFlow);
 					
 					// XML:message

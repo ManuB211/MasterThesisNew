@@ -26,6 +26,7 @@ import at.ac.c3pro.node.IGateway;
 import at.ac.c3pro.node.IPrivateNode;
 import at.ac.c3pro.node.IPublicNode;
 import at.ac.c3pro.node.Interaction;
+import at.ac.c3pro.node.Interaction.InteractionType;
 import at.ac.c3pro.node.InteractionActivity;
 import at.ac.c3pro.node.Receive;
 import at.ac.c3pro.node.Send;
@@ -83,7 +84,8 @@ public class ChoreographyGenerator {
 					for (IPublicNode nodeS : pumS.getdigraph().getVertices())
 						for (IPublicNode nodeT : pumT.getdigraph().getVertices()) {
 							if (nodeS instanceof InteractionActivity && nodeT instanceof InteractionActivity) {
-								if (nodeS.getName().equalsIgnoreCase(nodeT.getName()))
+								if (((InteractionActivity) nodeS).getNameWithoutSenderReceiverInfo().equalsIgnoreCase(
+										((InteractionActivity) nodeT).getNameWithoutSenderReceiverInfo()))
 									choreography.collaboration.Pu2Pu.put(nodeS, nodeT);
 							} // else if(nodeS instanceof Event && nodeT instanceof Event){
 
@@ -191,15 +193,7 @@ public class ChoreographyGenerator {
 			} else if (node instanceof Gateway) {
 				C2Pnode.put(node, (Gateway) node);
 			} else if (node instanceof Interaction) {
-				if (((Interaction) node).getSender().name.equals(currentRole.name))
-					C2Pnode.put(node, new Send(((Interaction) node).getReceiver(), ((Interaction) node).getMessage(),
-							((Interaction) node).getName() + " (s)"));
-				else if (((Interaction) node).getReceiver().name.equals(currentRole.name))
-					C2Pnode.put(node, new Receive(((Interaction) node).getSender(), ((Interaction) node).getMessage(),
-							((Interaction) node).getName() + " (r)"));
-				else
-					System.out.println("currentrole " + currentRole + "not identified in interaction " + node);
-
+				putNodeInC2PNode(C2Pnode, ((Interaction) node), currentRole);
 			} else {
 				System.out.println("Unknown type of node : " + node);
 			}
@@ -215,6 +209,54 @@ public class ChoreographyGenerator {
 		}
 
 		return new PublicModel(graph, currentRole.name + "PuM");
+	}
+
+	/**
+	 * Puts the node in the C2Pnode data structure. Each interaction type is
+	 * annotated with its name, as well as sender/receiver info (if applicable)
+	 */
+	private static void putNodeInC2PNode(Map<IChoreographyNode, IPublicNode> C2Pnode, Interaction node,
+			Role currentRole) {
+
+		// Throw exception if interaction node has none of the defined types
+		if (!InteractionType.MESSAGE_EXCHANGE.equals(node.getInteractionType())
+				&& !InteractionType.HANDOVER_OF_WORK.equals(node.getInteractionType())
+				&& !InteractionType.SHARED_RESOURCE.equals(node.getInteractionType())
+				&& !InteractionType.SYNCHRONOUS_ACTIVITY.equals(node.getInteractionType())) {
+			throw new IllegalStateException(
+					"Interaction node can not be matched to any valid interaction type. Please ensure that each Interaction node gets assigned a valid type");
+		}
+
+		if (node.getParticipant1().name.equals(currentRole.name))
+			C2Pnode.put(node, new Send(node.getParticipant2(), node.getMessage(),
+					getAnnotationOfInteraction(node.getInteractionType(), node.getName(), true)));
+		else if (node.getParticipant2().name.equals(currentRole.name))
+			C2Pnode.put(node, new Receive(node.getParticipant1(), node.getMessage(),
+					getAnnotationOfInteraction(node.getInteractionType(), node.getName(), false)));
+		else
+			System.out.println("currentrole " + currentRole + "not identified in interaction " + node);
+
+	}
+
+	/**
+	 * Computes the String an interaction node is annotated with in the resulting
+	 * graph
+	 */
+	private static String getAnnotationOfInteraction(InteractionType interactionType, String nodeName,
+			boolean isParticipant1) {
+
+		switch (interactionType) {
+		case MESSAGE_EXCHANGE:
+			return "M: " + nodeName + (isParticipant1 ? " (s)" : " (r)");
+		case HANDOVER_OF_WORK:
+			return "H: " + nodeName + (isParticipant1 ? " (s)" : " (r)");
+		case SHARED_RESOURCE:
+			return "R: " + nodeName + (isParticipant1 ? " (p1)" : " (p2)");
+		case SYNCHRONOUS_ACTIVITY:
+			return "S: " + nodeName + (isParticipant1 ? " (p1)" : " (p2)");
+		}
+
+		throw new IllegalArgumentException("The interaction type has to be defined");
 	}
 
 	public static IPrivateModel transformPubModel2PrModel(IPublicModel puModel, Role currentRole) {

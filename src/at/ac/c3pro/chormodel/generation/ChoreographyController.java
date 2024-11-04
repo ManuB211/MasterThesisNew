@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ import at.ac.c3pro.io.PrivateModel2Bpmn;
 import at.ac.c3pro.node.Edge;
 import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
+import at.ac.c3pro.node.Interaction.InteractionType;
 import at.ac.c3pro.util.ChoreographyGenerator;
 
 public class ChoreographyController {
@@ -51,12 +53,27 @@ public class ChoreographyController {
 		File dir = createOutputFolder();
 
 		// MODEL GENERATOR PARAMETERS
-		int interactionCount = 5; // number of interactions
 		int participantCount = 2; // number of participants
 		int xorSplitCount = 1; // number of XOR gateways
 		int andSplitCount = 2; // number of AND gateways
 		int loopCount = 0; // number of loops
 		int maxBranching = 3;
+
+		int amountMessageExchange = 2;
+		int amountHandoverOfWork = 1;
+		int amountRessourceSharing = 1;
+		int amountSynchronousActivity = 1;
+
+		Map<InteractionType, Integer> remainingInteractionTypes = new HashMap<>();
+		remainingInteractionTypes.put(InteractionType.MESSAGE_EXCHANGE, 2);
+		remainingInteractionTypes.put(InteractionType.HANDOVER_OF_WORK, 1);
+		remainingInteractionTypes.put(InteractionType.SHARED_RESOURCE, 1);
+		remainingInteractionTypes.put(InteractionType.SYNCHRONOUS_ACTIVITY, 1);
+
+		// -1 to ensure that one Interaction Type remains in the end to be able to close
+		// the last branch
+		int interactionCount = amountHandoverOfWork + amountMessageExchange + amountRessourceSharing
+				+ amountSynchronousActivity - 1;
 
 		// Here was the code from createInteractionList()
 
@@ -74,7 +91,7 @@ public class ChoreographyController {
 		while (!buildSuccess) {
 			long startTime = System.currentTimeMillis();
 			modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,
-					loopCount, maxBranching, formattedDate);
+					loopCount, maxBranching, formattedDate, remainingInteractionTypes);
 
 			// TODO: Put in Constructor?
 			modelGen.setEarlyBranchClosing(false);
@@ -253,13 +270,13 @@ public class ChoreographyController {
 				} else {
 					System.out.println(ia);
 					System.out.println(ia.getName());
-					System.out.println(ia.getSender());
-					System.out.println(ia.getReceiver());
+					System.out.println(ia.getParticipant1());
+					System.out.println(ia.getParticipant2());
 					System.out.println(ia.getMessage());
 					System.out.println(ia.getMessage().getId());
 
-					bw.write(ia.getName() + ": " + ia.getSender().name + " -> " + ia.getReceiver().name + " "
-							+ ia.getMessage().name + " " + ia.getMessage());
+					bw.write(ia.getName() + ": " + ia.getParticipant1().name + " -> " + ia.getParticipant2().name + " "
+							+ ia.getMessage().name + " " + ia.getMessage() + " : " + ia.getInteractionType());
 					bw.newLine();
 				}
 			}

@@ -120,17 +120,17 @@ public class ImpactAnalysisUtil {
 		for (IChoreographyNode node : choreo.getdigraph().getVertices()) {
 			if (choreo.isActivity(node)) { // is an Interaction
 				NbInteractions++;
-				role2NbInteractions.put(((Interaction) node).getSender(),
-						role2NbInteractions.get(((Interaction) node).getSender()) + 1);
-				role2NbInteractions.put(((Interaction) node).getReceiver(),
-						role2NbInteractions.get(((Interaction) node).getReceiver()) + 1);
+				role2NbInteractions.put(((Interaction) node).getParticipant1(),
+						role2NbInteractions.get(((Interaction) node).getParticipant1()) + 1);
+				role2NbInteractions.put(((Interaction) node).getParticipant2(),
+						role2NbInteractions.get(((Interaction) node).getParticipant2()) + 1);
 				// totalMessagesSize += ((Interaction) node).getMessage().size;
 				// totalMessagesImportance += ((Interaction) node).getMessage().importanceLevel;
 
 				for (Pair<IRole, IRole> p : ConnectivityMap.keySet()) {
-					if ((p.first == ((Interaction) node).getSender() && p.second == ((Interaction) node).getReceiver())
-							|| (p.second == ((Interaction) node).getSender()
-									&& p.first == ((Interaction) node).getReceiver())) {
+					if ((p.first == ((Interaction) node).getParticipant1() && p.second == ((Interaction) node).getParticipant2())
+							|| (p.second == ((Interaction) node).getParticipant1()
+									&& p.first == ((Interaction) node).getParticipant2())) {
 						double newValue = ConnectivityMap.get(p) + 1; // TODO weight by importance of message
 						ConnectivityMap.put(p, newValue);
 					}

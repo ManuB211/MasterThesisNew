@@ -60,8 +60,8 @@ public class PublicModelsGenerator {
 	}
 
 	private void addInteraction(Interaction ia) {
-		Role sender = ia.getSender();
-		Role receiver = ia.getReceiver();
+		Role sender = ia.getParticipant1();
+		Role receiver = ia.getParticipant2();
 		Message msg = ia.getMessage();
 
 		Send sendNode = new Send(receiver, msg, ia.getName());

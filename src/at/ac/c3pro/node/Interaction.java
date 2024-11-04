@@ -8,47 +8,56 @@ import at.ac.c3pro.chormodel.Role;
 
 public class Interaction extends ChoreographyNode {
 
-	private Role sender = null;
-	private Role receiver = null;
+	public enum InteractionType {
+		MESSAGE_EXCHANGE, HANDOVER_OF_WORK, SHARED_RESOURCE, SYNCHRONOUS_ACTIVITY
+	}
+
+	// In the case of Message or Handover of Work Participant1 will be the sender
+	// and 2 the receiver
+	// In the case of Synchronous Task or Ressource Sharing, there is no sender or
+	// receiver
+	private Role participant1 = null;
+	private Role participant2 = null;
 	private Message message = null;
+	private InteractionType interactionType;
 
 	public Interaction() {
 		super();
 	}
 
-	public Interaction(String name, Role sender, Role receiver, Message message) {
+	public Interaction(String name, Role participant1, Role participant2, Message message) {
 		super(name);
-		this.setSender(sender);
-		this.setReceiver(receiver);
+		this.setParticipant1(participant1);
+		this.setParticipant2(participant2);
 		this.setMessage(message);
 	}
 
-	public Interaction(String name, String id, Role sender, Role receiver, Message message) {
+	public Interaction(String name, String id, Role participant1, Role participant2, Message message) {
 		super(name);
-		this.setSender(sender);
-		this.setReceiver(receiver);
+		this.setParticipant1(participant1);
+		this.setParticipant2(participant2);
 		this.setMessage(message);
 		this.setId(id);
 	}
 
-	public Role getSender() {
-		return sender;
+	public Role getParticipant1() {
+		return participant1;
 	}
 
-	public void setSender(Role sender) {
-		this.sender = sender;
+	public void setParticipant1(Role sender) {
+		this.participant1 = sender;
 	}
 
 	public String getId() {
 		return super.getId();
 	}
 
-	public Role getReceiver() {
-		return receiver;
+	public Role getParticipant2() {
+		return participant2;
 	}
 
-	public void setReceiver(Role receiver) {
-		this.receiver = receiver;
+	public void setParticipant2(Role receiver) {
+		this.participant2 = receiver;
 	}
 
 	public Message getMessage() {
@@ -59,19 +68,28 @@ public class Interaction extends ChoreographyNode {
 		this.message = message;
 	}
 
+	public void setInteractionType(InteractionType interactionType) {
+		this.interactionType = interactionType;
+	}
+
+	public InteractionType getInteractionType() {
+		return interactionType;
+	}
+
 	public boolean hasRole(Role role) {
-		return this.sender.equals(role) || this.receiver.equals(role);
+		return this.participant1.equals(role) || this.participant2.equals(role);
 	}
 
 	public Set<Role> getRoles() {
-		return new HashSet<Role>(Arrays.asList(new Role[] { this.sender, this.receiver }));
+		return new HashSet<Role>(Arrays.asList(new Role[] { this.participant1, this.participant2 }));
 	}
 
 	public Interaction clone() {
-		return new Interaction(this.getName(), this.sender, this.receiver, this.message);
+		return new Interaction(this.getName(), this.participant1, this.participant2, this.message);
 	}
 
 	public String toString() {
-		return this.getName() + ": " + this.getSender() + " -> " + this.getReceiver() + " " + this.getMessage();
+		return this.getName() + ": " + this.getParticipant1() + " -> " + this.getParticipant2() + " "
+				+ this.getMessage();
 	}
 }

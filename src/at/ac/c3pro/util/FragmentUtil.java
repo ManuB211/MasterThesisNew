@@ -210,7 +210,7 @@ public class FragmentUtil {
 				} else if ((n instanceof InteractionActivity) && ((InteractionActivity) n).role.equals(r)) {
 					sourceAdd = true;
 				} else if (n instanceof Interaction
-						&& (((Interaction) n).getSender().equals(r) || ((Interaction) n).getReceiver().equals(r))) {
+						&& (((Interaction) n).getParticipant1().equals(r) || ((Interaction) n).getParticipant2().equals(r))) {
 					sourceAdd = true;
 				}
 
@@ -290,7 +290,7 @@ public class FragmentUtil {
 				} else if ((n instanceof InteractionActivity) && ((InteractionActivity) n).role.equals(r)) {
 					L.add(n);
 				} else if (n instanceof Interaction
-						&& (((Interaction) n).getSender().equals(r) || ((Interaction) n).getReceiver().equals(r))) {
+						&& (((Interaction) n).getParticipant1().equals(r) || ((Interaction) n).getParticipant2().equals(r))) {
 					L.add(n);
 				} else {
 					L.addAll(FragmentUtil.getNextRoleActivities(n, r, g, endNode));

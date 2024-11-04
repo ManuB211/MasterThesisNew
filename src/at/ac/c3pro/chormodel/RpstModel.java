@@ -974,8 +974,8 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 			} else if ((n instanceof InteractionActivity && ((InteractionActivity) n).role.name.equals(role.name))) {
 				// System.out.println("-- true: public model activity");
 				var = true;
-			} else if ((n instanceof Interaction) && (((Interaction) n).getSender().name.equals(role.name)
-					|| ((Interaction) n).getReceiver().name.equals(role.name))) {
+			} else if ((n instanceof Interaction) && (((Interaction) n).getParticipant1().name.equals(role.name)
+					|| ((Interaction) n).getParticipant2().name.equals(role.name))) {
 				// System.out.println("-- true: choreography model interaction");
 				// System.out.println("n is " + n.getName());
 				// System.out.println("n role sender" + ((Interaction) n).getSender());
@@ -1022,8 +1022,8 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
 			if (this instanceof ChoreographyModel) {
 				for (N n : this.diGraph.getDirectSuccessors(node)) {
-					if (n instanceof Interaction && !((Interaction) n).getSender().name.equals(role.name)
-							&& !(((Interaction) n).getReceiver().name.equals(role.name))) {
+					if (n instanceof Interaction && !((Interaction) n).getParticipant1().name.equals(role.name)
+							&& !(((Interaction) n).getParticipant2().name.equals(role.name))) {
 						L.addAll(getnextRoleActivities(n, role));
 					} else
 						L.add(n);

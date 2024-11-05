@@ -88,6 +88,11 @@ public class ChoreographyController {
 		complianceController.orderInteractions();
 		complianceController.printInteractionOrderWithAffectedRules();
 
+		if (amountHandoverOfWork >= participantCount) {
+			throw new IllegalArgumentException(
+					"The amount of interactions of the type handover-of-work cannot be equal or greater to the amount of participants");
+		}
+
 		while (!buildSuccess) {
 			long startTime = System.currentTimeMillis();
 			modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,

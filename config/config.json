@@ -1,0 +1,10 @@
+{
+	participantCount: 2,
+	xorSplitCount: 1,
+	andSplitCount: 2,
+	maxBranching: 3,
+	amountMessageExchange: 2,
+	amountHandoverOfWork: 1,
+	amountRessourceSharing: 1,
+	amountSynchronousActivity: 1
+}

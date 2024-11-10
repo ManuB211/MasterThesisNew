@@ -23,6 +23,8 @@ import at.ac.c3pro.node.Interaction;
 import at.ac.c3pro.node.Interaction.InteractionType;
 import at.ac.c3pro.node.Message;
 import at.ac.c3pro.node.XorGateway;
+import at.ac.c3pro.util.WeightedRandomSelection;
+import edu.uci.ics.jung.graph.util.Pair;
 
 public class ChorModelGenerator {
 
@@ -55,8 +57,14 @@ public class ChorModelGenerator {
 
 	private Map<InteractionType, Integer> remainingInteractionTypes;
 
+	// To get probabilities for drawing the branch-closing interactions at random
+	private WeightedRandomSelection<InteractionType> remainingInteractionTypesBeginning;
+
 	// Formatted date for uniform naming schemes
 	String formattedDate;
+
+	// Data structure for tracking interaction types between every two participants
+	private Map<Pair<Role>, List<InteractionType>> interactionTypesForParticipantCombinations;
 
 	public ChorModelGenerator() {
 	}
@@ -74,7 +82,10 @@ public class ChorModelGenerator {
 		this.remainingNodeCounts = this.initialNodeCounts;
 		this.formattedDate = formattedDate;
 		this.remainingInteractionTypes = remainingInteractionTypes;
+		this.remainingInteractionTypesBeginning = new WeightedRandomSelection<InteractionType>(
+				remainingInteractionTypes);
 		setupParticipants();
+		this.interactionTypesForParticipantCombinations = getMapOfAllParticipantCombinations();
 	}
 
 	public MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> build(String formattedDate) {
@@ -306,10 +317,18 @@ public class ChorModelGenerator {
 					System.out.println("BRANCH NOT CLOSABLE: " + branch.getSplit().getSpiltNode() + " Nodes: "
 							+ branch.getNodes());
 
-					List<InteractionType> interactionTypes = getPossibleInteractionTypes(branch);
-
-					// Only one should be left
-					InteractionType interactionType = interactionTypes.get(0);
+					/**
+					 * When the code arrives here, that means that all interaction types have
+					 * already been placed in the amount they should have been Still it might need
+					 * an unknown amount (TODO: is it really unknown?) of interactions to close all
+					 * remaining open branches. Therefore we choose the types here at random
+					 * according to the probability they had in the beginning
+					 * 
+					 * Example: If the user input specified to have 2 Mes, 1 ResS, 1 SynT, 1 HOW,
+					 * with probability 2/5 Message will be used here
+					 */
+					InteractionType interactionType = this.remainingInteractionTypesBeginning
+							.getRandomInteractionTypeAccInitialDist();
 
 					Interaction interaction = new Interaction();
 					interaction.setName(String.valueOf("IA" + interactions.size()));
@@ -534,13 +553,19 @@ public class ChorModelGenerator {
 		return remainingNodeCounts.get(NodeType.INTERACTION) - determineResInteractions();
 	}
 
-	private Role getRandomReceiver(Role sender) {
+	private Role getRandomReceiver(Role sender, List<Role> excludedReceivers) {
 		Role receiver;
-		int randomIndex;
-		do {
-			randomIndex = new Random().nextInt(participants.size());
-			receiver = participants.get(randomIndex);
-		} while (sender.equals(receiver));
+
+		List<Role> participantsToDrawFrom = new ArrayList<>(participants);
+		participantsToDrawFrom.remove(sender);
+		participantsToDrawFrom.removeAll(excludedReceivers);
+
+		if (participantsToDrawFrom.size() >= 1) {
+			receiver = participants.get(new Random().nextInt(participantsToDrawFrom.size()));
+		} else {
+			// TODO: Handle differently (new try for assignment)
+			throw new IllegalStateException("There are no possible receivers left, assignment failed");
+		}
 
 		return receiver;
 	}
@@ -687,10 +712,30 @@ public class ChorModelGenerator {
 	/**
 	 * Enriches Interactions with Sender & Receiver & Message
 	 * 
+	 * It needs to be taken care of, that the introduction of the Handover-Of-Work
+	 * (HOW) interaction type comes with constraints: Consider two participants A
+	 * and B.
+	 * 
+	 * -When there is a HOW from A to B, there can be no message exchange from B to
+	 * A where A receives the message before the HOW -When there is a HOW between A
+	 * and B, there can be no synchronous operation, that happens before the HOW for
+	 * any of the participants -TODO
+	 * 
+	 * Furthermore potential deadlocks have to be avoided, like e.g. A --HOW--> B,
+	 * B--HOW-->C, C--HOW-->A
+	 * 
+	 * This is modeled using a map that holds all the combinations of two
+	 * participants and maps to a list of the interaction types between them. The
+	 * order they have in the list represents the chronological occurence. This way
+	 * we can track all the interactions and extend it most easily, in case other
+	 * options are added later or other cases occur that were not initially thought
+	 * of.
+	 * 
 	 * @param split: The split to use as an entry point of the addition of the
 	 *               message flow
 	 */
 	private void addMessageFlow(Split split) {
+
 		if (split.getSpiltNode() instanceof Event) {
 			split.setFirstSender(getRandomParticipant());
 		}
@@ -738,12 +783,16 @@ public class ChorModelGenerator {
 					if (i + 1 == listsize) {
 
 						// If Split has no last receiver (), first worked branch of split determines it
-						// Else another branch ofthe split already determined receiver for the
+						// Else another branch of the split already determined receiver for the
 						// interaction
 						if (split.getLastReceiver() == null) {
 
-							receiver = setSenderAndRandomReceiver(((Interaction) currentNode), sender);
-							createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode));
+							List<Role> excludedReceivers = getExcludedReceivers(sender);
+
+							receiver = setSenderAndRandomReceiver(((Interaction) currentNode), sender,
+									excludedReceivers);
+							createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode),
+									interactionTypesForParticipantCombinations);
 
 							branch.setLastReceiver(receiver);
 							split.setLastReceiver(receiver); // set binding receiver for last interaction of all
@@ -757,15 +806,23 @@ public class ChorModelGenerator {
 							// one additional interaction needed -> 1st splitLastReceiver to random Part ;
 							// 2nd lastReceiver to splitLastReceiver
 							if (sender.equals(receiver)) {
-								receiver = setSenderAndRandomReceiver(((Interaction) currentNode), sender);
-								createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode));
+								List<Role> excludedReceivers = getExcludedReceivers(sender);
+
+								receiver = setSenderAndRandomReceiver(((Interaction) currentNode), sender,
+										excludedReceivers);
+								createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode),
+										interactionTypesForParticipantCombinations);
 
 								branch.setLastReceiver(receiver);
 								sender = branch.getLastReceiver();
 								receiver = split.getLastReceiver();
 
-								Interaction ia = createInteraction(interactions.size(), sender, receiver);
-								createMessageAndSetToCurrNode(sender, receiver, ia);
+								InteractionType typeToBeSet = this.remainingInteractionTypesBeginning
+										.getRandomInteractionTypeAccInitialDist();
+
+								Interaction ia = createInteraction(interactions.size(), sender, receiver, typeToBeSet);
+								createMessageAndSetToCurrNode(sender, receiver, ia,
+										interactionTypesForParticipantCombinations);
 
 								interactions.add(ia);
 								branch.addNode(ia);
@@ -774,13 +831,17 @@ public class ChorModelGenerator {
 							} else {
 								((Interaction) currentNode).setParticipant1(sender);
 								((Interaction) currentNode).setParticipant2(receiver);
-								createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode));
+								createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode),
+										interactionTypesForParticipantCombinations);
 							}
 						}
 					} else {
-						receiver = setSenderAndRandomReceiver(((Interaction) currentNode), sender);
+						List<Role> excludedReceivers = getExcludedReceivers(sender);
 
-						createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode));
+						receiver = setSenderAndRandomReceiver(((Interaction) currentNode), sender, excludedReceivers);
+
+						createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode),
+								interactionTypesForParticipantCombinations);
 
 						branch.setLastReceiver(receiver);
 					}
@@ -818,8 +879,13 @@ public class ChorModelGenerator {
 									sender = branch.getLastReceiver();
 									receiver = split.getLastReceiver();
 
-									Interaction ia = createInteraction(interactions.size(), sender, receiver);
-									createMessageAndSetToCurrNode(sender, receiver, ia);
+									InteractionType typeToBeSet = this.remainingInteractionTypesBeginning
+											.getRandomInteractionTypeAccInitialDist();
+
+									Interaction ia = createInteraction(interactions.size(), sender, receiver,
+											typeToBeSet);
+									createMessageAndSetToCurrNode(sender, receiver, ia,
+											interactionTypesForParticipantCombinations);
 
 									interactions.add(ia);
 									branch.addNode(ia);
@@ -835,6 +901,44 @@ public class ChorModelGenerator {
 	}
 
 	/**
+	 * Computes and returns a list of roles that are excluded as receivers for the
+	 * interaction in question, depending on the sender
+	 * 
+	 * @param: The sender of the interaction in question
+	 * 
+	 * @returns: A list of all excluded receivers
+	 */
+	private List<Role> getExcludedReceivers(Role sender) {
+		List<Role> rst = new ArrayList<>();
+
+		return rst;
+	}
+
+	/**
+	 * Creates a map of all possible two participant combinations. This has to be
+	 * done for both directions, since the direction of the message interaction
+	 * plays an important part
+	 * 
+	 * @returns A map with pairs of all possible two-participants combinations as
+	 *          key and an empty arraylist as value for each
+	 */
+
+	private Map<Pair<Role>, List<InteractionType>> getMapOfAllParticipantCombinations() {
+
+		Map<Pair<Role>, List<InteractionType>> rst = new HashMap<>();
+
+		for (Role role1 : participants) {
+			for (Role role2 : participants) {
+				if (!role1.equals(role2)) {
+					rst.put(new Pair<Role>(role1, role2), new ArrayList<>());
+				}
+			}
+		}
+
+		return rst;
+	}
+
+	/**
 	 * Creates a new Interaction
 	 * 
 	 * @param interactionId: The next free id to identify the IA
@@ -843,10 +947,11 @@ public class ChorModelGenerator {
 	 * 
 	 * @returns the newly created interaction
 	 */
-	private Interaction createInteraction(int interactionId, Role sender, Role receiver) {
+	private Interaction createInteraction(int interactionId, Role sender, Role receiver, InteractionType typeToBeSet) {
 		Interaction ia = new Interaction();
 		ia.setName(String.valueOf("IA" + interactions.size()));
 		ia.setId(UUID.randomUUID().toString());
+		ia.setInteractionType(typeToBeSet);
 		ia.setParticipant1(sender);
 		ia.setParticipant2(receiver);
 
@@ -860,22 +965,27 @@ public class ChorModelGenerator {
 	 * @param receiver: the receiver of the message
 	 * @param node:     the node
 	 */
-	private void createMessageAndSetToCurrNode(Role sender, Role receiver, Interaction node) {
+	private void createMessageAndSetToCurrNode(Role sender, Role receiver, Interaction node,
+			Map<Pair<Role>, List<InteractionType>> interactionTypesForParticipantCombinations) {
 		Message message = new Message("Message: " + sender.name + " to " + receiver.name, UUID.randomUUID().toString());
 		(node).setMessage(message);
+
+//		interactionTypesForParticipantCombinations.get(new Pair<Role>(sender, receiver)).add(node.getInteractionType());
 	}
 
 	/**
 	 * Sets the (given) sender and the (random receiver)
 	 * 
-	 * @param node:   The node the sender and receiver are added to
-	 * @param sender: The sender that is added to the node
+	 * @param node:              The node the sender and receiver are added to
+	 * @param sender:            The sender that is added to the node
+	 * @param excludedReceivers: The participants that cannot be the receivers (cf
+	 *                           comment on addMessageFlow)
 	 * 
 	 * @return The randomly selected receiver, that was added to the node
 	 */
-	private Role setSenderAndRandomReceiver(Interaction node, Role sender) {
+	private Role setSenderAndRandomReceiver(Interaction node, Role sender, List<Role> excludedReceivers) {
 		node.setParticipant1(sender);
-		Role receiver = getRandomReceiver(sender);
+		Role receiver = getRandomReceiver(sender, excludedReceivers);
 		node.setParticipant2(receiver);
 
 		return receiver;

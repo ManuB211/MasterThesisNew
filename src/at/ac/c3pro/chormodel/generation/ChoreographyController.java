@@ -73,7 +73,7 @@ public class ChoreographyController {
 		// -1 to ensure that one Interaction Type remains in the end to be able to close
 		// the last branch
 		int interactionCount = amountHandoverOfWork + amountMessageExchange + amountRessourceSharing
-				+ amountSynchronousActivity - 1;
+				+ amountSynchronousActivity;
 
 		// Here was the code from createInteractionList()
 

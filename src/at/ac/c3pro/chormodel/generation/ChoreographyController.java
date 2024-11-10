@@ -70,8 +70,6 @@ public class ChoreographyController {
 		remainingInteractionTypes.put(InteractionType.SHARED_RESOURCE, 1);
 		remainingInteractionTypes.put(InteractionType.SYNCHRONOUS_ACTIVITY, 1);
 
-		// -1 to ensure that one Interaction Type remains in the end to be able to close
-		// the last branch
 		int interactionCount = amountHandoverOfWork + amountMessageExchange + amountRessourceSharing
 				+ amountSynchronousActivity;
 

@@ -221,7 +221,7 @@ public class HOWHandler {
 	private IChoreographyNode getMergeNode(String name) {
 
 		for (IChoreographyNode vertex : this.graph.getVertices()) {
-			if (vertex.getName().startsWith(name) && vertex.getName().endsWith("_m")) {
+			if (vertex.getName().equals(name + "_m")) {
 				return vertex;
 			}
 		}

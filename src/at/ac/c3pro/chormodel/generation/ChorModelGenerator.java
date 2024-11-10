@@ -561,7 +561,7 @@ public class ChorModelGenerator {
 		participantsToDrawFrom.removeAll(excludedReceivers);
 
 		if (participantsToDrawFrom.size() >= 1) {
-			receiver = participants.get(new Random().nextInt(participantsToDrawFrom.size()));
+			receiver = participantsToDrawFrom.get(new Random().nextInt(participantsToDrawFrom.size()));
 		} else {
 			// TODO: Handle differently (new try for assignment)
 			throw new IllegalStateException("There are no possible receivers left, assignment failed");

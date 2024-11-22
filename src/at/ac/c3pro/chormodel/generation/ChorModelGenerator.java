@@ -151,24 +151,23 @@ public class ChorModelGenerator {
 
 			// Determine the possible Interaction types, if next node would be an
 			// interaction
-			List<InteractionType> possibleInteractionTypes = getPossibleInteractionTypes(currentBranch);
 
 			// (3)
 			if (loopCounter < 2) {
 				if (startWithInteraction) {
-					nextNode = getNextNode(NodeType.INTERACTION, possibleInteractionTypes);
+					nextNode = getNextNode(NodeType.INTERACTION);
 					// selectedNodeType = NodeType.INTERACTION;
 				} else {
 					selectedNodeType = getRandomPossibleNodeType();
 					if (selectedNodeType == null)
 						System.out.println("STOP");
-					nextNode = getNextNode(selectedNodeType, possibleInteractionTypes);
+					nextNode = getNextNode(selectedNodeType);
 				}
 			} else {
 				selectedNodeType = getRandomPossibleNodeType();
 				if (selectedNodeType == null)
 					System.out.println("STOP");
-				nextNode = getNextNode(selectedNodeType, possibleInteractionTypes);
+				nextNode = getNextNode(selectedNodeType);
 			}
 
 			this.buildGraph.addEdge(currentNode, nextNode);
@@ -258,36 +257,6 @@ public class ChorModelGenerator {
 		return this.buildGraph;
 	}
 
-	/**
-	 * Determines a list of all possible interaction types for the next node. This
-	 * depends on the remaining amount according to the user-given input parameters.
-	 * 
-	 * Although Handover-Of-Work can only be set, if its not the first interaction
-	 * (for a participant) //TODO: Clear up properties of HOW
-	 */
-
-	private List<InteractionType> getPossibleInteractionTypes(Branch currentBranch) {
-		List<InteractionType> rst = new ArrayList<>();
-
-		if (remainingInteractionTypes.get(InteractionType.MESSAGE_EXCHANGE) > 0) {
-			rst.add(InteractionType.MESSAGE_EXCHANGE);
-		}
-
-		if (remainingInteractionTypes.get(InteractionType.SHARED_RESOURCE) > 0) {
-			rst.add(InteractionType.SHARED_RESOURCE);
-		}
-
-		if (remainingInteractionTypes.get(InteractionType.SYNCHRONOUS_ACTIVITY) > 0) {
-			rst.add(InteractionType.SYNCHRONOUS_ACTIVITY);
-		}
-
-		if (remainingInteractionTypes.get(InteractionType.HANDOVER_OF_WORK) > 0) { // && TODO)
-			rst.add(InteractionType.HANDOVER_OF_WORK);
-		}
-
-		return rst;
-	}
-
 	/*
 	 * Close down whole graph recursively (depth first)
 	 */
@@ -308,10 +277,8 @@ public class ChorModelGenerator {
 					System.out.println("BRANCH NOT CLOSABLE: " + branch.getSplit().getSpiltNode() + " Nodes: "
 							+ branch.getNodes());
 
-					List<InteractionType> interactionTypes = getPossibleInteractionTypes(branch);
-
-					// Only one should be left
-					InteractionType interactionType = interactionTypes.get(0);
+					InteractionType interactionType = getNodeFromPossibleInteractionTypesOrAccordingToDistribution(
+							null);
 
 					Interaction interaction = new Interaction();
 					interaction.setName(String.valueOf("IA" + interactions.size()));
@@ -375,7 +342,7 @@ public class ChorModelGenerator {
 	 * 
 	 * @return the created node
 	 */
-	private IChoreographyNode getNextNode(NodeType nodeType, List<InteractionType> possibleInteractionTypes) {
+	private IChoreographyNode getNextNode(NodeType nodeType) {
 		IChoreographyNode node = null;
 		switch (nodeType) {
 		case INTERACTION:
@@ -409,6 +376,15 @@ public class ChorModelGenerator {
 		return node;
 	}
 
+	/**
+	 * Determines a list of all possible interaction types for the next node. This
+	 * depends on the remaining amount according to the user-given input parameters.
+	 * If none of the types have an remaining amount anymore, a type gets randomly
+	 * chosen according to the distribution the types had in the beginning
+	 * 
+	 * Although Handover-Of-Work can only be set, if its not the first interaction
+	 * (for a participant) //TODO: Clear up properties of HOW
+	 */
 	private InteractionType getNodeFromPossibleInteractionTypesOrAccordingToDistribution(Branch currBranch) {
 
 		List<InteractionType> rst = new ArrayList<>();

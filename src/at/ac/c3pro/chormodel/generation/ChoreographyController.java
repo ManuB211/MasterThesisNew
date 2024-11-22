@@ -53,7 +53,7 @@ public class ChoreographyController {
 		File dir = createOutputFolder();
 
 		// MODEL GENERATOR PARAMETERS
-		int participantCount = 2; // number of participants
+		int participantCount = 3; // number of participants
 		int xorSplitCount = 1; // number of XOR gateways
 		int andSplitCount = 2; // number of AND gateways
 		int loopCount = 0; // number of loops

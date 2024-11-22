@@ -23,6 +23,7 @@ import at.ac.c3pro.node.Interaction;
 import at.ac.c3pro.node.Interaction.InteractionType;
 import at.ac.c3pro.node.Message;
 import at.ac.c3pro.node.XorGateway;
+import at.ac.c3pro.util.WeightedRandomSelection;
 
 public class ChorModelGenerator {
 
@@ -54,6 +55,7 @@ public class ChorModelGenerator {
 	private List<XorGateway> loops = new ArrayList<XorGateway>();
 
 	private Map<InteractionType, Integer> remainingInteractionTypes;
+	private WeightedRandomSelection randomSelectionInteractionType;
 
 	// Formatted date for uniform naming schemes
 	String formattedDate;
@@ -377,8 +379,7 @@ public class ChorModelGenerator {
 		IChoreographyNode node = null;
 		switch (nodeType) {
 		case INTERACTION:
-			InteractionType typeToBeSet = possibleInteractionTypes
-					.get(ThreadLocalRandom.current().nextInt(possibleInteractionTypes.size()));
+			InteractionType typeToBeSet = this.getNodeFromPossibleInteractionTypesOrAccordingToDistribution(null);
 			remainingInteractionTypes.computeIfPresent(typeToBeSet, (k, v) -> v - 1);
 			node = new Interaction();
 			node.setName(String.valueOf("IA" + interactions.size()));
@@ -406,6 +407,30 @@ public class ChorModelGenerator {
 			break;
 		}
 		return node;
+	}
+
+	private InteractionType getNodeFromPossibleInteractionTypesOrAccordingToDistribution(Branch currBranch) {
+
+		List<InteractionType> rst = new ArrayList<>();
+
+		if (remainingInteractionTypes.get(InteractionType.MESSAGE_EXCHANGE) > 0) {
+			rst.add(InteractionType.MESSAGE_EXCHANGE);
+		}
+
+		if (remainingInteractionTypes.get(InteractionType.SHARED_RESOURCE) > 0) {
+			rst.add(InteractionType.SHARED_RESOURCE);
+		}
+
+		if (remainingInteractionTypes.get(InteractionType.SYNCHRONOUS_ACTIVITY) > 0) {
+			rst.add(InteractionType.SYNCHRONOUS_ACTIVITY);
+		}
+
+		if (remainingInteractionTypes.get(InteractionType.HANDOVER_OF_WORK) > 0) { // && TODO)
+			rst.add(InteractionType.HANDOVER_OF_WORK);
+		}
+
+		return !rst.isEmpty() ? rst.get(ThreadLocalRandom.current().nextInt(rst.size()))
+				: this.randomSelectionInteractionType.chooseAccordingToDistribution();
 	}
 
 	private Branch getRandomBranch() { // considers number of remaining interactions / branches without interactions
@@ -844,9 +869,11 @@ public class ChorModelGenerator {
 	 * @returns the newly created interaction
 	 */
 	private Interaction createInteraction(int interactionId, Role sender, Role receiver) {
+
 		Interaction ia = new Interaction();
 		ia.setName(String.valueOf("IA" + interactions.size()));
 		ia.setId(UUID.randomUUID().toString());
+		ia.setInteractionType(this.getNodeFromPossibleInteractionTypesOrAccordingToDistribution(null));
 		ia.setParticipant1(sender);
 		ia.setParticipant2(receiver);
 

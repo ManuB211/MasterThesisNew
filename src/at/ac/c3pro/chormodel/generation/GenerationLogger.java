@@ -18,7 +18,7 @@ public class GenerationLogger {
 		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
 		logger.setLevel(Level.INFO);
-		fileTxt = new FileHandler("target/Logging.txt");
+		fileTxt = new FileHandler("results/Logging.txt");
 
 		// create a TXT formatter
 		formatterTxt = new SimpleFormatter();

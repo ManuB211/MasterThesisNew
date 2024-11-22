@@ -2,8 +2,10 @@ package at.ac.c3pro.chormodel.generation;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jbpt.utils.IOUtils;
+import org.json.JSONObject;
 
 import at.ac.c3pro.chormodel.Choreography;
 import at.ac.c3pro.chormodel.ChoreographyModel;
@@ -52,17 +55,29 @@ public class ChoreographyController {
 
 		File dir = createOutputFolder();
 
-		// MODEL GENERATOR PARAMETERS
-		int participantCount = 3; // number of participants
-		int xorSplitCount = 1; // number of XOR gateways
-		int andSplitCount = 2; // number of AND gateways
-		int loopCount = 0; // number of loops
-		int maxBranching = 3;
+		// Read config file
+		String configString = "";
+		InputStream fileStream = new FileInputStream(new File("config/config.json"));
 
-		int amountMessageExchange = 2;
-		int amountHandoverOfWork = 1;
-		int amountRessourceSharing = 1;
-		int amountSynchronousActivity = 1;
+		int inputChar;
+		while ((inputChar = fileStream.read()) != -1) {
+			configString += (char) inputChar;
+		}
+		fileStream.close();
+
+		JSONObject configObject = new JSONObject(configString);
+
+		// MODEL GENERATOR PARAMETERS
+		int participantCount = configObject.getInt("participantCount"); // number of participants
+		int xorSplitCount = configObject.getInt("xorSplitCount"); // number of XOR gateways
+		int andSplitCount = configObject.getInt("andSplitCount"); // number of AND gateways
+		int loopCount = 0; // number of loops
+		int maxBranching = configObject.getInt("maxBranching");
+
+		int amountMessageExchange = configObject.getInt("amountMessageExchange");
+		int amountHandoverOfWork = configObject.getInt("amountHandoverOfWork");
+		int amountRessourceSharing = configObject.getInt("amountRessourceSharing");
+		int amountSynchronousActivity = configObject.getInt("amountSynchronousActivity");
 
 		Map<InteractionType, Integer> remainingInteractionTypes = new HashMap<>();
 		remainingInteractionTypes.put(InteractionType.MESSAGE_EXCHANGE, 2);
@@ -70,10 +85,8 @@ public class ChoreographyController {
 		remainingInteractionTypes.put(InteractionType.SHARED_RESOURCE, 1);
 		remainingInteractionTypes.put(InteractionType.SYNCHRONOUS_ACTIVITY, 1);
 
-		// -1 to ensure that one Interaction Type remains in the end to be able to close
-		// the last branch
 		int interactionCount = amountHandoverOfWork + amountMessageExchange + amountRessourceSharing
-				+ amountSynchronousActivity - 1;
+				+ amountSynchronousActivity;
 
 		// Here was the code from createInteractionList()
 

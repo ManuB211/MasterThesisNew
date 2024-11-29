@@ -2,6 +2,7 @@ package at.ac.c3pro.chormodel.generation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -55,7 +56,13 @@ public class ChorModelGenerator {
 	private List<XorGateway> loops = new ArrayList<XorGateway>();
 
 	private Map<InteractionType, Integer> remainingInteractionTypes;
+
+	// Can draw random interaction type based on the initial distribution
 	private WeightedRandomSelection randomSelectionInteractionType;
+
+	// Tracks which participants are already a receiver for a handover-of-work
+	// interaction
+	private List<Role> handoverReceivers;
 
 	// Formatted date for uniform naming schemes
 	String formattedDate;
@@ -76,6 +83,8 @@ public class ChorModelGenerator {
 		this.remainingNodeCounts = this.initialNodeCounts;
 		this.formattedDate = formattedDate;
 		this.remainingInteractionTypes = remainingInteractionTypes;
+		this.randomSelectionInteractionType = new WeightedRandomSelection(remainingInteractionTypes, participantCount);
+		this.handoverReceivers = new ArrayList<>();
 		setupParticipants();
 	}
 
@@ -121,7 +130,7 @@ public class ChorModelGenerator {
 			currentBranch = getRandomBranch();
 			currentNode = currentBranch.getLastNode();
 			if (currentNode == null) {
-				currentNode = currentBranch.getSplit().getSpiltNode();
+				currentNode = currentBranch.getSplit().getSplitNode();
 			}
 
 			// (2 -> 2.1)
@@ -274,10 +283,10 @@ public class ChorModelGenerator {
 			}
 			if (branch.isOpen()) {
 				if (!branch.isClosable()) {
-					System.out.println("BRANCH NOT CLOSABLE: " + branch.getSplit().getSpiltNode() + " Nodes: "
+					System.out.println("BRANCH NOT CLOSABLE: " + branch.getSplit().getSplitNode() + " Nodes: "
 							+ branch.getNodes());
 
-					InteractionType interactionType = getNodeFromPossibleInteractionTypesOrAccordingToDistribution(
+					InteractionType interactionType = getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(
 							null);
 
 					Interaction interaction = new Interaction();
@@ -286,6 +295,10 @@ public class ChorModelGenerator {
 					interaction.setInteractionType(interactionType);
 					interactions.add(interaction);
 					branch.addNode(interaction);
+
+					if (InteractionType.HANDOVER_OF_WORK.equals(interactionType)) {
+						randomSelectionInteractionType.handleHandoverOfWorkAdded();
+					}
 				} else {
 
 				}
@@ -346,12 +359,17 @@ public class ChorModelGenerator {
 		IChoreographyNode node = null;
 		switch (nodeType) {
 		case INTERACTION:
-			InteractionType typeToBeSet = this.getNodeFromPossibleInteractionTypesOrAccordingToDistribution(null);
+			InteractionType typeToBeSet = this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(null);
 			remainingInteractionTypes.computeIfPresent(typeToBeSet, (k, v) -> v - 1);
 			node = new Interaction();
 			node.setName(String.valueOf("IA" + interactions.size()));
 			node.setId(UUID.randomUUID().toString());
 			((Interaction) node).setInteractionType(typeToBeSet);
+
+			if (InteractionType.HANDOVER_OF_WORK.equals(typeToBeSet)) {
+				randomSelectionInteractionType.handleHandoverOfWorkAdded();
+			}
+
 			break;
 		case XOR:
 			node = new XorGateway();
@@ -385,7 +403,7 @@ public class ChorModelGenerator {
 	 * Although Handover-Of-Work can only be set, if its not the first interaction
 	 * (for a participant) //TODO: Clear up properties of HOW
 	 */
-	private InteractionType getNodeFromPossibleInteractionTypesOrAccordingToDistribution(Branch currBranch) {
+	private InteractionType getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(Branch currBranch) {
 
 		List<InteractionType> rst = new ArrayList<>();
 
@@ -535,13 +553,29 @@ public class ChorModelGenerator {
 		return remainingNodeCounts.get(NodeType.INTERACTION) - determineResInteractions();
 	}
 
-	private Role getRandomReceiver(Role sender) {
+	private Role getRandomReceiver(Role sender, boolean isHandoverOfWork) {
 		Role receiver;
 		int randomIndex;
+
+		List<Role> participantsWorkingSet = new ArrayList<>(participants);
+
+		if (isHandoverOfWork) {
+			participantsWorkingSet.removeAll(this.handoverReceivers);
+
+			if (participantsWorkingSet.isEmpty()) {
+				// TODO: Generation should start again
+				throw new IllegalStateException(
+						"There are no participants that could be receivers of the handover of work interaction. Sadface");
+			}
+		}
+
 		do {
-			randomIndex = new Random().nextInt(participants.size());
-			receiver = participants.get(randomIndex);
+			randomIndex = new Random().nextInt(participantsWorkingSet.size());
+			receiver = participantsWorkingSet.get(randomIndex);
 		} while (sender.equals(receiver));
+
+		if (isHandoverOfWork)
+			this.handoverReceivers.add(receiver);
 
 		return receiver;
 	}
@@ -646,7 +680,7 @@ public class ChorModelGenerator {
 		System.out.println("-------------------------------");
 
 		for (Split split : this.splitTracking.getSplits()) {
-			System.out.println("SplitNode: " + split.getSpiltNode() + " MergeNode: " + split.getMergeNode());
+			System.out.println("SplitNode: " + split.getSplitNode() + " MergeNode: " + split.getMergeNode());
 			for (Branch branch : split.getBranches()) {
 				System.out.println("State: " + branch.getState() + " Nodes: " + branch.getNodes() + " Res. IA: "
 						+ branch.resInteraction());
@@ -692,11 +726,11 @@ public class ChorModelGenerator {
 	 *               message flow
 	 */
 	private void addMessageFlow(Split split) {
-		if (split.getSpiltNode() instanceof Event) {
+		if (split.getSplitNode() instanceof Event) {
 			split.setFirstSender(getRandomParticipant());
 		}
 
-		System.out.println("SPLIT: " + split.getSpiltNode());
+		System.out.println("SPLIT: " + split.getSplitNode());
 		System.out.println("Number of Branches: " + split.getNumberBranches());
 		System.out.println("-------------------");
 		System.out.println("");
@@ -849,9 +883,13 @@ public class ChorModelGenerator {
 		Interaction ia = new Interaction();
 		ia.setName(String.valueOf("IA" + interactions.size()));
 		ia.setId(UUID.randomUUID().toString());
-		ia.setInteractionType(this.getNodeFromPossibleInteractionTypesOrAccordingToDistribution(null));
+		ia.setInteractionType(this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(null));
 		ia.setParticipant1(sender);
 		ia.setParticipant2(receiver);
+
+		if (InteractionType.HANDOVER_OF_WORK.equals(ia.getInteractionType())) {
+			randomSelectionInteractionType.handleHandoverOfWorkAdded();
+		}
 
 		return ia;
 	}
@@ -878,7 +916,7 @@ public class ChorModelGenerator {
 	 */
 	private Role setSenderAndRandomReceiver(Interaction node, Role sender) {
 		node.setParticipant1(sender);
-		Role receiver = getRandomReceiver(sender);
+		Role receiver = getRandomReceiver(sender, InteractionType.HANDOVER_OF_WORK.equals(node.getInteractionType()));
 		node.setParticipant2(receiver);
 
 		return receiver;
@@ -886,12 +924,13 @@ public class ChorModelGenerator {
 
 	private void buildFinishedGraph() {
 		Split startSplit = splitTracking.getMainBranch().getSplit();
+		enrichWithMsgFlowInformation(startSplit);
 		buildFinishedGraph(startSplit);
 	}
 
 	private void buildFinishedGraph(Split split) {
 		for (Branch branch : split.getBranches()) {
-			IChoreographyNode splitNode = split.getSpiltNode();
+			IChoreographyNode splitNode = split.getSplitNode();
 			ArrayList<IChoreographyNode> branchNodes = branch.getNodes();
 			if (branchNodes.isEmpty()) {
 				enrichedGraph.addEdge(splitNode, split.getMergeNode());
@@ -912,6 +951,26 @@ public class ChorModelGenerator {
 					enrichedGraph.addEdge(currentNode, nextNode);
 					// interactions.get(interactions.indexOf(currentNode));
 
+				}
+			}
+		}
+	}
+
+	private void enrichWithMsgFlowInformation(Split split) {
+		for (Branch branch : split.getBranches()) {
+
+			Iterator<IChoreographyNode> iter = branch.getNodes().iterator();
+			while (iter.hasNext()) {
+				IChoreographyNode currentNode = iter.next();
+				if (splitTracking.isSplit(currentNode)) {
+					enrichWithMsgFlowInformation(splitTracking.getSplit(currentNode));
+				} else {
+					if (currentNode instanceof Interaction) {
+						Interaction currentInteraction = (Interaction) currentNode;
+						currentInteraction
+								.setName(currentInteraction.getName() + "(" + currentInteraction.getParticipant1().name
+										+ ">" + currentInteraction.getParticipant2() + ")");
+					}
 				}
 			}
 		}

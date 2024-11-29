@@ -1,12 +1,17 @@
 package at.ac.c3pro.util;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.jbpt.graph.abs.IDirectedGraph;
+import org.jbpt.utils.IOUtils;
 
 import at.ac.c3pro.chormodel.Role;
 import at.ac.c3pro.node.Edge;
@@ -66,6 +71,10 @@ public class HOWHandler {
 	private Event start;
 	private boolean cleanNecessary;
 
+	// For debug purposes
+	private boolean printDebugGraphs = false;
+	private String formattedDate = getTimestampFormatted();
+
 	public HOWHandler(IDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> pGraph, Role pCurrentRole) {
 		this.graph = pGraph;
 		this.currentRole = pCurrentRole;
@@ -74,10 +83,39 @@ public class HOWHandler {
 	}
 
 	public void run() {
+		if (printDebugGraphs)
+			printGraphsDebug("BeforeCropOut");
+
 		this.cropOutHandover();
+
+		if (printDebugGraphs)
+			printGraphsDebug("AfterCropOutBeforeClean");
+
+		int cleanCtr = 1;
 		while (this.cleanNecessary) {
 			this.cleanGraph();
+
+			if (printDebugGraphs) {
+				String cleanCounterTimeInfo = "AfterClean" + cleanCtr;
+				printGraphsDebug(cleanCounterTimeInfo);
+			}
+			cleanCtr++;
 		}
+
+		// TODO Comment in again when problem that graph is split up in case of HOW
+		// this.removeOrphanParents();
+	}
+
+	private void printGraphsDebug(String timeInfo) {
+		IOUtils.toFile(formattedDate + "/" + formattedDate + "_" + timeInfo + "_" + currentRole.name + ".dot",
+				graph.toDOT());
+	}
+
+	private static String getTimestampFormatted() {
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Date date = new Date();
+		date.setTime(timestamp.getTime());
+		return new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(date);
 	}
 
 	private Event findStartNode() {
@@ -228,6 +266,62 @@ public class HOWHandler {
 
 		throw new IllegalArgumentException(
 				"Could not find corresponding merge node. Something has to have been wrong before");
+
+	}
+
+	/**
+	 * This function is another step of the graph reduction, that was not present in
+	 * the initial reduction algorithm of RpstModel. Said algorithm did produce
+	 * instances, in which there are orphaned parent gateway nodes, meaning that
+	 * e.g. an XOR pointed to another gateway merge, although the XOY could never be
+	 * reached. This function removes such instances
+	 */
+	private void removeOrphanParents() {
+
+		boolean anotherRunNeeded = true;
+
+		while (anotherRunNeeded) {
+			anotherRunNeeded = false;
+
+			System.out.println("==================================================================");
+			System.out.println("==================================================================");
+			System.out.println("==================================================================");
+			for (Edge<IChoreographyNode> e : graph.getEdges()) {
+				System.out.println("Edge: " + e.getSource() + " --> " + e.getTarget());
+			}
+			System.out.println("==================================================================");
+			System.out.println("==================================================================");
+			System.out.println("==================================================================");
+
+			for (IChoreographyNode node : graph.getVertices()) {
+
+				List<IChoreographyNode> preds = graph.getDirectPredecessors(node).stream().collect(Collectors.toList());
+
+				if (preds.isEmpty()) {
+
+					// If node is a gateway without parents, it needs to be removed
+					if (node instanceof Gateway) {
+						graph.removeVertex(node);
+
+						List<IChoreographyNode> succs = graph.getDirectSuccessors(node).stream()
+								.collect(Collectors.toList());
+
+						for (IChoreographyNode child : succs) {
+							graph.removeEdge(graph.getEdge(node, child));
+						}
+						anotherRunNeeded = true;
+
+					}
+					// If node is a interaction without parents something went wrong (for now throw
+					// exception, TODO restart generation?)
+					else if (node instanceof Interaction) {
+						throw new IllegalStateException("Unreachable interaction node found");
+					}
+
+					// If node i a event (start) nothing happens
+				}
+			}
+		}
 
 	}
 

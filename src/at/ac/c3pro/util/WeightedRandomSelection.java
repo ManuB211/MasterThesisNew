@@ -1,20 +1,62 @@
 package at.ac.c3pro.util;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import at.ac.c3pro.node.Interaction.InteractionType;
 
+/**
+ * This class handles random draws of interaction types according to the initial
+ * distribution of the user input. It purposely excludes the handover-of-work
+ * interaction type though, when the draw of said type would lead to more
+ * handover-of-work interactions in the resulting model than feasible. That
+ * scenario holds, when the handover-of-work type would be present more than
+ * participants-1 times
+ * 
+ */
 public class WeightedRandomSelection {
 
 	private List<InteractionTypeItem> interactionTypeCounts;
 	private Integer completeWeight;
 
-	public WeightedRandomSelection(Map<InteractionType, Integer> pInteractionTypeCounts) {
+	private Integer amountParticipants;
+	private Integer amountHOWAlreadyAdded;
+
+	public WeightedRandomSelection(Map<InteractionType, Integer> pInteractionTypeCounts, Integer pAmountParticipants) {
 		this.interactionTypeCounts = pInteractionTypeCounts.entrySet().stream()
 				.map(item -> new InteractionTypeItem(item)).collect(Collectors.toList());
 		this.completeWeight = pInteractionTypeCounts.values().stream().mapToInt(Integer::intValue).sum();
+		this.amountParticipants = pAmountParticipants;
+		this.amountHOWAlreadyAdded = 0;
+	}
+
+	public void handleHandoverOfWorkAdded() {
+		amountHOWAlreadyAdded++;
+
+		if (amountHOWAlreadyAdded == amountParticipants - 1) {
+			recomputeRandomSelection();
+		}
+	}
+
+	private void recomputeRandomSelection() {
+		List<InteractionTypeItem> interactionTypeCountsCopy = new ArrayList<>(interactionTypeCounts);
+
+		Iterator<InteractionTypeItem> iter = interactionTypeCountsCopy.iterator();
+
+		while (iter.hasNext()) {
+			InteractionTypeItem curr = iter.next();
+
+			if (curr.getType().equals(InteractionType.HANDOVER_OF_WORK)) {
+				iter.remove();
+				break;
+			}
+		}
+
+		this.completeWeight = interactionTypeCountsCopy.stream().mapToInt(elem -> elem.getWeight()).sum();
+		this.interactionTypeCounts = interactionTypeCountsCopy;
 	}
 
 	public InteractionType chooseAccordingToDistribution() {

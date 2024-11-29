@@ -52,7 +52,7 @@ public class CoRequisite extends CompliancePattern {
 			possibleQs = insideBranch(p, currentBranch, possibleQs);
 		} else if (split.getNodeType() == NodeType.AND) {
 			while (split.getNodeType() != NodeType.XOR) {
-				currentBranch = splitTracking.getBranchByNode(split.getSpiltNode());
+				currentBranch = splitTracking.getBranchByNode(split.getSplitNode());
 				split = currentBranch.getSplit();
 			}
 			possibleQs = insideBranch(p, currentBranch, possibleQs);

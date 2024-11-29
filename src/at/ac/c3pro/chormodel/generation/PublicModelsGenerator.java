@@ -45,7 +45,7 @@ public class PublicModelsGenerator {
 			role2PuModel.put(role, diGraph);
 		}
 
-		IChoreographyNode start = splitTracking.getMainBranch().getSplit().getSpiltNode();
+		IChoreographyNode start = splitTracking.getMainBranch().getSplit().getSplitNode();
 		Collection<IChoreographyNode> successors = chorModel.getDirectSuccessors(start);
 
 		while (!successors.isEmpty()) {

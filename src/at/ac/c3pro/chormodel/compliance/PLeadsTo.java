@@ -43,7 +43,7 @@ public class PLeadsTo extends OrderPattern {
 	public void findPossibleAssignments() {
 		IChoreographyNode succeedingNode = null;
 		for (Split split : splitTracking.getSplits()) {
-			System.out.println(split.getSpiltNode());
+			System.out.println(split.getSplitNode());
 			if ((!allowInsideAndSplit && splitTracking.insideAndSplit(split)) || splitTracking.insideXorSplit(split))
 				continue;
 			for (Branch branch : split.getBranches()) {

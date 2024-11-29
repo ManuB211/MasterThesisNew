@@ -80,7 +80,7 @@ public class CoExists extends CompliancePattern {
 
 	private ArrayList<Interaction> preceedingPath(IChoreographyNode node, ArrayList<Interaction> possibleQs) {
 		Branch currentBranch = splitTracking.getBranchByNode(node);
-		IChoreographyNode splitNode = currentBranch.getSplit().getSpiltNode();
+		IChoreographyNode splitNode = currentBranch.getSplit().getSplitNode();
 		while (!(splitNode instanceof Event)) {
 			if (splitNode instanceof XorGateway) {
 				possibleQs = insideBranch(currentBranch, possibleQs);
@@ -92,7 +92,7 @@ public class CoExists extends CompliancePattern {
 			}
 
 			currentBranch = splitTracking.getBranchByNode(splitNode);
-			splitNode = currentBranch.getSplit().getSpiltNode();
+			splitNode = currentBranch.getSplit().getSplitNode();
 			System.out.println("currentBranch: " + currentBranch.getNodes());
 			System.out.println("splitNode: " + splitNode);
 		}

@@ -151,7 +151,7 @@ public class SplitTracking {
 	}
 
 	public Split getPrecedingSplit(Split split) {
-		IChoreographyNode splitNode = split.getSpiltNode();
+		IChoreographyNode splitNode = split.getSplitNode();
 		Branch branch = this.getBranchByNode(splitNode);
 		Split precedingSplit = branch.getSplit();
 

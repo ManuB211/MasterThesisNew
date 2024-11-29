@@ -82,7 +82,7 @@ public class Split {
 		return maxEntry.getKey();
 	}
 
-	public IChoreographyNode getSpiltNode() {
+	public IChoreographyNode getSplitNode() {
 		return spiltNode;
 	}
 

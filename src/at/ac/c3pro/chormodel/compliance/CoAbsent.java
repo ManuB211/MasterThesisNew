@@ -49,14 +49,14 @@ public class CoAbsent extends CompliancePattern {
 
 	private ArrayList<Interaction> getPossibleQs(IChoreographyNode node, ArrayList<Interaction> possibleQs) {
 		Branch currentBranch = splitTracking.getBranchByNode(node);
-		IChoreographyNode splitNode = currentBranch.getSplit().getSpiltNode();
+		IChoreographyNode splitNode = currentBranch.getSplit().getSplitNode();
 
 		if (splitNode instanceof XorGateway) {
 			possibleQs = insideBranch(node, currentBranch, possibleQs);
 		} else if (splitNode instanceof AndGateway) {
 			while (!(splitNode instanceof XorGateway)) {
 				currentBranch = splitTracking.getBranchByNode(splitNode);
-				splitNode = currentBranch.getSplit().getSpiltNode();
+				splitNode = currentBranch.getSplit().getSplitNode();
 			}
 			possibleQs = insideBranch(node, currentBranch, possibleQs);
 		}

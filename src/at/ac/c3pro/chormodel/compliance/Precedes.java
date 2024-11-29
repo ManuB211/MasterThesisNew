@@ -93,7 +93,7 @@ public class Precedes extends OrderPattern {
 					}
 				}
 			}
-			node = currentBranch.getSplit().getSpiltNode();
+			node = currentBranch.getSplit().getSplitNode();
 			currentBranch = splitTracking.getBranchByNode(node);
 		}
 		return possiblePs;

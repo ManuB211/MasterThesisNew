@@ -46,7 +46,7 @@ public class Exclusive extends CompliancePattern {
 
 	private ArrayList<Interaction> getPossibleQs(IChoreographyNode node, ArrayList<Interaction> possibleQs) {
 		Branch currentBranch = splitTracking.getBranchByNode(node);
-		IChoreographyNode splitNode = currentBranch.getSplit().getSpiltNode();
+		IChoreographyNode splitNode = currentBranch.getSplit().getSplitNode();
 		Split preceedingSplit = currentBranch.getSplit();
 		while (splitTracking.insideXorSplit(preceedingSplit)) {
 			if (preceedingSplit.getNodeType() == NodeType.XOR) {
@@ -57,7 +57,7 @@ public class Exclusive extends CompliancePattern {
 				}
 			}
 
-			currentBranch = splitTracking.getBranchByNode(preceedingSplit.getSpiltNode());
+			currentBranch = splitTracking.getBranchByNode(preceedingSplit.getSplitNode());
 			preceedingSplit = currentBranch.getSplit();
 		}
 

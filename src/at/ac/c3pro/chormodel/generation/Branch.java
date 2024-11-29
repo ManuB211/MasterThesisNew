@@ -44,7 +44,7 @@ public class Branch {
 		if (!this.nodes.isEmpty()) {
 			lastNode = this.nodes.get(this.nodes.size() - 1);
 		} else {
-			lastNode = this.getSplit().getSpiltNode();
+			lastNode = this.getSplit().getSplitNode();
 		}
 
 		return lastNode;
@@ -145,7 +145,7 @@ public class Branch {
 
 		if (this.split.getMergeNode() == null) {
 			NodeType nodeType = this.split.getNodeType();
-			Branch initialBranch = this.splitTracking.getBranchByNode(this.split.getSpiltNode());
+			Branch initialBranch = this.splitTracking.getBranchByNode(this.split.getSplitNode());
 
 			// set last receiver on split and initial branch
 //			this.split.setLastReceiver(this.lastReceiver);
@@ -153,14 +153,14 @@ public class Branch {
 
 			switch (nodeType) {
 			case XOR:
-				XorGateway xorMerge = new XorGateway(this.split.getSpiltNode().getName() + "_m",
+				XorGateway xorMerge = new XorGateway(this.split.getSplitNode().getName() + "_m",
 						UUID.randomUUID().toString());
 				this.split.setMergeNode(xorMerge);
 				initialBranch.addNode(xorMerge);
 				initialBranch.setState(BranchState.OPEN);
 				break;
 			case AND:
-				AndGateway andMerge = new AndGateway(this.split.getSpiltNode().getName() + "_m",
+				AndGateway andMerge = new AndGateway(this.split.getSplitNode().getName() + "_m",
 						UUID.randomUUID().toString());
 				this.split.setMergeNode(andMerge);
 				initialBranch.addNode(andMerge);

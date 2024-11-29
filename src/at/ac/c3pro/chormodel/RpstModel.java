@@ -1,7 +1,10 @@
 package at.ac.c3pro.chormodel;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jbpt.algo.tree.rpst.IRPSTNode;
 import org.jbpt.algo.tree.rpst.RPST;
@@ -408,19 +412,38 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 		return graph;
 	}
 
+	public RpstModel<E, N> reduceGraph() {
+
+		String formattedDate = getTimestampFormatted();
+
+		IOUtils.toFile(formattedDate + "/ReductionStart.dot", this.getdigraph().toDOT());
+
+		return this.reduceGraph(formattedDate, 1);
+	}
+
+	private static String getTimestampFormatted() {
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Date date = new Date();
+		date.setTime(timestamp.getTime());
+		return new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(date);
+	}
+
 	/**
 	 * Reduce the graph of the model by identifying fragments where reduction is
 	 * possible.
 	 */
-	public RpstModel<E, N> reduceGraph() {
+	public RpstModel<E, N> reduceGraph(String formattedDate, Integer reduceCtr) {
 		RpstModel<E, N> model = this;
 		// recursively reduce the graph until there are no more graph reductions
 		// possible
 		for (IRPSTNode<E, N> e : this.getFragmentsBottomUp()) {
 			if (model.reduceGraph(e)) {
-				// TODO: at this point we could export to ".dot" to see the reduction progress
+
+				IOUtils.toFile(formattedDate + "/Reduction" + reduceCtr + ".dot", model.getdigraph().toDOT());
+
 				// System.out.println("the reduced graph: "+model.getdigraph());
-				return model.reloadFromGraph(model.getdigraph()).reduceGraph();
+
+				return model.reloadFromGraph(model.getdigraph()).reduceGraph(formattedDate, reduceCtr + 1);
 			}
 		}
 		// no more graph reductions possible
@@ -492,24 +515,45 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 		// System.out.println("parent RPST node: " + this.getParent(fragment));
 		// we count the direct connections between entry and exit
 		List<E> directEntryExitEdges = new LinkedList<E>();
+		// furthermore we count the edges inside the fragment, that are not direct
+		// connections, split up by same entry but different exit and same exit but
+		// different entry
+		List<E> entryEdgesWithOtherExit = new LinkedList<E>();
+		List<E> exitEdgesWithOtherEntry = new LinkedList<E>();
 		for (E edge : fragment.getFragment()) {
 			// System.out.println("\t -> edge: " + edge);
 			if (entry == edge.getSource() && exit == edge.getTarget()) {
 				// System.out.println("\t\t direct link between " + entry + " <-> " + exit);
 				directEntryExitEdges.add(edge);
 			}
+
+			/**
+			 * We also need to keep track of all edges in the fragment, that have the same
+			 * entry node but open up another branch Otherwise if there is a "correct"
+			 * branch inside of a fragment that has two directEntryExitEdges, the branch
+			 * gets deleted as well
+			 */
+			if (entry == edge.getSource() && exit != edge.getTarget()) {
+				entryEdgesWithOtherExit.add(edge);
+			}
+
+			if (entry != edge.getSource() && exit == edge.getTarget()) {
+				exitEdgesWithOtherEntry.add(edge);
+			}
+
 		}
 		int directConnection = directEntryExitEdges.size();
 		// System.out.println("\tdirect connection count:" + directConnection);
 
 		if (entry instanceof AndGateway && exit instanceof AndGateway) {
 			// System.out.println("\tAND case");
-			if (directConnection == 2) {
+			if (directConnection >= 2) {
 				// AND BOTH case
 				// System.out.println("\tAND BOTH case -> reduction possible (remove this bond)
 				// and reconnect the relevant nodes");
 				// this is exactly the same as XOR BOTH case
-				this.removeAndReconnect(entry, exit, directEntryExitEdges);
+				this.removeAndReconnect(entry, exit, directEntryExitEdges, entryEdgesWithOtherExit,
+						exitEdgesWithOtherEntry);
 				// System.out.println("#### RETURN TRUE ####");
 				return true;
 			} else if (directConnection == 1) {
@@ -578,11 +622,16 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 			}
 		} else if (entry instanceof XorGateway && exit instanceof XorGateway) {
 			// XOR BOTH?
-			if (directConnection == 2) {
+			if (directConnection >= 2) {
 				// System.out.println("\tXOR BOTH case -> reduction possible (remove this bond)
 				// and reconnect the relevant nodes");
 				// remove this bond, connect the predecessors of entry to successors of exit
-				this.removeAndReconnect(entry, exit, directEntryExitEdges);
+
+				// TODO: Lookup if XOR -> XOR_m existed in original model and if yes keep one of
+				// them?
+
+				this.removeAndReconnect(entry, exit, directEntryExitEdges, entryEdgesWithOtherExit,
+						exitEdgesWithOtherEntry);
 				// System.out.println("#### RETURN TRUE ####");
 				return true;
 			} else {
@@ -597,7 +646,8 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 		return false;
 	}
 
-	private void removeAndReconnect(N entry, N exit, List<E> directEntryExitEdges) {
+	private void removeAndReconnect(N entry, N exit, List<E> directEntryExitEdges,
+			List<E> entriesWithSameEntryButDifferentExit, List<E> entriesWithSameExitButDifferentEntry) {
 		// add edges between the predecessors of entry to the successors of exit
 		List<Entry<N, N>> edgesToAdd = new LinkedList<Entry<N, N>>();
 		for (N predecessor : this.diGraph.getDirectPredecessors(entry)) {
@@ -608,17 +658,59 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
 		// remove all direct edges from entry to exit
 		this.diGraph.removeEdges(directEntryExitEdges);
-		// remove incoming edges to entry
-		this.diGraph.removeEdges(this.diGraph.getIncomingEdges(entry));
-		// remove outgoing edges from exit
-		this.diGraph.removeEdges(this.diGraph.getOutgoingEdges(exit));
 
-		// adding edges
-		// System.out.println("\t\tEDGES to add: " + edgesToAdd);
-		for (Entry<N, N> edgeToAdd : edgesToAdd) {
-			N predecessor = edgeToAdd.getKey();
-			N successor = edgeToAdd.getValue();
-			this.diGraph.addEdge(predecessor, successor);
+		if (entriesWithSameEntryButDifferentExit.isEmpty()) {
+			// remove incoming edges to entry
+			Collection<E> incs = this.diGraph.getIncomingEdges(entry);
+			this.diGraph.removeEdges(incs);
+			// this.diGraph.removeEdges(this.diGraph.getIncomingEdges(entry));
+
+			// remove outgoing edges from exit
+			Collection<E> outs = this.diGraph.getOutgoingEdges(exit);
+			this.diGraph.removeEdges(outs);
+//		this.diGraph.removeEdges(this.diGraph.getOutgoingEdges(exit));
+
+			// adding edges
+			// System.out.println("\t\tEDGES to add: " + edgesToAdd);
+			for (Entry<N, N> edgeToAdd : edgesToAdd) {
+				N predecessor = edgeToAdd.getKey();
+				N successor = edgeToAdd.getValue();
+				this.diGraph.addEdge(predecessor, successor);
+			}
+		}
+
+		/**
+		 * In this case, there are other children of the node X that has two direct
+		 * connections to its own merge node X_merge. We need to cut X out and connect
+		 * its children to the predecessors of X (except X_merge) as well as the
+		 * predecessors of X_merge (except X) to the successor of X_merge
+		 */
+		else {
+			for (E e : entriesWithSameEntryButDifferentExit) {
+				// Here it can only be one, as otherwise entry node would have to be a merge
+				// node
+				N connectTo = this.diGraph.getDirectPredecessors(entry).stream().collect(Collectors.toList()).get(0);
+
+				// remove the edges parent of X -> X and X -> child
+				this.diGraph.removeEdge(this.diGraph.getEdge(connectTo, entry));
+				this.diGraph.removeEdge(e);
+
+				// add edge parent of X -> child
+				this.diGraph.addEdge(connectTo, e.getTarget());
+			}
+
+			for (E e : entriesWithSameExitButDifferentEntry) {
+				// Here it can also only be one, as otherwise the target node would have to be a
+				// fork node
+				N connectTo = this.diGraph.getDirectSuccessors(exit).stream().collect(Collectors.toList()).get(0);
+
+				// remove edges X_merge parent -> X_merge and X_merge -> successor
+				this.diGraph.removeEdge(e);
+				this.diGraph.removeEdge(this.diGraph.getEdge(exit, connectTo));
+
+				// add edge parent od X_merge -> successor
+				this.diGraph.addEdge(e.getSource(), connectTo);
+			}
 		}
 
 		this.diGraph.removeVertices(this.diGraph.getDisconnectedVertices());

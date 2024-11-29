@@ -1,5 +1,6 @@
 package at.ac.c3pro.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -209,8 +210,8 @@ public class FragmentUtil {
 					sourceAdd = true;
 				} else if ((n instanceof InteractionActivity) && ((InteractionActivity) n).role.equals(r)) {
 					sourceAdd = true;
-				} else if (n instanceof Interaction
-						&& (((Interaction) n).getParticipant1().equals(r) || ((Interaction) n).getParticipant2().equals(r))) {
+				} else if (n instanceof Interaction && (((Interaction) n).getParticipant1().equals(r)
+						|| ((Interaction) n).getParticipant2().equals(r))) {
 					sourceAdd = true;
 				}
 
@@ -269,7 +270,7 @@ public class FragmentUtil {
 		projectedModel = new RpstModel<E, N>(graph, "fragment projection");
 		if (doGraphReduce) {
 			// System.out.println(projectedModel.getdigraph());
-			return projectedModel.reduceGraph();
+			return projectedModel.reduceGraph(new ArrayList<>());
 		} else {
 			return projectedModel;
 		}
@@ -289,8 +290,8 @@ public class FragmentUtil {
 					L.add(n);
 				} else if ((n instanceof InteractionActivity) && ((InteractionActivity) n).role.equals(r)) {
 					L.add(n);
-				} else if (n instanceof Interaction
-						&& (((Interaction) n).getParticipant1().equals(r) || ((Interaction) n).getParticipant2().equals(r))) {
+				} else if (n instanceof Interaction && (((Interaction) n).getParticipant1().equals(r)
+						|| ((Interaction) n).getParticipant2().equals(r))) {
 					L.add(n);
 				} else {
 					L.addAll(FragmentUtil.getNextRoleActivities(n, r, g, endNode));

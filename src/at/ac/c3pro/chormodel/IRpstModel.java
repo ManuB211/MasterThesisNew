@@ -9,6 +9,7 @@ import org.jbpt.algo.tree.rpst.IRPSTNode;
 import org.jbpt.graph.abs.IDirectedGraph;
 
 import at.ac.c3pro.node.Edge;
+import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.INode;
 
 public interface IRpstModel<E extends Edge<N>, N extends INode> extends IRPST<E, N> {
@@ -43,9 +44,9 @@ public interface IRpstModel<E extends Edge<N>, N extends INode> extends IRPST<E,
 
 	public String getName();
 
-	public RpstModel<E, N> reduceGraph();
+	public RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge);
 
-	public boolean reduceGraph(IRPSTNode<E, N> fragment);
+	public boolean reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge, IRPSTNode<E, N> fragment);
 
 	// public void toDOT();
 	public Set<N> getNodes(IRPSTNode<E, N> rpstNode);

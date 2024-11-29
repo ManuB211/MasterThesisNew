@@ -57,10 +57,12 @@ public class FragmentGenerator {
 
 		IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> digraph = privateModel.getdigraph();
 
+		// TODO: TF is this -> only logging, do i need this
 		for (IRPSTNode<Edge<IPrivateNode>, IPrivateNode> v : privateModel.getVertices()) {
 			if (v.getEntry() instanceof Send || v.getExit() instanceof Send) {
 				System.out.println("Send:" + v.getEntry().getName());
 			} else if (v instanceof Receive) {
+				// TODO: TF is this -> not even possible?
 				System.out.println("ay");
 			}
 //			System.out.println("Entry: " + v.getEntry().getName() + " - Exit: " + v.getExit().getName());
@@ -77,23 +79,24 @@ public class FragmentGenerator {
 		IPrivateNode randomNode = nodes.get(randomInteger(0, nodes.size() - 1));
 
 		privateModel = addFragment(randomNode);
-//		System.out.println("stop");
-//		for (IPrivateNode node : privateModel.getdigraph().getVertices()) {
-//			
-//				
-//				
-//			}
-//			if (afterModel != null)
-//				IOUtils.toFile("Insert_autogen_" + i + ".dot", afterModel.getdigraph().toDOT());
-//			
-//			i++;
-//				
-//		}
 
 		IOUtils.toFile(formattedDate + "/Insert_autogen_" + i + ".dot", privateModel.getdigraph().toDOT());
 
 		return privateModel;
 	}
+
+	/**
+	 * Depending on the node given, a so called fragment is inserted.
+	 * 
+	 * If the given node is a Send, the fragment is inserted between the predecessor
+	 * and the given node If the given node is a Receive, the fragment is inserted
+	 * between the given node and its successor
+	 * 
+	 * Therefore it is already safe considering the Handover of Work operator, since
+	 * the fragment can only be inserted between the receive of the HOW and its
+	 * successor
+	 * 
+	 */
 
 	private PrivateModel addFragment(IPrivateNode node) {
 		PrivateModel enhancedModel = null;
@@ -134,15 +137,6 @@ public class FragmentGenerator {
 
 			enhancedModel.getdigraph().removeEdge(position);
 
-//			privateModel.getEdge(v1, v2);
-//			
-//			privateModel.get
-
-//			privateModel.getEdge(node, successors.get(0));
-//			
-//			privateModel.removeEdge();
-//			
-//			privateModel.removeEdge(edge);
 		}
 
 		return enhancedModel;

@@ -31,6 +31,7 @@ import at.ac.c3pro.chormodel.compliance.LeadsTo;
 import at.ac.c3pro.chormodel.compliance.Precedes;
 import at.ac.c3pro.chormodel.compliance.Universal;
 import at.ac.c3pro.io.ChoreographyModel2Bpmn;
+import at.ac.c3pro.io.ChoreographyModelToCPN;
 import at.ac.c3pro.io.Collaboration2Bpmn;
 import at.ac.c3pro.io.PrivateModel2Bpmn;
 import at.ac.c3pro.node.Edge;
@@ -158,7 +159,11 @@ public class ChoreographyController {
 
 				// Export Models
 				exportPublicModels(choreo);
-				exportPrivateModels(choreo);
+				List<PrivateModel> privateModels = exportPrivateModels(choreo);
+
+				// Transform Private Models to a PNML file
+				ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, formattedDate, dir);
+				choreoToCPN.printXML();
 
 				// Transform Models to bpmn
 				Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
@@ -212,18 +217,22 @@ public class ChoreographyController {
 	 * Exports the public models to the target folder, named after the timestamp the
 	 * generation was started
 	 */
-	private static void exportPrivateModels(Choreography choreo) {
+	private static List<PrivateModel> exportPrivateModels(Choreography choreo) {
 		FragmentGenerator fragGen = null;
+
+		List<PrivateModel> rst = new ArrayList<>();
 
 		// Export private model graphs
 		for (Role role : choreo.collaboration.roles) {
 			IPrivateModel prModel = choreo.R2PrM.get(role);
 			fragGen = new FragmentGenerator((PrivateModel) prModel, formattedDate);
 			prModel = fragGen.enhance();
+			rst.add((PrivateModel) prModel);
 
 			IOUtils.toFile(formattedDate + "/" + formattedDate + "_prModel_" + role.name + ".dot",
 					prModel.getdigraph().toDOT()); // assigned with compliance rules interactions
 		}
+		return rst;
 	}
 
 	/**

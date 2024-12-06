@@ -186,6 +186,18 @@ public class ChoreographyGenerator {
 		MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph = new MultiDirectedGraph<Edge<IPublicNode>, IPublicNode>();
 		Map<IChoreographyNode, IPublicNode> C2Pnode = new HashMap<IChoreographyNode, IPublicNode>();
 
+		System.out.println("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>");
+		System.out.println("Printing edges off choreography model for role " + currentRole);
+		System.out.println("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>");
+
+		for (Edge<IChoreographyNode> e : choreoM.getdigraph().getEdges()) {
+			System.out.println(e);
+		}
+
+		System.out.println("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>");
+		System.out.println("All edges of choreography model printed for role " + currentRole);
+		System.out.println("<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>");
+
 		for (IChoreographyNode node : choreoM.getdigraph().getVertices()) {
 			System.out.println("Node:" + node);
 			if (node instanceof Event) {
@@ -205,12 +217,18 @@ public class ChoreographyGenerator {
 
 		Collection<Edge<IChoreographyNode>> edges = howHandler.getEdges();
 
+		System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+		System.out.println("Start of Debug output for puModel generation of " + currentRole.name);
+		System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 		for (Edge<IChoreographyNode> e : edges) {
 			System.out.println("Edge: " + e);
 			System.out.println("Source" + C2Pnode.get(e.getSource()));
 			System.out.println("Source" + C2Pnode.get(e.getTarget()));
 			graph.addEdge(C2Pnode.get(e.getSource()), C2Pnode.get(e.getTarget()));
 		}
+		System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+		System.out.println("End of Debug output for puModel generation of " + currentRole.name);
+		System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
 		return new PublicModel(graph, currentRole.name + "PuM");
 	}

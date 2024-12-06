@@ -106,6 +106,8 @@ public class ChoreographyController {
 					"The amount of interactions of the type handover-of-work cannot be equal or greater to the amount of participants");
 		}
 
+		// TODO: Use buildSuccess in combination with custom exception to restart
+		// generation
 		while (!buildSuccess) {
 			long startTime = System.currentTimeMillis();
 			modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,

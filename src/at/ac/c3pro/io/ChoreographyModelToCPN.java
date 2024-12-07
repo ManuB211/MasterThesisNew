@@ -25,6 +25,9 @@ public class ChoreographyModelToCPN {
 	private List<PrivateModel> privateModels;
 
 	private File outputFolder;
+	
+	//The parent element of all the petri net tags
+	private Element net;
 
 	Document doc;
 
@@ -32,7 +35,10 @@ public class ChoreographyModelToCPN {
 		this.formattedDate = pFormattedDate;
 		this.privateModels = pPrivateModels;
 		this.outputFolder = pOutputFolder;
-
+		
+		this.net = new Element("net");
+		this.net.setAttribute("type", "http://www.yasper.org/specs/epnml-1.1");
+		this.net.setAttribute("id","CPN1"); // TODO: do i need something dynamic for the ID?
 		this.setupDocument();
 
 	}
@@ -42,18 +48,12 @@ public class ChoreographyModelToCPN {
 	 * tags
 	 */
 	private void setupDocument() {
-		this.doc = new Document();
-
-		Element pnml = new Element("pnml");
-		Element net = new Element("net");
-		net.setAttribute("type", "http://www.yasper.org/specs/epnml-1.1");
-		net.setAttribute("id", "CPN1"); // TODO: do i need something dynamic for the ID?
-
-		Element place = createPlace("p1", 530, 80);
-
-		net.addContent(place);
-		pnml.setContent(net);
-		doc.setRootElement(pnml);
+		
+		createPlace("p1", 530, 80);
+		createPlace("p2", 530, 380);
+		createTransition("tr1", 530, 230);
+		createArc("a1", "p1", "tr1");
+		createArc("a2", "tr1", "p2");
 
 	}
 
@@ -71,6 +71,14 @@ public class ChoreographyModelToCPN {
 	 * Prints the CPN.xml file to the output folder
 	 */
 	public void printXML() throws IOException {
+		
+		Document doc = new Document();
+		Element pnml = new Element("pnml");
+		
+		pnml.setContent(net);
+		doc.setRootElement(pnml);
+		
+		
 		XMLOutputter xmlOutput = new XMLOutputter();
 
 		// Pretty Print
@@ -81,6 +89,85 @@ public class ChoreographyModelToCPN {
 	/**
 	 * ===================================================TAG-CREATION========================================================================
 	 */
+	
+	/**
+	 * Creates an arc given the source and target element
+	 * 
+	 * @param id: The id of the arc
+	 * @param source: The source of the arc
+	 * @param target: The target of the arc
+	 * 
+	 * @return an <arc>-tag
+	 * */
+	private void createArc(String id, String sourceId, String targetId) {
+		Element arcElem = new Element("arc");
+		arcElem.setAttribute("id", id);
+		
+		arcElem.setAttribute("source", sourceId);
+		arcElem.setAttribute("target", targetId);
+		
+		net.addContent(arcElem);
+	}
+	
+	/**
+	 * Creates a transition element with automatic dimensions (normal transition)
+	 * 
+	 * @param id: the id of the element
+	 * @param posX: the x-coordinate of the element
+	 * @param posY: the y-coordinate of the element
+	 * 
+	 * @return a <transition>-tag
+	 * */
+	private void createTransition(String id, Integer posX, Integer posY) {
+		Element transitionElem = new Element("transition");
+		
+		transitionElem.setAttribute("id", id);
+		transitionElem.addContent(getGraphicsElement(PNMLElementEnum.TRANSITION, posX, posY));
+		
+		net.addContent(transitionElem);
+	}
+	
+	/**
+	 * Creates a transition element with given dimensions (synchronous task)
+	 * 
+	 * @param id: the id of the element
+	 * @param posX: the x-coordinate of the element
+	 * @param posY: the y-coordinate of the element
+	 * @param dimX: the width
+	 * @param dimY: the height
+	 * 
+	 * @return a <transition>-tag
+	 * */
+	private void createTransition(String id, Integer posX, Integer posY, Integer dimX, Integer dimY) {
+		Element transitionElem = new Element("transition");
+		
+		transitionElem.setAttribute("id", id);
+		transitionElem.addContent(getGraphicsElement(posX, posY, dimX, dimY));
+		
+		net.addContent(transitionElem);
+	}
+	
+	
+	/**
+	 * Creates a place element
+	 * 
+	 * @param id:   The id of the place (will also be the name)
+	 * @param posX: The x-coord of the position
+	 * @param posY: The y-coord of the position
+	 * 
+	 * @return a <place>-element
+	 */
+
+	private void createPlace(String id, Integer posX, Integer posY) {
+		Element placeElem = new Element("place");
+
+		placeElem.setAttribute("id", id);
+
+		placeElem.addContent(getGraphicsElement(PNMLElementEnum.PLACE, posX, posY));
+		placeElem.addContent(getNameElement(id));
+
+		net.addContent(placeElem);
+	}
 
 	/**
 	 * Gets a graphics-tag containing the dimension and position information for a
@@ -104,35 +191,18 @@ public class ChoreographyModelToCPN {
 
 	}
 
+	
 	/**
-	 * -----------------------------------------------Transition-Element---------------------------------------------------------------------
-	 */
-
-	/**
-	 * --------------------------------------------------Place-Element------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Creates a place element
+	 * Gets a graphics-tag containing the dimension and position information for a
+	 * place or transition
 	 * 
-	 * @param id:   The id of the place (will also be the name)
-	 * @param posX: The x-coord of the position
-	 * @param posY: The y-coord of the position
+	 * @param posX: x-coordinate of the Position
+	 * @param posY: Y-coordinate of the Position
+	 * @param dimX: width of the element
+	 * @param dimY: height of the element
 	 * 
-	 * @return a <place>-element
+	 * @return a <graphics>-element
 	 */
-
-	private Element createPlace(String id, Integer posX, Integer posY) {
-		Element placeElem = new Element("place");
-
-		placeElem.setAttribute("id", id);
-
-		placeElem.addContent(getGraphicsElement(PNMLElementEnum.PLACE, posX, posY));
-		placeElem.addContent(getNameElement(id));
-
-		return placeElem;
-	}
-
 	private Element getGraphicsElement(Integer posX, Integer posY, Integer dimX, Integer dimY) {
 
 		Element graphicsElem = new Element("graphics");

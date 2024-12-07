@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item key="org.eclipse.egit.ui.internal.clone.GitSelectWizardPageWizardSel" value="0"/>
+	<item key="GitSelectRepositoryPage.lastRepository" value="/home/manu/Desktop/MasterThesis/MasterThesisNew/.git"/>
+	<section name="GitImportWizard">
+		<item key="GitProjectsImportPage.STORE_NESTED_PROJECTS" value="true"/>
+		<section name="GitImportWizard.dialogBounds">
+			<item key="DIALOG_X_ORIGIN" value="657"/>
+			<item key="DIALOG_Y_ORIGIN" value="177"/>
+			<item key="DIALOG_WIDTH" value="652"/>
+			<item key="DIALOG_HEIGHT" value="550"/>
+			<item key="DIALOG_FONT_NAME" value="1|Ubuntu|11.0|0|GTK|1|"/>
+		</section>
+	</section>
+</section>

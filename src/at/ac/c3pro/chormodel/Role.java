@@ -25,4 +25,8 @@ public boolean equals(Role role){
 		return this.name.equals(role.name);
 }
 
+public String getName() {
+	return this.name;
+}
+
 }

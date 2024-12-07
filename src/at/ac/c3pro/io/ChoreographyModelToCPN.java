@@ -3,14 +3,25 @@ package at.ac.c3pro.io;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.jbpt.graph.abs.IDirectedEdge;
+import org.jbpt.graph.abs.IDirectedGraph;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
 import at.ac.c3pro.chormodel.PrivateModel;
+import at.ac.c3pro.node.Edge;
+import at.ac.c3pro.node.IPrivateNode;
+import at.ac.c3pro.node.Interaction;
+import at.ac.c3pro.node.Receive;
+import at.ac.c3pro.node.Send;
 
 public class ChoreographyModelToCPN {
 
@@ -20,26 +31,37 @@ public class ChoreographyModelToCPN {
 
 	private final Integer DIMENSION_PLACE = 20;
 	private final Integer DIMENSION_TRANSITION = 32;
+	
+	//Spacing between siblings
+	private final Integer X_OFFSET = 300;
+	//Spacing between parent/child
+	private final Integer Y_OFFSET = 300;
 
-	private String formattedDate;
 	private List<PrivateModel> privateModels;
 
 	private File outputFolder;
 	
+	private Map<String, Position> positions;
+	private Map<String, Integer> shifts; 
+	
 	//The parent element of all the petri net tags
 	private Element net;
 
-	Document doc;
-
-	public ChoreographyModelToCPN(List<PrivateModel> pPrivateModels, String pFormattedDate, File pOutputFolder) {
-		this.formattedDate = pFormattedDate;
+	public ChoreographyModelToCPN(List<PrivateModel> pPrivateModels, File pOutputFolder) {
 		this.privateModels = pPrivateModels;
 		this.outputFolder = pOutputFolder;
+		this.positions = new HashMap<>();
+		this.shifts = new HashMap<>();
 		
 		this.net = new Element("net");
 		this.net.setAttribute("type", "http://www.yasper.org/specs/epnml-1.1");
 		this.net.setAttribute("id","CPN1"); // TODO: do i need something dynamic for the ID?
-		this.setupDocument();
+		
+		//this.test();
+		
+		PrivateModel prModel1 = privateModels.get(1);
+		
+		this.buildPNMLForSingleParticipant(prModel1);
 
 	}
 
@@ -47,13 +69,13 @@ public class ChoreographyModelToCPN {
 	 * Sets up the basic structure of the document, meaning the xml, pnml and net
 	 * tags
 	 */
-	private void setupDocument() {
+	private void test() {
 		
 		createPlace("p1", 530, 80);
 		createPlace("p2", 530, 380);
 		createTransition("tr1", 530, 230);
-		createArc("a1", "p1", "tr1");
-		createArc("a2", "tr1", "p2");
+		createArc("p1", "tr1");
+		createArc("tr1", "p2");
 
 	}
 
@@ -64,8 +86,189 @@ public class ChoreographyModelToCPN {
 	 *                          PNML of
 	 */
 	private void buildPNMLForSingleParticipant(PrivateModel participantModel) {
+		
+		IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph = participantModel.getdigraph();
+		
+		IPrivateNode start = participantModel.getStartEvent();
+		
+		this.handlePositioning(participantModelGraph, start);
 
+		//Create place for the start event 
+		createPlace(
+				start.getName(),
+				this.positions.get(start.getName()).x,
+				this.positions.get(start.getName()).y
+				);
+		
+		this.buildPetriNet(participantModelGraph, start);
+		
+		for(Edge<IPrivateNode> e: participantModel.getdigraph().getEdges()) {
+			System.out.println(e);
+		}
 	}
+	
+	private void buildPetriNet(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node) {
+		
+		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
+
+		for(IPrivateNode childNode : nodeChildren) {
+			
+			String childNodeName = childNode.getName();
+			Position childNodePosition = this.positions.get(childNodeName);
+			
+			//Create place for node 
+			if(childNode instanceof Receive || childNode instanceof Send) {
+				createInteraction(childNodeName, childNodePosition.x, childNodePosition.y);
+				//Create arc from parent to children 
+				createArc(node.getName(), childNode.getName()+"_in");
+			} else {
+				createPlace(childNodeName, childNodePosition.x, childNodePosition.y);
+				//Create arc from parent to children 
+				createArc(node.getName(), childNode.getName());
+			}
+			
+			
+			
+			buildPetriNet(participantModelGraph, childNode);
+			
+		}
+		
+	}
+	
+	private void handlePositioning(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode start) {
+		//Calculate Positioning of the nodes
+				this.calculatePositionsForNodes(participantModelGraph, start, 0, 0, 0);
+				//Resolve Overlaps locally
+				this.resolveOverlaps(participantModelGraph, start);
+				//Apply Global Shifts to resolve overlaps locally
+				this.applyAdditionalShifts(participantModelGraph, start, 0);
+	}
+	
+	/**
+	 * Calculates the position of the nodes in the resulting petri net, so a balanced structure is created
+	 * 
+	 * @param participantModel: the graph behind the model to be created
+	 * @param node: The node that is currently looked at
+	 * @param posX: The x coordinate of the node
+	 * @param posY: The y coordinate of the node
+	 * @param level: The depth of the node
+	 * */
+	private void calculatePositionsForNodes(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node, Integer posX, Integer posY, Integer level) {
+		
+		this.positions.put(node.getName(), new Position(posX, posY+level*Y_OFFSET));
+		
+		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
+		
+		Integer posXChild = posX - (nodeChildren.size() -1) * X_OFFSET / 2;
+		
+		for(IPrivateNode childNode : nodeChildren) {
+			calculatePositionsForNodes(participantModelGraph, childNode, posXChild, posY, level+1);
+			posXChild += X_OFFSET;
+		}
+	}
+	
+	/**
+	 * Resolves overlaps in the petri net structure by looking at each two subtrees of a node:
+	 * 1. Calculate the overlap of the subtrees by comparing rightmost node of left subtree and leftmost node of right subtree
+	 * 2. If overlap exists shift the node and all subtrees to "make space"
+	 * 2.1 Store the shift that needs to be done for the right child
+	 * 3. Recursively look in all subtrees if another overlap is found
+	 * */
+	private void resolveOverlaps(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node) {
+		
+		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
+
+		for(int i=0; i<nodeChildren.size()-1;i++) {
+			
+			Integer rightmostOfLeftSubtree = getRightmost(participantModelGraph, nodeChildren.get(i));
+			Integer leftmostOfRightSubtree = getLeftmost(participantModelGraph, nodeChildren.get(i+1));
+			
+			Integer overlap = leftmostOfRightSubtree - rightmostOfLeftSubtree;
+			
+			//Also shift when they are perfectly over each other
+			if(overlap >= 0) {
+				Integer shift = ((overlap % X_OFFSET)+1) * X_OFFSET; 
+				
+				this.shifts.put(nodeChildren.get(i+1).getName(), shift);
+				
+				this.shiftSubtree(participantModelGraph, node, shift);
+			}
+		}
+	}
+	
+	/**
+	 * Moves the x-coordinate of the node and all subtrees by shift to the right
+	 * */
+	private void shiftSubtree(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node, Integer shift) {
+		
+		Position currentPositionOfNode = this.positions.get(node.getName());
+		
+		this.positions.put(node.getName(), new Position(currentPositionOfNode.x+shift, currentPositionOfNode.y));
+		
+		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
+
+		for(IPrivateNode childNode : nodeChildren) {
+			shiftSubtree(participantModelGraph, childNode, shift);
+		}
+	}
+	
+	/**
+	 * Gets the rightmost tree of the (sub)tree at the given node
+	 * 
+	 * @param node: The root node of the (sub)tree
+	 * 
+	 * @return: The x position of the rightmost node
+	 * */
+	private Integer getRightmost(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node) {
+		
+		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
+
+		if(nodeChildren.isEmpty()) {
+			return this.positions.get(node.getName()).x;
+		}
+		return getRightmost(participantModelGraph, nodeChildren.getLast());
+	}
+	
+	/**
+	 * Gets the leftmost tree of the (sub)tree at the given node
+	 * 
+	 * @param node: The root node of the (sub)tree
+	 * 
+	 * @return: The x position of the leftmost node
+	 * */
+	private Integer getLeftmost(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node) {
+		
+		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
+
+		if(nodeChildren.isEmpty()) {
+			return this.positions.get(node.getName()).x;
+		}
+		return getRightmost(participantModelGraph, nodeChildren.getFirst());
+	}
+	
+	/**
+	 * 
+	 * */
+	private void applyAdditionalShifts(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node, Integer acc) {
+		
+		Position currentPositionOfNode = this.positions.get(node.getName());
+		
+		this.positions.put(node.getName(), new Position(currentPositionOfNode.x + acc, currentPositionOfNode.y));
+		
+		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
+
+		for(IPrivateNode childNode : nodeChildren) {
+			
+			Integer addShiftOfNode = 0;
+			
+			if(this.shifts.containsKey(node.getName())) {
+				addShiftOfNode = this.shifts.get(node.getName());
+			}
+			applyAdditionalShifts(participantModelGraph, childNode, acc + addShiftOfNode);
+			
+		}
+	}
+
 
 	/**
 	 * Prints the CPN.xml file to the output folder
@@ -85,6 +288,18 @@ public class ChoreographyModelToCPN {
 		xmlOutput.setFormat(Format.getPrettyFormat());
 		xmlOutput.output(doc, new FileWriter(outputFolder + "/CPN.pnml"));
 	}
+	
+	private void createInteraction(String id, Integer posX, Integer posY) {
+		
+		String idIn = id+"_in", idOut = id+"_out";
+		
+		createPlace(idIn, posX, posY-50);
+		createTransition(id, posX, posY);
+		createPlace(idOut,posX, posY+50);
+		
+		createArc(idIn, id);
+		createArc(id, idOut);
+	}
 
 	/**
 	 * ===================================================TAG-CREATION========================================================================
@@ -99,8 +314,11 @@ public class ChoreographyModelToCPN {
 	 * 
 	 * @return an <arc>-tag
 	 * */
-	private void createArc(String id, String sourceId, String targetId) {
+	private void createArc(String sourceId, String targetId) {
 		Element arcElem = new Element("arc");
+		
+		String id = sourceId+"_to_"+targetId;
+		
 		arcElem.setAttribute("id", id);
 		
 		arcElem.setAttribute("source", sourceId);
@@ -273,5 +491,24 @@ public class ChoreographyModelToCPN {
 		return nameElem;
 
 	}
-
+	
+	/**
+	 * Tracks the position the nodes need to have in the resulting Petri model
+	 * */
+	class Position{
+		
+		Integer x;
+		Integer y;
+		
+		Position(Integer x, Integer y){
+			this.x = x;
+			this.y = y;
+		}
+		
+		public String toString() {
+			return "("+x+","+y+")";
+		}
+	}
 }
+
+

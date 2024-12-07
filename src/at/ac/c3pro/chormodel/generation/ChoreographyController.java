@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -162,7 +163,7 @@ public class ChoreographyController {
 				List<PrivateModel> privateModels = exportPrivateModels(choreo);
 
 				// Transform Private Models to a PNML file
-				ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, formattedDate, dir);
+				ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, dir);
 				choreoToCPN.printXML();
 
 				// Transform Models to bpmn
@@ -222,8 +223,12 @@ public class ChoreographyController {
 
 		List<PrivateModel> rst = new ArrayList<>();
 
+		//Sort roles so we can be sure that the returned list of private models is in order 
+		List<Role> rolesSorted = new ArrayList<>(choreo.collaboration.roles);
+		rolesSorted.sort(Comparator.comparing(Role::getName));
+		
 		// Export private model graphs
-		for (Role role : choreo.collaboration.roles) {
+		for (Role role : rolesSorted) {
 			IPrivateModel prModel = choreo.R2PrM.get(role);
 			fragGen = new FragmentGenerator((PrivateModel) prModel, formattedDate);
 			prModel = fragGen.enhance();

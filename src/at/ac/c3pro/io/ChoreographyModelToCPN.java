@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 import org.jbpt.graph.abs.IDirectedEdge;
 import org.jbpt.graph.abs.IDirectedGraph;
+import at.ac.c3pro.node.AndGateway;
+import at.ac.c3pro.node.XorGateway;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.output.Format;
@@ -22,6 +24,7 @@ import at.ac.c3pro.node.IPrivateNode;
 import at.ac.c3pro.node.Interaction;
 import at.ac.c3pro.node.Receive;
 import at.ac.c3pro.node.Send;
+import at.ac.c3pro.node.Event;
 
 public class ChoreographyModelToCPN {
 
@@ -107,6 +110,7 @@ public class ChoreographyModelToCPN {
 		}
 	}
 	
+	//TODO: Clean this shit up
 	private void buildPetriNet(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node) {
 		
 		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
@@ -118,13 +122,69 @@ public class ChoreographyModelToCPN {
 			
 			//Create place for node 
 			if(childNode instanceof Receive || childNode instanceof Send) {
+				
 				createInteraction(childNodeName, childNodePosition.x, childNodePosition.y);
+				
 				//Create arc from parent to children 
-				createArc(node.getName(), childNode.getName()+"_in");
-			} else {
+				
+				if(node instanceof AndGateway) {
+					createArc(node.getName(), childNode.getName()+"_in");
+				} else if (node instanceof XorGateway) {
+					continue;
+				} else if (node instanceof Send || node instanceof Receive) {
+					createArc(node.getName()+"_out", childNode.getName()+"_in");
+				} else if (node instanceof Event) {
+					createArc(node.getName(), childNode.getName()+"_in");
+				}
+				
+			} else if(childNode instanceof AndGateway) {
+				
+				createAnd(childNodeName, childNodePosition.x, childNodePosition.y);
+				
+				if(node instanceof AndGateway) {
+					createArc(node.getName(), childNode.getName());
+				} else if (node instanceof XorGateway) {
+					continue;
+				} else if (node instanceof Send || node instanceof Receive) {
+					createArc(node.getName()+"_out", childNode.getName());
+				} else if (node instanceof Event) {
+					createArc(node.getName(),childNode.getName());
+				}
+				
+			} 
+			else if (childNode instanceof XorGateway) {
+				List<IPrivateNode> xorChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
+				
+				boolean isMergeNode = childNode.getName().contains("_m");
+				
+				if(!isMergeNode) {
+					for(IPrivateNode xorChild : xorChildren) {
+						createXor(xorChild, isMergeNode);
+					}
+				}
+				
+				
+				if(!isMergeNode) {
+					
+				}
+
+				
+//				createXOR();
+			}
+			
+			//Child node is End-Event 
+			else if (childNode instanceof Event) {
 				createPlace(childNodeName, childNodePosition.x, childNodePosition.y);
+				
 				//Create arc from parent to children 
-				createArc(node.getName(), childNode.getName());
+				if(node instanceof AndGateway) {
+					createArc(node.getName(), childNode.getName());
+				} else if (node instanceof XorGateway) {
+					continue;
+				} else if (node instanceof Send || node instanceof Receive) {
+					createArc(node.getName()+"_out", childNode.getName());
+				}
+				
 			}
 			
 			
@@ -299,6 +359,17 @@ public class ChoreographyModelToCPN {
 		
 		createArc(idIn, id);
 		createArc(id, idOut);
+	}
+	
+	private void createAnd(String id, Integer posX, Integer posY) {		
+		createTransition(id, posX, posY);
+	}
+	
+	private void createXor(IPrivateNode node, boolean isMergeNode) {
+		Position pos = this.positions.get(node.getName());
+		
+		createTransition(node.getName()+"_xor_in", pos.x, pos.y -100);
+		
 	}
 
 	/**

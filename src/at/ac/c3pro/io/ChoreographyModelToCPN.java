@@ -160,6 +160,16 @@ public class ChoreographyModelToCPN {
 				if(!isMergeNode) {
 					for(IPrivateNode xorChild : xorChildren) {
 						createXor(xorChild, isMergeNode);
+						
+						if(node instanceof AndGateway) {
+							createArc(node.getName(), childNode.getName()+"_xor_in");
+						} else if (node instanceof XorGateway) {
+							continue;
+						} else if (node instanceof Send || node instanceof Receive) {
+							createArc(node.getName()+"_out", childNode.getName());
+						} else if (node instanceof Event) {
+							createArc(node.getName(),childNode.getName());
+						}
 					}
 				}
 				

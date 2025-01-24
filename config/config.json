@@ -6,5 +6,6 @@
 	amountMessageExchange: 4,
 	amountHandoverOfWork: 1,
 	amountRessourceSharing: 2,
-	amountSynchronousActivity: 2
+	amountSynchronousActivity: 2,
+	visualizeAllCPNs: true
 }

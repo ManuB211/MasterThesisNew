@@ -9,76 +9,56 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.jbpt.graph.abs.IDirectedEdge;
 import org.jbpt.graph.abs.IDirectedGraph;
-import at.ac.c3pro.node.AndGateway;
-import at.ac.c3pro.node.XorGateway;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
 import at.ac.c3pro.chormodel.PrivateModel;
+import at.ac.c3pro.node.AndGateway;
 import at.ac.c3pro.node.Edge;
+import at.ac.c3pro.node.Event;
 import at.ac.c3pro.node.IPrivateNode;
-import at.ac.c3pro.node.Interaction;
+import at.ac.c3pro.node.PrivateActivity;
 import at.ac.c3pro.node.Receive;
 import at.ac.c3pro.node.Send;
-import at.ac.c3pro.node.Event;
+import at.ac.c3pro.node.XorGateway;
 
 public class ChoreographyModelToCPN {
 
-	private enum PNMLElementEnum {
-		PLACE, TRANSITION
-	}
-
-	private final Integer DIMENSION_PLACE = 20;
-	private final Integer DIMENSION_TRANSITION = 32;
-	
-	//Spacing between siblings
-	private final Integer X_OFFSET = 300;
-	//Spacing between parent/child
-	private final Integer Y_OFFSET = 300;
-
 	private List<PrivateModel> privateModels;
 
+	private List<String> alreadyVisited;
+
+	private List<String> alreadyCreated;
+
 	private File outputFolder;
-	
-	private Map<String, Position> positions;
-	private Map<String, Integer> shifts; 
-	
-	//The parent element of all the petri net tags
-	private Element net;
+	private static String formattedDate;
 
-	public ChoreographyModelToCPN(List<PrivateModel> pPrivateModels, File pOutputFolder) {
+	// The parent element of all the petri net tags
+//	private Element net;
+
+	private Map<String, Element> privateNets;
+
+	public ChoreographyModelToCPN(List<PrivateModel> pPrivateModels, String pFormattedDate) throws IOException {
 		this.privateModels = pPrivateModels;
-		this.outputFolder = pOutputFolder;
-		this.positions = new HashMap<>();
-		this.shifts = new HashMap<>();
-		
-		this.net = new Element("net");
-		this.net.setAttribute("type", "http://www.yasper.org/specs/epnml-1.1");
-		this.net.setAttribute("id","CPN1"); // TODO: do i need something dynamic for the ID?
-		
-		//this.test();
-		
-		PrivateModel prModel1 = privateModels.get(1);
-		
-		this.buildPNMLForSingleParticipant(prModel1);
+		this.formattedDate = pFormattedDate;
+		this.alreadyVisited = new ArrayList<>();
+		this.alreadyCreated = new ArrayList<>();
+		this.privateNets = new HashMap<>();
 
-	}
+		this.outputFolder = createOutputFolder();
 
-	/**
-	 * Sets up the basic structure of the document, meaning the xml, pnml and net
-	 * tags
-	 */
-	private void test() {
-		
-		createPlace("p1", 530, 80);
-		createPlace("p2", 530, 380);
-		createTransition("tr1", 530, 230);
-		createArc("p1", "tr1");
-		createArc("tr1", "p2");
+//		this.net = new Element("net");
+//		this.net.setAttribute("type", "http://www.yasper.org/specs/epnml-1.1");
+//		this.net.setAttribute("id", "CPN1"); // TODO: do i need something dynamic for the ID?
+
+		// Generate petri model for each private model of the participants
+		for (int i = 0; i < privateModels.size(); i++) {
+			String cpnId = "CPN" + i;
+			this.privateNets.putIfAbsent(cpnId, this.buildPNMLForSingleParticipant(privateModels.get(i), cpnId));
+		}
 
 	}
 
@@ -88,365 +68,599 @@ public class ChoreographyModelToCPN {
 	 * @param participantModel: the private model of the participant to build the
 	 *                          PNML of
 	 */
-	private void buildPNMLForSingleParticipant(PrivateModel participantModel) {
-		
+	private Element buildPNMLForSingleParticipant(PrivateModel participantModel, String cpnId) {
+
+		Element netCurr = new Element("net");
+		netCurr.setAttribute("type", "http://www.yasper.org/specs/epnml-1.1"); // TODO
+		netCurr.setAttribute("id", cpnId);
+
 		IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph = participantModel.getdigraph();
-		
+
 		IPrivateNode start = participantModel.getStartEvent();
-		
-		this.handlePositioning(participantModelGraph, start);
 
-		//Create place for the start event 
-		createPlace(
-				start.getName(),
-				this.positions.get(start.getName()).x,
-				this.positions.get(start.getName()).y
-				);
-		
-		this.buildPetriNet(participantModelGraph, start);
-		
-		for(Edge<IPrivateNode> e: participantModel.getdigraph().getEdges()) {
-			System.out.println(e);
-		}
+		// Create place for the start event
+		createPlace(start.getName(), netCurr);
+
+//		System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
+		this.buildPetriNet(participantModelGraph, start, netCurr);
+
+//		System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
+//		for (Edge<IPrivateNode> e : participantModel.getdigraph().getEdges()) {
+//			System.out.println(e);
+//		}
+		return netCurr;
 	}
-	
-	//TODO: Clean this shit up
-	private void buildPetriNet(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node) {
-		
-		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
 
-		for(IPrivateNode childNode : nodeChildren) {
-			
-			String childNodeName = childNode.getName();
-			Position childNodePosition = this.positions.get(childNodeName);
-			
-			//Create place for node 
-			if(childNode instanceof Receive || childNode instanceof Send) {
-				
-				createInteraction(childNodeName, childNodePosition.x, childNodePosition.y);
-				
-				//Create arc from parent to children 
-				
-				if(node instanceof AndGateway) {
-					createArc(node.getName(), childNode.getName()+"_in");
-				} else if (node instanceof XorGateway) {
-					continue;
-				} else if (node instanceof Send || node instanceof Receive) {
-					createArc(node.getName()+"_out", childNode.getName()+"_in");
-				} else if (node instanceof Event) {
-					createArc(node.getName(), childNode.getName()+"_in");
-				}
-				
-			} else if(childNode instanceof AndGateway) {
-				
-				createAnd(childNodeName, childNodePosition.x, childNodePosition.y);
-				
-				if(node instanceof AndGateway) {
-					createArc(node.getName(), childNode.getName());
-				} else if (node instanceof XorGateway) {
-					continue;
-				} else if (node instanceof Send || node instanceof Receive) {
-					createArc(node.getName()+"_out", childNode.getName());
-				} else if (node instanceof Event) {
-					createArc(node.getName(),childNode.getName());
-				}
-				
-			} 
-			else if (childNode instanceof XorGateway) {
-				List<IPrivateNode> xorChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
-				
-				boolean isMergeNode = childNode.getName().contains("_m");
-				
-				if(!isMergeNode) {
-					for(IPrivateNode xorChild : xorChildren) {
-						createXor(xorChild, isMergeNode);
-						
-						if(node instanceof AndGateway) {
-							createArc(node.getName(), childNode.getName()+"_xor_in");
-						} else if (node instanceof XorGateway) {
-							continue;
-						} else if (node instanceof Send || node instanceof Receive) {
-							createArc(node.getName()+"_out", childNode.getName());
-						} else if (node instanceof Event) {
-							createArc(node.getName(),childNode.getName());
-						}
-					}
-				}
-				
-				
-				if(!isMergeNode) {
-					
-				}
+	/**
+	 * @formatter:off
+	 * Builds the elements for the distinct components of the petri net. With (t)
+	 * transition and (p) place that means:
+	 * 
+	 * start event: start(p) -> start_out(t)
+	 * end event: end_in(t) -> end(p)
+	 * interaction, priv. act: ia_in(p) -> ia(t) -> ia_out(p)
+	 * and gateway: and_in(t) -> and(p) -> and_out(t)
+	 * xor gateway fork: xor_in (t) -> xor(p) -> xor_to_child1 (t), xor_to_child2(t),...
+	 * xor gateway merge: parent1_to_xorm(t), parent2_to_xorm(t),... -> xorm(p) -> xorm_out(t)
+	 * 
+	 * @formatter:on
+	 */
+	private void buildPetriNet(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph,
+			IPrivateNode node, Element netCurr) {
 
-				
-//				createXOR();
+		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream()
+				.collect(Collectors.toList());
+
+		if (!this.alreadyVisited.contains(node.getId())) {
+
+			List<IPrivateNode> nodeParents = participantModelGraph.getDirectPredecessors(node).stream()
+					.collect(Collectors.toList());
+
+			if (node instanceof Event) {
+				if (node.getName().equals("start")) {
+					createStart(netCurr);
+				} else if (node.getName().equals("end")) {
+					createEnd(netCurr);
+				} else {
+					throw new IllegalArgumentException("Received invalid event");
+				}
+			} else if (node instanceof Send || node instanceof Receive || node instanceof PrivateActivity) {
+				createInteractionOrPrivateActivity(node.getName(), nodeChildren, nodeParents, netCurr);
+			} else if (node instanceof AndGateway) {
+				createAnd(node.getName(), nodeChildren, nodeParents, netCurr);
+			} else if (node instanceof XorGateway) {
+				createXor(node.getName(), nodeChildren, nodeParents, netCurr);
+			} else {
+				throw new IllegalArgumentException("Received node that is of no valid type");
 			}
-			
-			//Child node is End-Event 
-			else if (childNode instanceof Event) {
-				createPlace(childNodeName, childNodePosition.x, childNodePosition.y);
-				
-				//Create arc from parent to children 
-				if(node instanceof AndGateway) {
-					createArc(node.getName(), childNode.getName());
-				} else if (node instanceof XorGateway) {
-					continue;
-				} else if (node instanceof Send || node instanceof Receive) {
-					createArc(node.getName()+"_out", childNode.getName());
-				}
-				
-			}
-			
-			
-			
-			buildPetriNet(participantModelGraph, childNode);
-			
-		}
-		
-	}
-	
-	private void handlePositioning(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode start) {
-		//Calculate Positioning of the nodes
-				this.calculatePositionsForNodes(participantModelGraph, start, 0, 0, 0);
-				//Resolve Overlaps locally
-				this.resolveOverlaps(participantModelGraph, start);
-				//Apply Global Shifts to resolve overlaps locally
-				this.applyAdditionalShifts(participantModelGraph, start, 0);
-	}
-	
-	/**
-	 * Calculates the position of the nodes in the resulting petri net, so a balanced structure is created
-	 * 
-	 * @param participantModel: the graph behind the model to be created
-	 * @param node: The node that is currently looked at
-	 * @param posX: The x coordinate of the node
-	 * @param posY: The y coordinate of the node
-	 * @param level: The depth of the node
-	 * */
-	private void calculatePositionsForNodes(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node, Integer posX, Integer posY, Integer level) {
-		
-		this.positions.put(node.getName(), new Position(posX, posY+level*Y_OFFSET));
-		
-		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
-		
-		Integer posXChild = posX - (nodeChildren.size() -1) * X_OFFSET / 2;
-		
-		for(IPrivateNode childNode : nodeChildren) {
-			calculatePositionsForNodes(participantModelGraph, childNode, posXChild, posY, level+1);
-			posXChild += X_OFFSET;
-		}
-	}
-	
-	/**
-	 * Resolves overlaps in the petri net structure by looking at each two subtrees of a node:
-	 * 1. Calculate the overlap of the subtrees by comparing rightmost node of left subtree and leftmost node of right subtree
-	 * 2. If overlap exists shift the node and all subtrees to "make space"
-	 * 2.1 Store the shift that needs to be done for the right child
-	 * 3. Recursively look in all subtrees if another overlap is found
-	 * */
-	private void resolveOverlaps(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node) {
-		
-		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
 
-		for(int i=0; i<nodeChildren.size()-1;i++) {
-			
-			Integer rightmostOfLeftSubtree = getRightmost(participantModelGraph, nodeChildren.get(i));
-			Integer leftmostOfRightSubtree = getLeftmost(participantModelGraph, nodeChildren.get(i+1));
-			
-			Integer overlap = leftmostOfRightSubtree - rightmostOfLeftSubtree;
-			
-			//Also shift when they are perfectly over each other
-			if(overlap >= 0) {
-				Integer shift = ((overlap % X_OFFSET)+1) * X_OFFSET; 
-				
-				this.shifts.put(nodeChildren.get(i+1).getName(), shift);
-				
-				this.shiftSubtree(participantModelGraph, node, shift);
-			}
+//			System.out.println("Current Node:");
+//			System.out.println(node);
+//			System.out.println("Child Nodes:");
+//			System.out.println(nodeChildren);
+//			System.out.println("Parent Nodes:");
+//			System.out.println(nodeParents);
+//			System.out.println("-------------------------------------------------------------------");
+
+			this.alreadyVisited.add(node.getId());
+		}
+
+		for (IPrivateNode child : nodeChildren) {
+			buildPetriNet(participantModelGraph, child, netCurr);
 		}
 	}
-	
-	/**
-	 * Moves the x-coordinate of the node and all subtrees by shift to the right
-	 * */
-	private void shiftSubtree(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node, Integer shift) {
-		
-		Position currentPositionOfNode = this.positions.get(node.getName());
-		
-		this.positions.put(node.getName(), new Position(currentPositionOfNode.x+shift, currentPositionOfNode.y));
-		
-		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
-
-		for(IPrivateNode childNode : nodeChildren) {
-			shiftSubtree(participantModelGraph, childNode, shift);
-		}
-	}
-	
-	/**
-	 * Gets the rightmost tree of the (sub)tree at the given node
-	 * 
-	 * @param node: The root node of the (sub)tree
-	 * 
-	 * @return: The x position of the rightmost node
-	 * */
-	private Integer getRightmost(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node) {
-		
-		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
-
-		if(nodeChildren.isEmpty()) {
-			return this.positions.get(node.getName()).x;
-		}
-		return getRightmost(participantModelGraph, nodeChildren.getLast());
-	}
-	
-	/**
-	 * Gets the leftmost tree of the (sub)tree at the given node
-	 * 
-	 * @param node: The root node of the (sub)tree
-	 * 
-	 * @return: The x position of the leftmost node
-	 * */
-	private Integer getLeftmost(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node) {
-		
-		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
-
-		if(nodeChildren.isEmpty()) {
-			return this.positions.get(node.getName()).x;
-		}
-		return getRightmost(participantModelGraph, nodeChildren.getFirst());
-	}
-	
-	/**
-	 * 
-	 * */
-	private void applyAdditionalShifts(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph, IPrivateNode node, Integer acc) {
-		
-		Position currentPositionOfNode = this.positions.get(node.getName());
-		
-		this.positions.put(node.getName(), new Position(currentPositionOfNode.x + acc, currentPositionOfNode.y));
-		
-		List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream().collect(Collectors.toList());
-
-		for(IPrivateNode childNode : nodeChildren) {
-			
-			Integer addShiftOfNode = 0;
-			
-			if(this.shifts.containsKey(node.getName())) {
-				addShiftOfNode = this.shifts.get(node.getName());
-			}
-			applyAdditionalShifts(participantModelGraph, childNode, acc + addShiftOfNode);
-			
-		}
-	}
-
 
 	/**
 	 * Prints the CPN.xml file to the output folder
+	 * 
+	 * @throws InterruptedException
 	 */
-	public void printXML() throws IOException {
-		
-		Document doc = new Document();
-		Element pnml = new Element("pnml");
-		
-		pnml.setContent(net);
-		doc.setRootElement(pnml);
-		
-		
-		XMLOutputter xmlOutput = new XMLOutputter();
+	public void printXMLs(boolean visualRepresentation) throws IOException, InterruptedException {
 
-		// Pretty Print
-		xmlOutput.setFormat(Format.getPrettyFormat());
-		xmlOutput.output(doc, new FileWriter(outputFolder + "/CPN.pnml"));
+		for (Map.Entry<String, Element> privModelCPN : this.privateNets.entrySet()) {
+			Document doc = new Document();
+			Element pnml = new Element("pnml");
+
+			pnml.setContent(privModelCPN.getValue());
+			doc.setRootElement(pnml);
+
+			XMLOutputter xmlOutput = new XMLOutputter();
+
+			// Pretty Print
+			xmlOutput.setFormat(Format.getPrettyFormat());
+
+			String cpnName = "/" + privModelCPN.getKey() + ".pnml";
+			xmlOutput.output(doc, new FileWriter(outputFolder + cpnName));
+		}
+
+		if (visualRepresentation) {
+			ProcessBuilder processBuilder = new ProcessBuilder("python", "resources/generatePetrinetVisualization.py",
+					outputFolder.toString().substring(7, 26));
+			processBuilder.redirectErrorStream(true);
+
+			Process process = processBuilder.start();
+			process.waitFor();
+		}
+
 	}
-	
-	private void createInteraction(String id, Integer posX, Integer posY) {
-		
-		String idIn = id+"_in", idOut = id+"_out";
-		
-		createPlace(idIn, posX, posY-50);
-		createTransition(id, posX, posY);
-		createPlace(idOut,posX, posY+50);
-		
-		createArc(idIn, id);
-		createArc(id, idOut);
+
+	/**
+	 * @throws Exception
+	 * 
+	 */
+	private static File createOutputFolder() throws IOException {
+		File dir = new File("target/" + formattedDate + "/CPNs_private");
+
+		if (!dir.exists()) {
+			boolean created = dir.mkdir();
+			if (created) {
+				System.out.println("Directory created successfully!");
+			} else {
+				throw new IOException("Failed to create the directory.");
+			}
+		} else {
+			System.out.println("Directory already exists.");
+		}
+
+		return dir;
 	}
-	
-	private void createAnd(String id, Integer posX, Integer posY) {		
-		createTransition(id, posX, posY);
+
+	/**
+	 * Transforms a interaction or private activity to its corresponding PNML
+	 * elements
+	 */
+	private void createInteractionOrPrivateActivity(String id, List<IPrivateNode> children, List<IPrivateNode> parents,
+			Element net) {
+		String idIn = id + "_in", idOut = id + "_out";
+
+		// Exactly one parent and one child
+		IPrivateNode parent = parents.get(0);
+		IPrivateNode child = children.get(0);
+
+		createTransition(id, net);
+
+		// In case of a IA -> IA connection we connect them directly without
+		// intermediate transaction
+		if (!(parent instanceof Send || parent instanceof Receive || parent instanceof PrivateActivity)) {
+			createPlace(idIn, net);
+			createArc(idIn, id, net);
+		}
+
+		createPlace(idOut, net);
+		createArc(id, idOut, net);
+
+		// Handle Connection to Parent
+		if (parent instanceof Event && parent.getName().equals("start")) {
+			// start -> IA ( start_out (t) -> IA_in (p))
+			createArc(parent.getNameOut(), idIn, net);
+		} else if (parent instanceof XorGateway && parent.getName().contains("_m")) {
+			// XOR_m -> IA (XOR_m_out (t) -> IA_in (p))
+			createArc(parent.getNameOut(), idIn, net);
+		} else if (parent instanceof XorGateway) {
+			// XOR -> IA (XOR_to_IA (t) -> IA_in (p))
+			String xorToIA = parent.getName() + "_to_" + id;
+
+			createArc(xorToIA, idIn, net);
+		} else if (parent instanceof AndGateway) {
+			// AND_m -> IA (AND_m (t) -> IA_in (p))
+			// AND -> IA (AND (t) -> IA_in)
+			createArc(parent.getName(), idIn, net);
+		} else if (parent instanceof Send || parent instanceof Receive || parent instanceof PrivateActivity) {
+			// IA1 -> IA2 (IA1_out (p) -> IA2 (t) )
+			createArc(parent.getNameOut(), id, net);
+		}
+
+		// Handle Connection to Child
+		if (child instanceof Event && child.getName().equals("end")) {
+			// IA -> end (IA_out (p) -> end_in (t))
+			createArc(idOut, child.getNameIn(), net);
+		} else if (child instanceof XorGateway && child.getName().contains("_m")) {
+			// IA->XOR_m (IA_out (p) -> IA_to_XOR_m (t) -> XOR_m (p) )
+			String IAtoXorMerge = id + "_to_" + child.getName();
+			createArc(idOut, IAtoXorMerge, net);
+		} else if (child instanceof XorGateway) {
+			// IA -> XOR (IA_out (p) -> XOR_in (t))
+			createArc(idOut, child.getNameIn(), net);
+		} else if (child instanceof AndGateway) {
+			// IA -> AND_m (IA_out (p) -> AND_m (t))
+			// IA -> AND (IA_out (p) -> AND (t))
+			createArc(idOut, child.getName(), net);
+		} else if (child instanceof Send || child instanceof Receive || child instanceof PrivateActivity) {
+			// IA1 -> IA2 (IA1 (t) -> IA2_in (p) )
+			createArc(id, child.getNameIn(), net);
+
+		}
+
 	}
-	
-	private void createXor(IPrivateNode node, boolean isMergeNode) {
-		Position pos = this.positions.get(node.getName());
-		
-		createTransition(node.getName()+"_xor_in", pos.x, pos.y -100);
-		
+
+	private void createAnd(String id, List<IPrivateNode> children, List<IPrivateNode> parents, Element net) {
+
+		boolean isMergeNode = id.contains("_m");
+
+		// Creates the transition for the AND Gateway
+		createTransition(id, net);
+
+		if (isMergeNode) {
+
+			for (IPrivateNode parent : parents) {
+
+				if (parent instanceof XorGateway && parent.getName().contains("_m")) {
+					// XOR_m -> AND_m (XOR_m_out (t) -> XOR_m_to_AND_m (p) -> AND_m (t) )
+
+					String connectorPlace = parent.getName() + "_" + id;
+
+					createPlace(connectorPlace, net);
+
+					createArc(parent.getNameOut(), connectorPlace, net);
+					createArc(connectorPlace, id, net);
+
+				} else if (parent instanceof AndGateway && parent.getName().contains("_m")) {
+					String connectorPlace = parent.getName() + "_" + id;
+
+					createPlace(connectorPlace, net);
+
+					createArc(parent.getName(), connectorPlace, net);
+					createArc(connectorPlace, id, net);
+
+				} else if (parent instanceof Send || parent instanceof Receive || parent instanceof PrivateActivity) {
+					// IA -> AND_m ( IA_out (p) -> AND_m (t) )
+
+					createArc(parent.getName(), id, net);
+
+				}
+			}
+
+			for (IPrivateNode child : children) {
+
+				if (child instanceof XorGateway && child.getName().contains("_m")) {
+					// AND_m -> XOR_m (AND_m (t) -> XOR_m (p) )
+					createArc(id, child.getName(), net);
+				} else if (child instanceof XorGateway) {
+					// AND_m -> XOR (AND_m (t) -> AND_m_XOR (p) -> XOR_in (t) )
+					String connectorPlace = id + "_" + child.getName();
+
+					createPlace(connectorPlace, net);
+
+					createArc(id, connectorPlace, net);
+					createArc(connectorPlace, child.getNameIn(), net);
+
+				} else if (child instanceof AndGateway && child.getName().contains("_m")) {
+					// AND1_m -> AND0_m ( AND1_m (t) -> AND1_m_AND0_m (p) -> AND0_m (t) )
+					String connectorPlace = id + "_" + child.getName();
+
+					createPlace(connectorPlace, net);
+
+					createArc(id, connectorPlace, net);
+					createArc(connectorPlace, child.getName(), net);
+
+				} else if (child instanceof AndGateway) {
+					// AND1_m -> AND2 (AND1_m (t) -> AND1_m_AND2 (p) -> AND2 (t))
+					String connectorPlace = id + "_" + child.getName();
+
+					createPlace(connectorPlace, net);
+
+					createArc(id, connectorPlace, net);
+					createArc(connectorPlace, child.getName(), net);
+				} else if (child instanceof Send || child instanceof Receive || child instanceof PrivateActivity) {
+					// AND1_m -> IA (AND1_m (t) -> IA_in (p))
+					createArc(id, child.getNameIn(), net);
+				} else if (child instanceof Event && child.getName().equals("end")) {
+					// AND_m -> end (AND_m (t) -> AND_m_end (p) -> end_in (t))
+					String connectorPlace = id + "_" + child.getName();
+
+					createPlace(connectorPlace, net);
+
+					createArc(id, connectorPlace, net);
+					createArc(connectorPlace, child.getNameIn(), net);
+				}
+
+			}
+
+		} else {
+
+			for (IPrivateNode parent : parents) {
+
+				if (parent instanceof Event && parent.getName().equals("start")) {
+					// start -> AND (start_out (t) -> start_AND (p) -> AND (t)
+					String connectorPlace = parent.getName() + "_" + id;
+
+					createPlace(connectorPlace, net);
+
+					createArc(parent.getNameOut(), connectorPlace, net);
+					createArc(connectorPlace, id, net);
+
+				} else if (parent instanceof XorGateway && parent.getName().contains("_m")) {
+					// XOR_m -> AND (XOR_m_out (t) -> XOR_m_AND (p) -> AND (t))
+					String connectorPlace = parent.getName() + "_" + id;
+
+					createPlace(connectorPlace, net);
+
+					createArc(parent.getNameOut(), connectorPlace, net);
+					createArc(connectorPlace, id, net);
+				} else if (parent instanceof XorGateway) {
+					// XOR -> AND (XOR (p) -> AND (t))
+
+					createArc(parent.getName(), id, net);
+				} else if (parent instanceof AndGateway) {
+					// AND0_m -> AND1 ( AND0_m (t) -> AND0_m_AND1 (p) -> AND1 (t) )
+					// AND0 -> AND1 ( AND0 (t) -> AND0_AND1 (p) -> AND1 (t) )
+					String connectorPlace = parent.getName() + "_" + id;
+
+					createPlace(connectorPlace, net);
+
+					createArc(parent.getName(), connectorPlace, net);
+					createArc(connectorPlace, id, net);
+				} else if (parent instanceof Send || parent instanceof Receive || parent instanceof PrivateActivity) {
+					// IA -> AND (IA_out (p) -> AND (t))
+					createArc(parent.getNameOut(), id, net);
+				}
+
+			}
+
+			for (IPrivateNode child : children) {
+
+				// To be sure; there should never be AndGateway-merge or XorGateway-merge here
+				if (child instanceof AndGateway && !child.getName().contains("_m")) {
+					// AND0 -> AND1 (AND0 (t) -> AND0_AND1 (p) -> AND1 (t) )
+					String connectorPlace = id + "_" + child.getName();
+
+					createPlace(connectorPlace, net);
+
+					createArc(id, connectorPlace, net);
+					createArc(connectorPlace, child.getName(), net);
+				} else if (child instanceof XorGateway && !child.getName().contains("_m")) {
+					// AND -> XOR (AND (t) -> AND_XOR (p) -> XOR_in (t) )
+					String connectorPlace = id + "_" + child.getName();
+
+					createPlace(connectorPlace, net);
+
+					createArc(id, connectorPlace, net);
+					createArc(connectorPlace, child.getNameIn(), net);
+				} else if (child instanceof Send || child instanceof Receive || child instanceof PrivateActivity) {
+					// AND -> IA (AND (t) -> IA_in (p))
+					createArc(id, child.getNameIn(), net);
+				}
+			}
+
+		}
+
+	}
+
+	private void createXor(String id, List<IPrivateNode> children, List<IPrivateNode> parents, Element net) {
+
+		boolean isMergeNode = id.contains("_m");
+
+		if (isMergeNode) {
+			String idOut = id + "_out";
+
+			createTransition(idOut, net);
+
+			createPlace(id, net);
+			createArc(id, idOut, net);
+
+			for (IPrivateNode parent : parents) {
+
+				if (parent instanceof AndGateway && parent.getName().contains("_m")) {
+					// AND_m -> XOR_m ( AND_m (t) -> XOR_m (p) )
+					createArc(parent.getName(), id, net);
+				} else if (parent instanceof XorGateway && parent.getName().contains("_m")) {
+					// XOR1_m -> XOR0_m ( XOR1_m_out (t) -> XOR0_m (p) )
+					createArc(parent.getNameOut(), id, net);
+				} else if (parent instanceof XorGateway) {
+					// XOR0 -> XOR0_m
+
+					String transitionOptionalBranch = parent.getName() + "_to_" + id;
+
+					createTransition(transitionOptionalBranch, net);
+
+					createArc(parent.getName(), transitionOptionalBranch, net);
+					createArc(transitionOptionalBranch, id, net);
+				} else if (parent instanceof Send || parent instanceof Receive || parent instanceof PrivateActivity) {
+					// IA -> XOR_m (IA_out (p) -> IA_to_XOR_m (t) -> XOR (p))
+					String idIn = parent.getName() + "_to_" + id;
+
+					createTransition(idIn, net);
+
+					createArc(parent.getNameOut(), idIn, net);
+					createArc(idIn, id, net);
+				}
+
+			}
+
+			for (IPrivateNode child : children) {
+
+				if (child instanceof Event && child.getName().equals("end")) {
+					// XOR_m -> end (XOR_m_out (t) -> XOR_m_end (p)-> end_in (t))
+					String connectorPlace = id + "_" + child.getName();
+
+					createPlace(connectorPlace, net);
+
+					createArc(idOut, connectorPlace, net);
+					createArc(connectorPlace, child.getNameIn(), net);
+				} else if (child instanceof XorGateway && child.getName().contains("_m")) {
+					// XOR1_m -> XOR0_m (XOR1_m_out (t) -> XOR0 (p))
+					createArc(idOut, child.getName(), net);
+				} else if (child instanceof XorGateway) {
+					// XOR1_m -> XOR2 (XOR1_m_out (t) -> XOR1_m_XOR2 (p) -> XOR2_in (t) )
+					String connectorPlace = id + "_" + child.getName();
+
+					createPlace(connectorPlace, net);
+
+					createArc(idOut, connectorPlace, net);
+					createArc(connectorPlace, child.getNameIn(), net);
+				} else if (child instanceof AndGateway) {
+					// XOR_m -> AND_m (XOR_m_out (t) -> XOR_m_AND (p) -> AND_m (t) )
+					// XOR_m -> AND (XOR_m_out (t) -> XOR_m_AND (p) -> AND (t))
+					String connectorPlace = id + "_" + child.getName();
+
+					createPlace(connectorPlace, net);
+
+					createArc(idOut, connectorPlace, net);
+					createArc(connectorPlace, child.getName(), net);
+				} else if (child instanceof Send || child instanceof Receive || child instanceof PrivateActivity) {
+					// XOR_m -> IA (XOR_m_out (t) -> IA_in (p))
+					createArc(idOut, child.getNameIn(), net);
+				}
+			}
+
+		} else {
+
+			createPlace(id, net);
+			String idIn = id + "_in";
+
+			createTransition(idIn, net);
+			createArc(idIn, id, net);
+
+			for (IPrivateNode child : children) {
+
+				if (child instanceof AndGateway) {
+					// XOR -> AND (XOR (p) -> AND (t) )
+					createArc(id, child.getName(), net);
+
+				} else if (child instanceof XorGateway && child.getName().contains("_m")) {
+					// Optional Branch: XOR0 -> XOR0_m (XOR0 (p) -> XOR0_to_XOR0_m (t) -> XOR0_m (p)
+					// )
+
+					String transitionOptionalBranch = id + "_to_" + child.getName();
+
+					createTransition(transitionOptionalBranch, net);
+
+					createArc(id, transitionOptionalBranch, net);
+					createArc(transitionOptionalBranch, child.getName(), net);
+
+				} else if (child instanceof XorGateway) {
+					// XOR0 -> XOR1 ( XOR1_m_out (t) -> XOR1_m_to_XOR0_m (p) -> XOR_0_m_in (t)
+
+					createArc(id, child.getNameIn(), net);
+
+				} else if (child instanceof Send || child instanceof Receive || child instanceof PrivateActivity) {
+					String idOut = id + "_to_" + child.getName();
+
+					createTransition(idOut, net);
+					createArc(id, idOut, net);
+				}
+
+			}
+
+			for (IPrivateNode parent : parents) {
+				if (parent instanceof Event && parent.getName().equals("start")) {
+					// start -> XOR (start_out (t) -> start_XOR (p) -> XOR_in (t) -> XOR
+					// (p) )
+					String connectorPlace = parent.getName() + "_" + id;
+					createPlace(connectorPlace, net);
+
+					// Start_out->Start_XOR
+					createArc(parent.getNameOut(), connectorPlace, net);
+					// Start_XOR -> XOR_in
+					createArc(connectorPlace, idIn, net);
+					// XOR_in -> XOR
+					createArc(idIn, id, net);
+				} else if (parent instanceof XorGateway && parent.getName().contains("_m")) {
+					// XOR1_m -> XOR2 (XOR1_m_out -> XOR1_m_XOR2 (p) -> XOR2_in (t))
+					String connectorPlace = parent.getName() + "_" + id;
+
+					createPlace(connectorPlace, net);
+
+					createArc(parent.getNameOut(), connectorPlace, net);
+					createArc(connectorPlace, idIn, net);
+
+				} else if (parent instanceof XorGateway) {
+					// XOR0 -> XOR1 (XOR0 (p) -> XOR1_in (t))
+					createArc(parent.getName(), idIn, net);
+
+				} else if (parent instanceof AndGateway) {
+					// AND_m -> XOR ( AND_m (t) -> AND_m_XOR (p) -> XOR_in (t))
+					// AND -> XOR (AND (t) -> AND_XOR (p) -> XOR_in (t) )
+					String connectorPlace = parent.getName() + "_" + id;
+
+					createPlace(connectorPlace, net);
+
+					createArc(parent.getName(), connectorPlace, net);
+					createArc(connectorPlace, idIn, net);
+				} else if (parent instanceof Send || parent instanceof Receive || parent instanceof PrivateActivity) {
+					// IA -> XOR (IA_out (p) -> XOR_in (t))
+					createArc(parent.getNameOut(), idIn, net);
+				}
+
+			}
+		}
+
+	}
+
+	private void createStart(Element net) {
+		createPlace("start", net);
+		createTransition("start_out", net);
+
+		createArc("start", "start_out", net);
+
+		this.alreadyCreated.add("start");
+		this.alreadyCreated.add("start_out");
+	}
+
+	private void createEnd(Element net) {
+		createPlace("end", net);
+		createTransition("end_in", net);
+
+		createArc("end_in", "end", net);
+
+		this.alreadyCreated.add("end");
+		this.alreadyCreated.add("end_in");
 	}
 
 	/**
 	 * ===================================================TAG-CREATION========================================================================
 	 */
-	
+
 	/**
 	 * Creates an arc given the source and target element
 	 * 
-	 * @param id: The id of the arc
+	 * @param id:     The id of the arc
 	 * @param source: The source of the arc
 	 * @param target: The target of the arc
 	 * 
 	 * @return an <arc>-tag
-	 * */
-	private void createArc(String sourceId, String targetId) {
-		Element arcElem = new Element("arc");
-		
-		String id = sourceId+"_to_"+targetId;
-		
-		arcElem.setAttribute("id", id);
-		
-		arcElem.setAttribute("source", sourceId);
-		arcElem.setAttribute("target", targetId);
-		
-		net.addContent(arcElem);
+	 */
+	private void createArc(String sourceId, String targetId, Element net) {
+		String id = sourceId + "_to_" + targetId;
+
+		if (!this.alreadyCreated.contains(id)) {
+			Element arcElem = new Element("arc");
+			arcElem.setAttribute("id", id);
+
+			arcElem.setAttribute("source", sourceId);
+			arcElem.setAttribute("target", targetId);
+
+			net.addContent(arcElem);
+
+			this.alreadyCreated.add(id);
+		}
+
 	}
-	
-	/**
-	 * Creates a transition element with automatic dimensions (normal transition)
-	 * 
-	 * @param id: the id of the element
-	 * @param posX: the x-coordinate of the element
-	 * @param posY: the y-coordinate of the element
-	 * 
-	 * @return a <transition>-tag
-	 * */
-	private void createTransition(String id, Integer posX, Integer posY) {
-		Element transitionElem = new Element("transition");
-		
-		transitionElem.setAttribute("id", id);
-		transitionElem.addContent(getGraphicsElement(PNMLElementEnum.TRANSITION, posX, posY));
-		
-		net.addContent(transitionElem);
-	}
-	
+
 	/**
 	 * Creates a transition element with given dimensions (synchronous task)
 	 * 
-	 * @param id: the id of the element
+	 * @param id:   the id of the element
 	 * @param posX: the x-coordinate of the element
 	 * @param posY: the y-coordinate of the element
 	 * @param dimX: the width
 	 * @param dimY: the height
 	 * 
 	 * @return a <transition>-tag
-	 * */
-	private void createTransition(String id, Integer posX, Integer posY, Integer dimX, Integer dimY) {
-		Element transitionElem = new Element("transition");
-		
-		transitionElem.setAttribute("id", id);
-		transitionElem.addContent(getGraphicsElement(posX, posY, dimX, dimY));
-		
-		net.addContent(transitionElem);
+	 */
+	private void createTransition(String id, Element net) {
+
+		if (!this.alreadyCreated.contains(id)) {
+			Element transitionElem = new Element("transition");
+			transitionElem.setAttribute("id", id);
+			net.addContent(transitionElem);
+			this.alreadyCreated.add(id);
+		}
+
 	}
-	
-	
+
 	/**
 	 * Creates a place element
 	 * 
@@ -457,100 +671,16 @@ public class ChoreographyModelToCPN {
 	 * @return a <place>-element
 	 */
 
-	private void createPlace(String id, Integer posX, Integer posY) {
-		Element placeElem = new Element("place");
+	private void createPlace(String id, Element net) {
 
-		placeElem.setAttribute("id", id);
+		if (!this.alreadyCreated.contains(id)) {
+			Element placeElem = new Element("place");
 
-		placeElem.addContent(getGraphicsElement(PNMLElementEnum.PLACE, posX, posY));
-		placeElem.addContent(getNameElement(id));
-
-		net.addContent(placeElem);
-	}
-
-	/**
-	 * Gets a graphics-tag containing the dimension and position information for a
-	 * place or transition
-	 * 
-	 * @param type: the type of the element for the graphics tag
-	 * @param posX: x-coordinate of the Position
-	 * @param posy: Y-coordinate of the Position
-	 * 
-	 * @return a <graphics>-element
-	 */
-	private Element getGraphicsElement(PNMLElementEnum type, Integer posX, Integer posY) {
-
-		if (PNMLElementEnum.PLACE.equals(type)) {
-			return getGraphicsElement(posX, posY, DIMENSION_PLACE, DIMENSION_PLACE);
-		} else if (PNMLElementEnum.TRANSITION.equals(type)) {
-			return getGraphicsElement(posX, posY, DIMENSION_TRANSITION, DIMENSION_TRANSITION);
-		} else {
-			return getGraphicsElement(posX, posY, -1, -1);
+			placeElem.setAttribute("id", id);
+			placeElem.addContent(getNameElement(id));
+			net.addContent(placeElem);
+			this.alreadyCreated.add(id);
 		}
-
-	}
-
-	
-	/**
-	 * Gets a graphics-tag containing the dimension and position information for a
-	 * place or transition
-	 * 
-	 * @param posX: x-coordinate of the Position
-	 * @param posY: Y-coordinate of the Position
-	 * @param dimX: width of the element
-	 * @param dimY: height of the element
-	 * 
-	 * @return a <graphics>-element
-	 */
-	private Element getGraphicsElement(Integer posX, Integer posY, Integer dimX, Integer dimY) {
-
-		Element graphicsElem = new Element("graphics");
-
-		Element posElem = getPositionElement(posX, posY);
-		Element dimElem = getDimensionElement(dimX, dimY);
-
-		graphicsElem.addContent(posElem);
-		graphicsElem.addContent(dimElem);
-
-		return graphicsElem;
-	}
-
-	/**
-	 * Gets a position-tag
-	 * 
-	 * @param x: The x coordinate
-	 * @param y: The y coordinate
-	 * 
-	 * @return: a <position>-Element
-	 */
-	private Element getPositionElement(Integer x, Integer y) {
-		Element posElem = new Element("position");
-		posElem.setAttribute("x", x.toString());
-		posElem.setAttribute("y", y.toString());
-
-		return posElem;
-	}
-
-	/**
-	 * Gets a dimension-element based on the given values
-	 * 
-	 * @param x: The width
-	 * @param y: The height
-	 * 
-	 * @return a <dimension>-element with the respective height
-	 */
-	private Element getDimensionElement(Integer x, Integer y) {
-
-		if (x < 0 || y < 0) {
-			throw new IllegalStateException(
-					"The creation of the dimension element failed, because neither input dimensions are positive, nor was a valid element-type given from which it could have been deducted");
-		}
-
-		Element dimElem = new Element("dimension");
-		dimElem.setAttribute("x", x.toString());
-		dimElem.setAttribute("y", y.toString());
-
-		return dimElem;
 
 	}
 
@@ -572,24 +702,5 @@ public class ChoreographyModelToCPN {
 		return nameElem;
 
 	}
-	
-	/**
-	 * Tracks the position the nodes need to have in the resulting Petri model
-	 * */
-	class Position{
-		
-		Integer x;
-		Integer y;
-		
-		Position(Integer x, Integer y){
-			this.x = x;
-			this.y = y;
-		}
-		
-		public String toString() {
-			return "("+x+","+y+")";
-		}
-	}
+
 }
-
-

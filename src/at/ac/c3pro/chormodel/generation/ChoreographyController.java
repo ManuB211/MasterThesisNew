@@ -90,6 +90,8 @@ public class ChoreographyController {
 		int interactionCount = amountHandoverOfWork + amountMessageExchange + amountRessourceSharing
 				+ amountSynchronousActivity;
 
+		boolean printPetriNetVisualizationsSeparateParticipants = configObject.getBoolean("visualizeAllCPNs");
+
 		// Here was the code from createInteractionList()
 
 		ChorModelGenerator modelGen;
@@ -163,8 +165,14 @@ public class ChoreographyController {
 				List<PrivateModel> privateModels = exportPrivateModels(choreo);
 
 				// Transform Private Models to a PNML file
-				ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, dir);
-				choreoToCPN.printXML();
+//				ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, dir);
+				ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, formattedDate);
+				try {
+					choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
+				} catch (IOException | InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
 				// Transform Models to bpmn
 				Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
@@ -223,10 +231,11 @@ public class ChoreographyController {
 
 		List<PrivateModel> rst = new ArrayList<>();
 
-		//Sort roles so we can be sure that the returned list of private models is in order 
+		// Sort roles so we can be sure that the returned list of private models is in
+		// order
 		List<Role> rolesSorted = new ArrayList<>(choreo.collaboration.roles);
 		rolesSorted.sort(Comparator.comparing(Role::getName));
-		
+
 		// Export private model graphs
 		for (Role role : rolesSorted) {
 			IPrivateModel prModel = choreo.R2PrM.get(role);

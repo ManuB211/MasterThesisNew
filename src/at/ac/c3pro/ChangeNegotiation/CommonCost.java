@@ -5,12 +5,12 @@ import at.ac.c3pro.chormodel.Collaboration;
 
 public class CommonCost extends Cost {
 
-	public CommonCost() {
-		super();
-	}
+    public CommonCost() {
+        super();
+    }
 
-	public void calculatecost(CommonBO po, Collaboration co, ChangeOperation op) {
+    public void calculatecost(CommonBO po, Collaboration co, ChangeOperation op) {
 
-	}
+    }
 
 }

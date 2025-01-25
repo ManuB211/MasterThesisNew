@@ -6,17 +6,17 @@ import at.ac.c3pro.chormodel.IRole;
 
 public interface IChangeOperation {
 
-	public void Propagate();
+    void Propagate();
 
-	public void Decompose();
+    void Decompose();
 
-	public String getId();
+    String getId();
 
-	public ChgOpType getType();
+    ChgOpType getType();
 
-	public void setChoreography(Choreography c);
+    void setChoreography(Choreography c);
 
-	public IRole getCurrentRole();
+    IRole getCurrentRole();
 
-	public int getNb_nodes();
+    int getNb_nodes();
 }

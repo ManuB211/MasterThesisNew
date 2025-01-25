@@ -6,21 +6,21 @@ import at.ac.c3pro.chormodel.Role;
 
 public class PublicCost extends Cost {
 
-	Role partner;
+    Role partner;
 
-	public PublicCost(Role partner) {
-		super();
-		this.partner = partner;
-	}
+    public PublicCost(Role partner) {
+        super();
+        this.partner = partner;
+    }
 
-	public void calculatecost(PublicBO po, PublicModel pm, ChangeOperation op) {
+    public void calculatecost(PublicBO po, PublicModel pm, ChangeOperation op) {
 
-	}
+    }
 
-	public String toString() {
+    public String toString() {
 
-		// return "("+partner +","+super.toString()+")";
-		return super.toString();
-	}
+        // return "("+partner +","+super.toString()+")";
+        return super.toString();
+    }
 
 }

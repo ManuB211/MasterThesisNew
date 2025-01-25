@@ -1,41 +1,181 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="ec2e7313-cace-4265-bb9c-8817a99b10c2" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/Negotiationresults/NegotiationLog0.csv" beforeDir="false" afterPath="$PROJECT_DIR$/Negotiationresults/NegotiationLog0.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.lock_info" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.mylyn/.taskListIndex/segments_1" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.mylyn/.taskListIndex/write.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.mylyn/.tasks.xml.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.mylyn/repositories.xml.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.mylyn/tasks.xml.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.buildship.core/gradle/versions.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.resources/.projects/.org.eclipse.egit.core.cmp/.location" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.resources/.root/.indexes/history.version" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.resources/.root/.indexes/properties.index" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.resources/.root/.indexes/properties.version" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.resources/.root/4.tree" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.resources/.safetable/org.eclipse.core.resources" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.core.resources.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.egit.core.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.egit.ui.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.jdt.ui.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.m2e.discovery.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.mylyn.context.core.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.mylyn.monitor.ui.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.mylyn.tasks.ui.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.ide.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.navigator.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.ui.workbench.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.e4.workbench/workbench.xmi" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.egit.core/.org.eclipse.egit.core.cmp/.project" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.egit.core/.org.eclipse.egit.core.cmp/.settings/org.eclipse.core.resources.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.egit.ui/dialog_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.jdt.core/assumedExternalFilesCache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.jdt.core/externalFilesCache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.jdt.core/javaLikeNames.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.jdt.core/nonChainingJarsCache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.jdt.core/variablesAndContainers.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.jdt.ui/OpenTypeHistory.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.jdt.ui/QualifiedTypeNameHistory.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.jdt.ui/dialog_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.m2e.core/workspaceState.ser" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.m2e.logback/0.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.m2e.logback/logback.2.7.0.20241001-1350.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.mylyn.github.ui/avatars.ser" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.oomph.setup/workspace.setup" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.tips.ide/dialog_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.ui.ide/dialog_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.ui.intro/introstate" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.ui.workbench/dialog_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/.plugins/org.eclipse.ui.workbench/workingsets.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.metadata/version.ini" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/BusinessObjective.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/BusinessObjective.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/CombinedCost.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/CombinedCost.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/CommonBO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/CommonBO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/CommonCost.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/CommonCost.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/Cost.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/Cost.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/NegotiationSimulation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/NegotiationSimulation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/OpaqueNegotiation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/OpaqueNegotiation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/OpaqueNegotiationAlternative.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/OpaqueNegotiationAlternative.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/PrivateBO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/PrivateBO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/PrivateCost.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/PrivateCost.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/PublicBO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/PublicBO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/PublicCost.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/PublicCost.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/SinglePartnerAlternative.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/SinglePartnerAlternative.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/TransparentNegotiation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ChangeNegotiation/TransparentNegotiation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ImpactAnalysis/ImpactAnalysisUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ImpactAnalysis/ImpactAnalysisUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/ImpactAnalysis/package-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/ImpactAnalysis/package-info.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/change/ChangeOperation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/change/ChangeOperation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/change/Delete.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/change/Delete.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/change/IChangeOperation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/change/IChangeOperation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/change/Insert.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/change/Insert.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/change/Replace.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/change/Replace.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/change/Update.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/change/Update.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/changePropagation/ChangePropagationUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/changePropagation/ChangePropagationUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/changePropagation/Stats.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/changePropagation/Stats.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/changePropagation/package-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/changePropagation/package-info.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/Choreography.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/Choreography.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/ChoreographyModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/ChoreographyModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/Collaboration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/Collaboration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IPrivateModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IPrivateModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IPublicModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IPublicModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IRole.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IRole.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IRpstModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IRpstModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/MultiDirectedGraph.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/MultiDirectedGraph.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/PrivateModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/PrivateModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/Public2PrivateMap.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/Public2PrivateMap.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/PublicModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/PublicModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/Role.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/Role.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/CoAbsent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/CoAbsent.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/CoExists.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/CoExists.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/CoRequisite.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/CoRequisite.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/ComplianceController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/ComplianceController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/CompliancePattern.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/CompliancePattern.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/ComplianceRulesGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/ComplianceRulesGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/Exclusive.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/Exclusive.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/Exists.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/Exists.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/LeadsTo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/LeadsTo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/OccurrencePattern.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/OccurrencePattern.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/OrderPattern.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/OrderPattern.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/PLeadsTo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/PLeadsTo.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/Precedes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/Precedes.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/Universal.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/Universal.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/XLeadsTo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/compliance/XLeadsTo.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/Branch.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/Branch.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChorModelGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChorModelGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/Controller.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChoreopraphyController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChoreographyController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChoreographyController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/FragmentGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/FragmentGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/GenerationLogger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/GenerationLogger.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/PublicModelsGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/PublicModelsGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/Split.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/Split.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/SplitTracking.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/SplitTracking.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/Bpmn2ChoreographyModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/Bpmn2ChoreographyModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/Bpmn2Collaboration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/Bpmn2Collaboration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/Bpmn2PrivateModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/Bpmn2PrivateModel.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModel2Bpmn.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModel2Bpmn.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN2.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/Collaboration2Bpmn.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/Collaboration2Bpmn.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/Json2ChoreographyModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/Json2ChoreographyModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/Json2PrivateModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/Json2PrivateModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/Json2PublicModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/Json2PublicModel.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/PrivateModel2Bpmn.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/PrivateModel2Bpmn.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/AndGateway.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/AndGateway.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/ChoreographyNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/ChoreographyNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/Edge.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/Edge.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/Event.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/Event.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/Gateway.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/Gateway.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/IChoreographyNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/IChoreographyNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/IEdge.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/IEdge.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/IEvent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/IEvent.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/IGateway.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/IGateway.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/INode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/INode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/IPrivateNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/IPrivateNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/IPublicNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/IPublicNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/Interaction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/Interaction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/InteractionActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/InteractionActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/Message.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/Message.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/Node.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/Node.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/PrivateActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/PrivateActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/PrivateNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/PrivateNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/PublicActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/PublicActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/PublicNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/PublicNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/Receive.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/Receive.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/Send.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/Send.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/node/XorGateway.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/node/XorGateway.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Bpmn2ChoreographyTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Bpmn2ChoreographyTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Bpmn2CollaborationTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Bpmn2CollaborationTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Bpmn2PrivateModelTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Bpmn2PrivateModelTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Choreography2BpmnTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Choreography2BpmnTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/ChoreographyModelTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/ChoreographyModelTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/ChoreographyTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/ChoreographyTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Collaboration2BpmnTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Collaboration2BpmnTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/NodeTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/NodeTests.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/PrivateModel2BpmnTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/PrivateModel2BpmnTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/PrivateModelTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/PrivateModelTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/PropagationThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/PropagationThread.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/PublicModelTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/PublicModelTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Rpsttest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Rpsttest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Rpsttest2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/Rpsttest2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/tests/bpmn2ChoreographyModelTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/tests/bpmn2ChoreographyModelTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/ChoreographyGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/ChoreographyGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/BookTripOperation.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/Book_Trip_OperationExtended.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/Book_Trip_OperationExtended2.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/Book_Trip_OperationExtended3.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/Book_Trip_OperationExtended4.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/Book_Trip_OperationExtended5.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/CentralityMatrix.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/ChangePropagationLog.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/ChangePropagationStats.xls" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/CollaborationBookTripV3.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/choreo2BPMNtest.bpmn" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/choreo2BPMNtest.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/collab2BPMNtest.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/collaborationV1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/FragmentUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/FragmentUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/HOWHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/HOWHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/Util.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/Util.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/WeightedRandomSelection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/WeightedRandomSelection.java" afterDir="false" />
     </list>
-    <ignored path="$PROJECT_DIR$/out/" />
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -183,6 +323,9 @@
       <find>processNO</find>
     </findStrings>
   </component>
+  <component name="FormatOnSaveOptions">
+    <option name="myRunOnSave" value="true" />
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -217,12 +360,22 @@
   <component name="NodePackageJsonFileManager">
     <packageJsonPaths />
   </component>
+  <component name="OptimizeOnSaveOptions">
+    <option name="myRunOnSave" value="true" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
   <component name="ProjectFrameBounds">
     <option name="x" value="1937" />
     <option name="y" value="46" />
     <option name="width" value="1920" />
     <option name="height" value="1177" />
   </component>
+  <component name="ProjectId" id="2s7fDYgJEToz7TeQuAeNmilcFOy" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
@@ -276,32 +429,26 @@
       <pane id="PackagesPane" />
     </panes>
   </component>
-  <component name="PropertiesComponent">
-    <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1552574116033" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
-    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
-  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.ChoreographyController.executor": "Debug",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Admin/Desktop/Implementierung/data",
+    "settings.editor.selected.configurable": "actions.on.save"
+  }
+}]]></component>
   <component name="RunManager">
-    <configuration name="ChoreopraphyController" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="at.ac.c3pro.chormodel.generation.ChoreopraphyController" />
-      <module name="Data" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <configuration name="ChoreographyController" type="Application" factoryName="Application" temporary="true">
+      <option name="MAIN_CLASS_NAME" value="at.ac.c3pro.chormodel.generation.ChoreographyController" />
+      <module name="Version1" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="at.ac.c3pro.chormodel.generation.*" />
@@ -336,10 +483,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.ChoreopraphyController" />
+        <item itemvalue="Application.ChoreographyController" />
       </list>
     </recent_temporary>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>

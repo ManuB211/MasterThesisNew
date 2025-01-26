@@ -2,6 +2,7 @@ package at.ac.c3pro.io;
 
 import at.ac.c3pro.chormodel.PrivateModel;
 import at.ac.c3pro.node.*;
+import at.ac.c3pro.node.Interaction.InteractionType;
 import org.jbpt.graph.abs.IDirectedGraph;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -11,10 +12,7 @@ import org.jdom.output.XMLOutputter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ChoreographyModelToCPN {
@@ -24,50 +22,204 @@ public class ChoreographyModelToCPN {
     private final List<String> alreadyVisited;
 
     private final List<String> alreadyCreated;
+    private final List<String> alreadyCreatedGlobal;
 
     private final File outputFolder;
     private static String formattedDate;
 
-    // The parent element of all the petri net tags
-//	private Element net;
+    // The parent element of the complete CPN
+
 
     private final Map<String, Element> privateNets;
+
+    //Needed for the creation of the global petri net
+    private Element netComplete;
+
+    private List<Element> netCompleteElementsWithoutRelevantSync;
+    private List<Element> netCompleteElementsRelevantSync;
+
+    private Map<InteractionType, List<String>> interactionTransitions;
+
+    private int currentParticipant;
+    private boolean globalStartCreated;
+    private boolean globalEndCreated;
+
 
     public ChoreographyModelToCPN(List<PrivateModel> pPrivateModels, String pFormattedDate) throws IOException {
         this.privateModels = pPrivateModels;
         formattedDate = pFormattedDate;
         this.alreadyVisited = new ArrayList<>();
         this.alreadyCreated = new ArrayList<>();
+        this.alreadyCreatedGlobal = new ArrayList<>();
         this.privateNets = new HashMap<>();
+
+        //Initialize the datastructure to save the interaction-transitions
+        this.interactionTransitions = new HashMap<>();
+        this.interactionTransitions.put(InteractionType.HANDOVER_OF_WORK, new ArrayList<>());
+        this.interactionTransitions.put(InteractionType.MESSAGE_EXCHANGE, new ArrayList<>());
+        this.interactionTransitions.put(InteractionType.SHARED_RESOURCE, new ArrayList<>());
+        this.interactionTransitions.put(InteractionType.SYNCHRONOUS_ACTIVITY, new ArrayList<>());
 
         this.outputFolder = createOutputFolder();
 
-        System.out.println("***********************************************************************************");
-        System.out.println("***********************************************************************************");
-        System.out.println("***********************************************************************************");
-        System.out.println("Private Models: " + this.privateModels.size());
-        System.out.println("***********************************************************************************");
-        System.out.println("***********************************************************************************");
-        System.out.println("***********************************************************************************");
+        this.netComplete = new Element("net");
+        this.netComplete.setAttribute("type", "http://www.yasper.org/specs/epnml-1.1"); // TODO
+        this.netComplete.setAttribute("id", "CPN_complete");
+
+        this.netCompleteElementsWithoutRelevantSync = new ArrayList<>();
+        this.netCompleteElementsRelevantSync = new ArrayList<>();
 
         // Generate petri model for each private model of the participants
         for (int i = 0; i < privateModels.size(); i++) {
+
+            this.currentParticipant = i;
 
             this.alreadyCreated.clear();
             this.alreadyVisited.clear();
 
             String cpnId = "CPN" + i;
 
-            System.out.println("******************************************************");
-            System.out.println("******************************************************");
-            System.out.println("Starting Petri Net generation for participant " + i);
-            System.out.println("******************************************************");
-            System.out.println("******************************************************");
 
-            this.privateNets.putIfAbsent(cpnId, this.buildPNMLForSingleParticipant(privateModels.get(i), cpnId));
+            this.privateNets.putIfAbsent(cpnId, buildPNMLForSingleParticipant(privateModels.get(i), cpnId));
+        }
+
+        createPetriNetInteractions();
+
+        buildGlobalPetriNet();
+
+    }
+
+    private void buildGlobalPetriNet() {
+
+        //Build a map in which "wrongly" named transitions map to the correct ones
+        Map<String, String> replacementTransitions = new HashMap<>();
+        Set<String> transitionsToCreate = new HashSet<>();
+
+        Iterator<Element> iter = this.netCompleteElementsRelevantSync.iterator();
+        while (iter.hasNext()) {
+            Element currElem = iter.next();
+
+            if (currElem.getName().equals("transition")) {
+
+                String transId = currElem.getAttributeValue("id");
+
+                String correctTransId = transId.split(" ")[0] + " " + transId.split(" ")[1];
+
+                replacementTransitions.putIfAbsent(transId, correctTransId);
+                transitionsToCreate.add(correctTransId);
+                iter.remove();
+            }
+        }
+
+        //Create new transitions
+        for (String transitionId : transitionsToCreate) {
+            createTransitionGlobal(transitionId);
+        }
+
+        //Add all the elements that dont need special handling + newly created transitions (sync tasks)
+        for (Element elem : this.netCompleteElementsWithoutRelevantSync) {
+            this.netComplete.addContent(elem);
+        }
+
+        //iterate over the remaining elements (arcs)
+        for (Element arcElem : this.netCompleteElementsRelevantSync) {
+
+            String sourceReplacement = replacementTransitions.getOrDefault(arcElem.getAttributeValue("source"), null);
+            String targetReplacement = replacementTransitions.getOrDefault(arcElem.getAttributeValue("target"), null);
+
+            if (sourceReplacement != null) {
+                arcElem.setAttribute("source", sourceReplacement);
+            }
+
+            if (targetReplacement != null) {
+                arcElem.setAttribute("target", targetReplacement);
+            }
+        }
+
+        //Add the corrected sync tasks to the global petri net
+        for (Element elem : this.netCompleteElementsRelevantSync) {
+            this.netComplete.addContent(elem);
         }
 
     }
+
+    /**
+     * Builds the connections in the global petri net on the basis of the generated transactions representing the interactions
+     */
+    private void createPetriNetInteractions() {
+
+        List<String> msgAndHow = this.interactionTransitions.get(InteractionType.MESSAGE_EXCHANGE);
+        msgAndHow.addAll(this.interactionTransitions.get(InteractionType.HANDOVER_OF_WORK));
+        Collections.sort(msgAndHow);
+
+        createPetriNetInteractionsMsgAndHow(msgAndHow);
+
+        List<String> resourceShare = this.interactionTransitions.get(InteractionType.SHARED_RESOURCE);
+        Collections.sort(resourceShare);
+
+        createPetriNetInteractionsSharedResource(resourceShare);
+
+//        List<String> synchronousTask = this.interactionTransitions.get(InteractionType.SYNCHRONOUS_ACTIVITY);
+//        Collections.sort(synchronousTask);
+//
+//        createPetriNetInteractionsSynchronousTask(synchronousTask);
+    }
+
+    /**
+     * Creates the connections in the global petri net for the types Hanover-of-Work and Message Exchange
+     * Both cases are a connection from the sending participants transaction to a message channel (place) and from there to the
+     * to the receiving participants transaction
+     */
+    private void createPetriNetInteractionsMsgAndHow(List<String> interactions) {
+
+        //As the list is lexicographically ordered we can be sure at that point that (if every HOW/MSG has a corresponding part)
+        //that they will be at subsequent indices in the order receiver, sender.
+
+        for (int i = 0; i < interactions.size() - 2; i += 2) {
+
+            String sender = interactions.get(i + 1), receiver = interactions.get(i);
+
+            //Create the place
+            String idGlobalPlace = sender.split("\\(")[0];
+            createPlaceGlobal(idGlobalPlace);
+
+            //Create Arcs from and to the place
+            createArcGlobal(sender, idGlobalPlace);
+            createArcGlobal(idGlobalPlace, receiver);
+        }
+    }
+
+    /**
+     * Creates the connections in the global petri net of the type Shared Resource.
+     * For such interactions, there are two connections from the senders as well as the receivers transition
+     * to the shared resource (place); One going to the place, one coming from the place
+     */
+    private void createPetriNetInteractionsSharedResource(List<String> interactions) {
+
+        for (int i = 0; i < interactions.size() - 2; i += 2) {
+            String participant1 = interactions.get(i), participant2 = interactions.get(i + 1);
+
+            //Create the place
+            String idGlobalPlace = participant1.split("\\(")[0];
+            createPlaceGlobal(idGlobalPlace);
+
+            //Create the arcs: p1 -> sr, sr -> p1, p2 -> sr, sr -> p2
+            createArcGlobal(participant1, idGlobalPlace);
+            createArcGlobal(idGlobalPlace, participant1);
+            createArcGlobal(participant2, idGlobalPlace);
+            createArcGlobal(idGlobalPlace, participant2);
+
+        }
+    }
+
+//    private void createPetriNetInteractionsSynchronousTask(List<String> interactions) {
+//
+//        for (int i = 0; i < interactions.size() - 2; i += 2) {
+//            String participant1 = interactions.get(i), participant2 = interactions.get(i+1);
+//
+//            this.netComplete.remove
+//        }
+//    }
 
     /**
      * Builds the PNML model for a single participant
@@ -88,15 +240,12 @@ public class ChoreographyModelToCPN {
         // Create place for the start event
         createPlace(start.getName(), netCurr);
 
-        System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+//        System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
         this.buildPetriNet(participantModelGraph, start, netCurr);
 
-        System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+//        System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
-//		for (Edge<IPrivateNode> e : participantModel.getdigraph().getEdges()) {
-//			System.out.println(e);
-//		}
         return netCurr;
     }
 
@@ -135,6 +284,7 @@ public class ChoreographyModelToCPN {
                 }
             } else if (node instanceof Send || node instanceof Receive || node instanceof PrivateActivity) {
                 createInteractionOrPrivateActivity(node.getName(), nodeChildren, nodeParents, netCurr);
+                trackNodeForBuildingOverallPetriNet(node.getName());
             } else if (node instanceof AndGateway) {
                 createAnd(node.getName(), nodeChildren, nodeParents, netCurr);
             } else if (node instanceof XorGateway) {
@@ -143,13 +293,13 @@ public class ChoreographyModelToCPN {
                 throw new IllegalArgumentException("Received node that is of no valid type");
             }
 
-            System.out.println("Current Node:");
-            System.out.println(node);
-            System.out.println("Child Nodes:");
-            System.out.println(nodeChildren);
-            System.out.println("Parent Nodes:");
-            System.out.println(nodeParents);
-            System.out.println("-------------------------------------------------------------------");
+//            System.out.println("Current Node:");
+//            System.out.println(node);
+//            System.out.println("Child Nodes:");
+//            System.out.println(nodeChildren);
+//            System.out.println("Parent Nodes:");
+//            System.out.println(nodeParents);
+//            System.out.println("-------------------------------------------------------------------");
 
             this.alreadyVisited.add(node.getId());
         }
@@ -167,20 +317,10 @@ public class ChoreographyModelToCPN {
     public void printXMLs(boolean visualRepresentation) throws IOException, InterruptedException {
 
         for (Map.Entry<String, Element> privModelCPN : this.privateNets.entrySet()) {
-            Document doc = new Document();
-            Element pnml = new Element("pnml");
-
-            pnml.setContent(privModelCPN.getValue());
-            doc.setRootElement(pnml);
-
-            XMLOutputter xmlOutput = new XMLOutputter();
-
-            // Pretty Print
-            xmlOutput.setFormat(Format.getPrettyFormat());
-
-            String cpnName = "/" + privModelCPN.getKey() + ".pnml";
-            xmlOutput.output(doc, new FileWriter(outputFolder + cpnName));
+            printOneXML(privModelCPN.getKey(), privModelCPN.getValue());
         }
+
+        printOneXML("CPN_complete", this.netComplete);
 
         if (visualRepresentation) {
             ProcessBuilder processBuilder = new ProcessBuilder("python", "resources/generatePetrinetVisualization.py",
@@ -191,6 +331,22 @@ public class ChoreographyModelToCPN {
             process.waitFor();
         }
 
+    }
+
+    private void printOneXML(String name, Element element) throws IOException {
+        Document doc = new Document();
+        Element pnml = new Element("pnml");
+
+        pnml.setContent(element);
+        doc.setRootElement(pnml);
+
+        XMLOutputter xmlOutput = new XMLOutputter();
+
+        // Pretty Print
+        xmlOutput.setFormat(Format.getPrettyFormat());
+
+        String cpnName = "/" + name + ".pnml";
+        xmlOutput.output(doc, new FileWriter(outputFolder + cpnName));
     }
 
     /**
@@ -211,6 +367,25 @@ public class ChoreographyModelToCPN {
         }
 
         return dir;
+    }
+
+    private void trackNodeForBuildingOverallPetriNet(String name) {
+        String messageType = name.split(":")[0];
+
+        switch (messageType) {
+            case "H":
+                this.interactionTransitions.get(InteractionType.HANDOVER_OF_WORK).add(localIdToGlobalId(name));
+                break;
+            case "M":
+                this.interactionTransitions.get(InteractionType.MESSAGE_EXCHANGE).add(localIdToGlobalId(name));
+                break;
+            case "R":
+                this.interactionTransitions.get(InteractionType.SHARED_RESOURCE).add(localIdToGlobalId(name));
+                break;
+            case "S":
+                this.interactionTransitions.get(InteractionType.SYNCHRONOUS_ACTIVITY).add(localIdToGlobalId(name));
+                break;
+        }
     }
 
     /**
@@ -596,92 +771,242 @@ public class ChoreographyModelToCPN {
     }
 
     private void createStart(Element net) {
+        if (!globalStartCreated) {
+            createGlobalStart();
+        }
+
         createPlace("start", net);
         createTransition("start_out", net);
 
         createArc("start", "start_out", net);
 
+        //Connect start_global_out to the local start
+        createArcGlobal("start_global_out", localIdToGlobalId("start"));
+
         this.alreadyCreated.add("start");
         this.alreadyCreated.add("start_out");
     }
 
+    private void createGlobalStart() {
+        //Create global start place
+        String idPlace = "start_global";
+
+        createPlaceGlobal(idPlace);
+
+        //Create global start_out transition
+        String idTransition = "start_global_out";
+        createTransitionGlobal(idTransition);
+
+        //Create arc  between start_global and start_global_out
+        createArcGlobal(idPlace, idTransition);
+
+        this.globalStartCreated = true;
+    }
+
     private void createEnd(Element net) {
+        if (!globalEndCreated) {
+            createGlobalEnd();
+        }
+
         createPlace("end", net);
         createTransition("end_in", net);
 
         createArc("end_in", "end", net);
 
+        //Connect local end to the end_global_in
+        createArcGlobal(localIdToGlobalId("end"), "end_global_in");
+
         this.alreadyCreated.add("end");
         this.alreadyCreated.add("end_in");
+    }
+
+    private void createGlobalEnd() {
+        //Create global end_in transition
+
+        String idTransition = "end_global_in";
+        createTransitionGlobal(idTransition);
+
+        //Create global end place
+        String idPlace = "end_global";
+        createPlaceGlobal(idPlace);
+
+        //Create arc  between start_global and start_global_out
+        createArcGlobal(idTransition, idPlace);
+
+        this.globalEndCreated = true;
     }
 
     /**
      * ===================================================TAG-CREATION========================================================================
      */
 
+
+    /***
+     *  Wrapper method to generate arc that needs to be in the local and global petri net
+     */
+    private void createArc(String sourceId, String targetId, Element net) {
+        createArcImpl(sourceId, targetId, net, false);
+    }
+
+    /**
+     * Wrapper method to generate arc that only needs to be in the global petri net
+     */
+    private void createArcGlobal(String sourceId, String targetId) {
+        createArcImpl(sourceId, targetId, this.netComplete, true);
+    }
+
     /**
      * Creates an arc given the source and target element
      *
-     * @param id:     The id of the arc
-     * @param source: The source of the arc
-     * @param target: The target of the arc
+     * @param sourceId: The source of the arc
+     * @param targetId: The target of the arc
+     * @param net:      The net to add the arc in
      * @return an <arc>-tag
      */
-    private void createArc(String sourceId, String targetId, Element net) {
+    private void createArcImpl(String sourceId, String targetId, Element net, boolean onlyGlobal) {
         String id = sourceId + "_to_" + targetId;
 
         if (!this.alreadyCreated.contains(id)) {
-            Element arcElem = new Element("arc");
-            arcElem.setAttribute("id", id);
 
-            arcElem.setAttribute("source", sourceId);
-            arcElem.setAttribute("target", targetId);
+            if (!onlyGlobal) {
+                //Add to local petri net
+                Element arcElem = new Element("arc");
 
-            net.addContent(arcElem);
+                arcElem.setAttribute("id", id);
+
+                arcElem.setAttribute("source", sourceId);
+                arcElem.setAttribute("target", targetId);
+
+                net.addContent(arcElem);
+            }
+
+            //add to global petri net
+            Element arcElemGlobal = new Element("arc");
+
+            arcElemGlobal.setAttribute("id", onlyGlobal ? id : localIdToGlobalId(id));
+
+            arcElemGlobal.setAttribute("source", onlyGlobal ? sourceId : localIdToGlobalId(sourceId));
+            arcElemGlobal.setAttribute("target", onlyGlobal ? targetId : localIdToGlobalId(targetId));
+
+            boolean isSourceSyncTask = sourceId.startsWith("S: ");
+            boolean isTargetSyncTask = targetId.startsWith("S: ");
+
+            if (isSourceSyncTask && isTargetSyncTask)
+                this.netCompleteElementsRelevantSync.add(arcElemGlobal);
+            else
+                this.netCompleteElementsWithoutRelevantSync.add(arcElemGlobal);
+//            this.netComplete.addContent(arcElemGlobal);
+
 
             this.alreadyCreated.add(id);
         }
 
+    }
+
+    /***
+     *  Wrapper method to generate transition that needs to be in the local and global petri net
+     */
+    private void createTransition(String id, Element net) {
+        createTransitionImpl(id, net, false);
+    }
+
+    /**
+     * Wrapper method to generate transition that only needs to be in the global petri net
+     */
+    private void createTransitionGlobal(String id) {
+        createTransitionImpl(id, this.netComplete, true);
     }
 
     /**
      * Creates a transition element with given dimensions (synchronous task)
      *
-     * @param id:   the id of the element
-     * @param posX: the x-coordinate of the element
-     * @param posY: the y-coordinate of the element
-     * @param dimX: the width
-     * @param dimY: the height
+     * @param id:  the id of the element
+     * @param net: the net to add the transition in
      * @return a <transition>-tag
      */
-    private void createTransition(String id, Element net) {
+    private void createTransitionImpl(String id, Element net, boolean onlyGlobal) {
+
 
         if (!this.alreadyCreated.contains(id)) {
-            Element transitionElem = new Element("transition");
-            transitionElem.setAttribute("id", id);
-            net.addContent(transitionElem);
+
+            if (!onlyGlobal) {
+                //add to local petri net
+                Element transitionElem = new Element("transition");
+
+                transitionElem.setAttribute("id", id);
+                net.addContent(transitionElem);
+            }
+
+            //add to global petri net
+            Element transitionElemGlobal = new Element("transition");
+
+            transitionElemGlobal.setAttribute("id", onlyGlobal ? id : localIdToGlobalId(id));
+
+            boolean isRelevantSyncTask = id.startsWith("S: ") && !id.contains("_to_");
+
+            if (isRelevantSyncTask)
+                this.netCompleteElementsRelevantSync.add(transitionElemGlobal);
+            else
+                this.netCompleteElementsWithoutRelevantSync.add(transitionElemGlobal);
+
+//            this.netComplete.addContent(transitionElemGlobal);
+
             this.alreadyCreated.add(id);
         }
 
     }
 
+    /***
+     *  Wrapper method to generate place that needs to be in the local and global petri net
+     */
+    private void createPlace(String id, Element net) {
+        createPlaceImpl(id, net, false);
+    }
+
+    /**
+     * Wrapper method to generate place that only needs to be in the global petri net
+     */
+    private void createPlaceGlobal(String id) {
+        createPlaceImpl(id, this.netComplete, true);
+    }
+
     /**
      * Creates a place element
      *
-     * @param id:   The id of the place (will also be the name)
-     * @param posX: The x-coord of the position
-     * @param posY: The y-coord of the position
+     * @param id:  The id of the place (will also be the name)
+     * @param net: the net to add the place in
      * @return a <place>-element
      */
 
-    private void createPlace(String id, Element net) {
+    private void createPlaceImpl(String id, Element net, boolean onlyGlobal) {
 
         if (!this.alreadyCreated.contains(id)) {
-            Element placeElem = new Element("place");
 
-            placeElem.setAttribute("id", id);
-            placeElem.addContent(getNameElement(id));
-            net.addContent(placeElem);
+            if (!onlyGlobal) {
+                //add to local petri net
+                Element placeElem = new Element("place");
+
+                placeElem.setAttribute("id", id);
+                placeElem.addContent(getNameElement(id));
+                net.addContent(placeElem);
+            }
+
+            //add to global petri net
+            Element placeElemGlobal = new Element("place");
+
+            String globalId = onlyGlobal ? id : localIdToGlobalId(id);
+            placeElemGlobal.setAttribute("id", globalId);
+            placeElemGlobal.addContent(getNameElement(globalId));
+
+            boolean isSyncTask = id.startsWith("S: ");
+
+//            if (isSyncTask)
+//                this.netCompleteElementsRelevantSync.add(placeElemGlobal);
+//            else
+            this.netCompleteElementsWithoutRelevantSync.add(placeElemGlobal);
+
+//            this.netComplete.addContent(placeElemGlobal);
+
             this.alreadyCreated.add(id);
         }
 
@@ -703,6 +1028,10 @@ public class ChoreographyModelToCPN {
 
         return nameElem;
 
+    }
+
+    private String localIdToGlobalId(String localId) {
+        return localId + "(P" + this.currentParticipant + ")";
     }
 
 }

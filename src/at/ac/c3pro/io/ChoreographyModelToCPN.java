@@ -175,7 +175,7 @@ public class ChoreographyModelToCPN {
         //As the list is lexicographically ordered we can be sure at that point that (if every HOW/MSG has a corresponding part)
         //that they will be at subsequent indices in the order receiver, sender.
 
-        for (int i = 0; i < interactions.size() - 2; i += 2) {
+        for (int i = 0; i < interactions.size() - 1; i += 2) {
 
             String sender = interactions.get(i + 1), receiver = interactions.get(i);
 

@@ -334,10 +334,8 @@ public class ChorModelGenerator {
     /**
      * Creates a new node of the given node type and returns it
      *
-     * @param nodeType:                 The node type that the created node will
-     *                                  have
-     * @param possibleInteractionTypes: The interaction types a Interaction node can
-     *                                  have
+     * @param nodeType: The node type that the created node will
+     *                  have
      * @return the created node
      */
     private IChoreographyNode getNextNode(NodeType nodeType) {

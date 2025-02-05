@@ -24,9 +24,43 @@ public class PrivateModel extends RpstModel<Edge<IPrivateNode>, IPrivateNode> im
         for (IPrivateNode node : this.diGraph.getVertices()) {
             if ((node instanceof Event) || (node instanceof Gateway) || (node instanceof InteractionActivity)) {
                 for (IPrivateNode successor : this.getnextInteractionOrGateway(node)) {
+
                     graph.addEdge((IPublicNode) node, (IPublicNode) successor);
+
+
                 }
             }
+        }
+        PuM = new PublicModel(graph, this.getName() + "Interface");
+        return PuM;
+    }
+
+    public IPublicModel BehavioralInterface2() {
+        IPublicModel PuM = null;
+        MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph = new MultiDirectedGraph<Edge<IPublicNode>, IPublicNode>();
+        for (IPrivateNode node : this.diGraph.getVertices()) {
+
+            for (IPrivateNode successor : this.getnextInteractionOrGateway2(node)) {
+                try {
+                    graph.addEdge((IPublicNode) node, (IPublicNode) successor);
+                } catch (ClassCastException e) {
+                    try {
+                        graph.addEdge(((PrivateActivity) node).getPublicActivity(), (IPublicNode) successor);
+                    } catch (ClassCastException e2) {
+                        try {
+                            graph.addEdge((IPublicNode) node, ((PrivateActivity) successor).getPublicActivity());
+                        } catch (ClassCastException e3) {
+                            try {
+                                graph.addEdge(((PrivateActivity) node).getPublicActivity(), ((PrivateActivity) successor).getPublicActivity());
+                            } catch (ClassCastException e4) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+
+            }
+
         }
         PuM = new PublicModel(graph, this.getName() + "Interface");
         return PuM;
@@ -36,6 +70,16 @@ public class PrivateModel extends RpstModel<Edge<IPrivateNode>, IPrivateNode> im
      * @return this function returns the list of next nodes of type gateway,
      * InteractionActivity or Event of a given node
      */
+
+    public List<IPrivateNode> getnextInteractionOrGateway2(IPrivateNode node) {
+        List<IPrivateNode> L = new LinkedList<IPrivateNode>();
+        if (this.diGraph.getDirectSuccessors(node).size() > 0)
+            for (IPrivateNode n : this.diGraph.getDirectSuccessors(node)) {
+                L.add(n);
+            }
+
+        return L;
+    }
 
     public List<IPrivateNode> getnextInteractionOrGateway(IPrivateNode node) {
         List<IPrivateNode> L = new LinkedList<IPrivateNode>();

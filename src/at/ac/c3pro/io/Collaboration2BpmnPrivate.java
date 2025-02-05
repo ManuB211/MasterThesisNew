@@ -1,0 +1,318 @@
+package at.ac.c3pro.io;
+
+import at.ac.c3pro.chormodel.*;
+import at.ac.c3pro.chormodel.generation.FragmentGenerator;
+import at.ac.c3pro.node.*;
+import org.jdom.Attribute;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.Namespace;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+
+public class Collaboration2BpmnPrivate {
+
+    static Namespace BPMN2NS = Namespace.getNamespace("http://www.omg.org/spec/BPMN/20100524/MODEL");
+
+    private Collaboration collab = null;
+    private String formattedDate;
+    private Choreography choreo = null;
+    private final String name;
+    private final List<Element> processes = new ArrayList<Element>();
+    private final Set<Element> messages = new HashSet<Element>();
+    private final Set<Element> participants = new HashSet<Element>();
+    private final Set<Element> messageFlows = new HashSet<Element>();
+    private final Map<String, String> operationRefs = new HashMap<String, String>();
+
+    private final String outputFolder;
+
+    public enum GatewayDirection {
+        Diverging, Converging
+    }
+
+    public Collaboration2BpmnPrivate(Collaboration collab, Choreography choreo, String name, String folder, String formattedDate) {
+        this.collab = collab;
+        this.name = name;
+        this.outputFolder = folder;
+        this.choreo = choreo;
+        this.formattedDate = formattedDate;
+    }
+
+    public void buildXML() throws IOException {
+        // generate node operationRefIds and build map
+        FragmentGenerator fragGen = null;
+
+        HashMap<Role, PrivateModel> rst = new HashMap<Role, PrivateModel>();
+
+        // Sort roles so we can be sure that the returned list of private models is in
+        // order
+        //List<Role> rolesSorted = new ArrayList<>(choreo.collaboration.roles);
+        //rolesSorted.sort(Comparator.comparing(Role::getName));
+
+        // Export private model graphs
+
+        //fragGen = new FragmentGenerator((PrivateModel) prModel, formattedDate);
+        //prModel = fragGen.enhance();
+        //rst.put(role, (PrivateModel) prModel);
+
+        Element definitions = new Element("definitions", BPMN2NS);
+        // definitions.setAttribute(new Attribute("typeLanguage",
+        // "http://www.w3.org/2001/XMLSchema"));
+        Namespace bpmndi = Namespace.getNamespace("bpmndi", "http://www.omg.org/spec/BPMN/20100524/DI");
+        Namespace omgdc = Namespace.getNamespace("omgdc", "http://www.omg.org/spec/DD/20100524/DC");
+        Namespace omgdi = Namespace.getNamespace("omgdi", "http://www.omg.org/spec/DD/20100524/DI");
+        Namespace xsi = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
+
+        Document doc = new Document();
+        doc.setRootElement(definitions);
+
+        definitions.addNamespaceDeclaration(bpmndi);
+        definitions.addNamespaceDeclaration(omgdc);
+        definitions.addNamespaceDeclaration(omgdi);
+        definitions.addNamespaceDeclaration(xsi);
+        definitions.setAttribute("targetNamespace", "http://www.signavio.com/bpmn20");
+        definitions.setAttribute("typeLanguage", "http://www.w3.org/2001/XMLSchema");
+        definitions.setAttribute("schemaLocation",
+                "http://www.omg.org/spec/BPMN/20100524/MODEL http://www.omg.org/spec/BPMN/2.0/20100501/BPMN20.xsd",
+                xsi);
+
+        // XML:collaboration
+        Element collaboration = new Element("collaboration", BPMN2NS);
+        collaboration.setAttribute(new Attribute("id", "sid-" + collab.id));
+        System.out.println("Collab id:" + collab.id);
+
+        for (Role role : collab.roles) {
+
+            List<Element> flowNodeRefs = new ArrayList<Element>();
+            List<Element> processNodes = new ArrayList<Element>();
+            List<Element> seqFlows = new ArrayList<Element>();
+            Set<IPrivateNode> nodes = new HashSet<IPrivateNode>();
+
+            // XML:roles
+            System.out.println(role.id);
+            System.out.println(role.name);
+            Element participant = new Element("participant", BPMN2NS);
+            participant.setAttribute(new Attribute("id", "sid-" + role.id));
+            participant.setAttribute(new Attribute("name", role.name));
+            UUID processId = UUID.randomUUID();
+            participant.setAttribute(new Attribute("processRef", "sid-" + processId));
+
+            participants.add(participant);
+            IPrivateModel prModel = choreo.R2PrM.get(role);
+            fragGen = new FragmentGenerator((PrivateModel) prModel, formattedDate);
+            prModel = fragGen.enhance();
+            //IPublicModel puModel = collab.R2PuM.get(role);
+
+
+            // XML:process - attributes
+            Element process = new Element("process", BPMN2NS);
+            process.setAttribute(new Attribute("id", "sid-" + processId));
+            process.setAttribute(new Attribute("isClosed", "true"));
+            process.setAttribute(new Attribute("isExecutable", "false"));
+            process.setAttribute(new Attribute("name", role.name));
+            process.setAttribute(new Attribute("processType", "Public"));
+
+            // XML:process - lane
+            Element laneSet = new Element("laneSet", BPMN2NS);
+            laneSet.setAttribute(new Attribute("id", "sid-" + UUID.randomUUID()));
+            Element lane = new Element("lane", BPMN2NS);
+            lane.setAttribute(new Attribute("id", "sid-" + UUID.randomUUID()));
+
+            for (Edge<IPrivateNode> edge : prModel.getdigraph().getEdges()) {
+                // XML:process - seqFlow
+                Element seqFlow = new Element("sequenceFlow", BPMN2NS);
+                seqFlow.setAttribute(new Attribute("id", role.name + "sid-" + edge.getId()));
+                seqFlow.setAttribute(new Attribute("name", edge.getName()));
+                seqFlow.setAttribute(new Attribute("sourceRef", role.name + "sid-" + edge.getSource().getId()));
+                seqFlow.setAttribute(new Attribute("targetRef", role.name + "sid-" + edge.getTarget().getId()));
+
+                nodes.add(edge.getSource());
+                nodes.add(edge.getTarget());
+
+                seqFlows.add(seqFlow);
+            }
+
+            for (IPrivateNode node : nodes) {
+                // XML:process - lane -> flowNode
+                Element flowNodeRef = new Element("flowNodeRef", BPMN2NS);
+                flowNodeRef.setText(role.name + "sid-" + node.getId());
+                flowNodeRefs.add(flowNodeRef);
+
+                // XML:process - nodes - messages - msgFlow
+                if (node instanceof Send) {
+                    // XML:process - sendTask
+                    Element sendTask = new Element("sendTask", BPMN2NS);
+                    sendTask.setAttribute(new Attribute("id", role.name + "sid-" + node.getId()));
+                    sendTask.setAttribute(new Attribute("name", node.getName()));
+                    //sendTask.setAttribute(new Attribute("operationRef",
+                    //        operationRefs.get(((Send) node).getNameWithoutSenderReceiverInfo())));
+                    Set<Element> incoming = this.getIncomingEdges(node, prModel, role);
+                    Set<Element> outgoing = this.getOutgoingEdges(node, prModel, role);
+                    sendTask.addContent(incoming);
+                    sendTask.addContent(outgoing);
+                    processNodes.add(sendTask);
+
+                    // XML:message
+                    Element msg = new Element("message", BPMN2NS);
+                    msg.setAttribute(new Attribute("id", "sid-" + node.getMessage().id));
+                    msg.setAttribute(new Attribute("name", node.getMessage().name));
+                    messages.add(msg);
+
+                    // XML:messageFlow
+                    Element msgFlow = new Element("messageFlow", BPMN2NS);
+                    msgFlow.setAttribute(new Attribute("id", "sid-" + UUID.randomUUID()));
+                    msgFlow.setAttribute(new Attribute("messageRef", "sid-" + node.getMessage().id));
+                    msgFlow.setAttribute(new Attribute("sourceRef", role.name + "sid-" + node.getId()));
+                    msgFlow.setAttribute(new Attribute("targetRef", node.getRoles().toArray()[0].toString() + "sid-" + collab.Pu2Pu.get(node).getId()));
+                    messageFlows.add(msgFlow);
+
+                } else if (node instanceof Receive) {
+                    // XML:process - receiveTask
+                    Element receiveTask = new Element("receiveTask", BPMN2NS);
+                    receiveTask.setAttribute(new Attribute("id", role.name + "sid-" + node.getId()));
+                    receiveTask.setAttribute(new Attribute("name", node.getName()));
+                    //receiveTask.setAttribute(new Attribute("operationRef",
+                    //        operationRefs.get(((Receive) node).getNameWithoutSenderReceiverInfo())));
+                    receiveTask.addContent(this.getIncomingEdges(node, prModel, role));
+                    receiveTask.addContent(this.getOutgoingEdges(node, prModel, role));
+                    processNodes.add(receiveTask);
+                } else if (node instanceof Event) {
+                    // XML:event
+                    Element event;
+                    Set<Element> inEdges = this.getIncomingEdges(node, prModel, role);
+                    Set<Element> outEdges = this.getOutgoingEdges(node, prModel, role);
+
+                    if (!outEdges.isEmpty()) {
+                        event = new Element("startEvent", BPMN2NS);
+                    } else if (!inEdges.isEmpty()) {
+                        event = new Element("endEvent", BPMN2NS);
+                    } else {
+                        event = new Element("idkEvent");
+                    }
+
+                    event.setAttribute(new Attribute("id", role.name + "sid-" + node.getId()));
+                    event.setAttribute(new Attribute("name", node.getName()));
+
+                    if (!outEdges.isEmpty())
+                        event.addContent(outEdges);
+                    if (!inEdges.isEmpty())
+                        event.addContent(inEdges);
+
+                    processNodes.add(event);
+                } else if (node instanceof PrivateActivity) {
+                    // XML:process - receiveTask
+                    Element privateTask = new Element("task", BPMN2NS);
+                    privateTask.setAttribute(new Attribute("id", role.name + "sid-" + node.getId()));
+                    privateTask.setAttribute(new Attribute("name", node.getName()));
+                    //receiveTask.setAttribute(new Attribute("operationRef",
+                    //        operationRefs.get(((Receive) node).getNameWithoutSenderReceiverInfo())));
+                    privateTask.addContent(this.getIncomingEdges(node, prModel, role));
+                    privateTask.addContent(this.getOutgoingEdges(node, prModel, role));
+                    processNodes.add(privateTask);
+                } else if (node instanceof XorGateway) {
+                    // XML:exclusiveGateway
+                    Element xorGateway = new Element("exclusiveGateway", BPMN2NS);
+                    Set<Element> inEdges = this.getIncomingEdges(node, prModel, role);
+                    Set<Element> outEdges = this.getOutgoingEdges(node, prModel, role);
+                    GatewayDirection direction;
+
+                    xorGateway.addContent(inEdges);
+                    xorGateway.addContent(outEdges);
+
+                    if (inEdges.size() > 1) {
+                        direction = GatewayDirection.Converging;
+                    } else {
+                        direction = GatewayDirection.Diverging;
+                    }
+
+                    xorGateway.setAttribute(new Attribute("id", role.name + "sid-" + node.getId()));
+                    xorGateway.setAttribute(new Attribute("name", node.getName()));
+                    xorGateway.setAttribute(new Attribute("gatewayDirection", direction.toString()));
+                    processNodes.add(xorGateway);
+
+                } else if (node instanceof AndGateway) {
+                    // XML:parallelGateway
+                    Element andGateway = new Element("parallelGateway", BPMN2NS);
+                    Set<Element> inEdges = this.getIncomingEdges(node, prModel, role);
+                    Set<Element> outEdges = this.getOutgoingEdges(node, prModel, role);
+                    GatewayDirection direction;
+
+                    andGateway.addContent(inEdges);
+                    andGateway.addContent(outEdges);
+
+                    if (inEdges.size() > 1) {
+                        direction = GatewayDirection.Converging;
+                    } else {
+                        direction = GatewayDirection.Diverging;
+                    }
+
+                    andGateway.setAttribute(new Attribute("id", role.name + "sid-" + node.getId()));
+                    andGateway.setAttribute(new Attribute("name", node.getName()));
+                    andGateway.setAttribute(new Attribute("gatewayDirection", direction.toString()));
+                    processNodes.add(andGateway);
+                } else {
+
+                }
+
+            }
+
+            System.out.println("SEQF: " + seqFlows.size() + " flowNodeRefs: " + flowNodeRefs.size() + " processNodes: "
+                    + processNodes.size());
+
+            // put process together
+            lane.addContent(flowNodeRefs);
+            laneSet.addContent(lane);
+            process.addContent(laneSet);
+            process.addContent(processNodes);
+            process.addContent(seqFlows);
+            processes.add(process);
+        }
+
+        // put doc together
+        doc.getRootElement().addContent(messages);
+        collaboration.addContent(participants);
+        collaboration.addContent(messageFlows);
+        doc.getRootElement().addContent(collaboration);
+        doc.getRootElement().addContent(processes);
+
+        XMLOutputter xmlOutput = new XMLOutputter();
+
+        // display nice nice
+        xmlOutput.setFormat(Format.getPrettyFormat());
+        xmlOutput.output(doc, new FileWriter(outputFolder + "/" + name + ".bpmn"));
+
+    }
+
+    private Set<Element> getIncomingEdges(IPrivateNode node, IPrivateModel puModel, Role role) {
+        Set<Element> inEdges = new HashSet<Element>();
+        for (Edge<IPrivateNode> edge : puModel.getdigraph().getEdges()) {
+            if (edge.getTarget().equals(node))
+                inEdges.add(new Element("incoming", BPMN2NS).setText(role.name + "sid-" + edge.getId()));
+            //if (edge.getSource().getRoles().toArray().length > 0)
+            //    inEdges.add(new Element("incoming", BPMN2NS).setText(edge.getSource().getRoles().toArray()[0].toString() + "sid-" + edge.getId()));
+            //else if (edge.getSource() instanceof AndGateway || edge.getSource() instanceof XorGateway || edge.getSource() instanceof Send || edge.getSource() instanceof Receive)
+            //else
+            //    inEdges.add(new Element("incoming", BPMN2NS).setText("sid-" + edge.getId()));
+        }
+
+        return inEdges;
+    }
+
+    private Set<Element> getOutgoingEdges(IPrivateNode node, IPrivateModel puModel, Role role) {
+        Set<Element> outEdges = new HashSet<Element>();
+        for (Edge<IPrivateNode> edge : puModel.getdigraph().getEdges()) {
+            if (edge.getSource().equals(node))
+                outEdges.add(new Element("outgoing", BPMN2NS).setText(role.name + "sid-" + edge.getId()));
+            //if (edge.getTarget().getRoles().toArray().length > 0)
+            //    outEdges.add(new Element("outgoing", BPMN2NS).setText(edge.getTarget().getRoles().toArray()[0].toString() + "sid-" + edge.getId()));
+            //else
+            //    outEdges.add(new Element("outgoing", BPMN2NS).setText("sid-" + edge.getId()));
+        }
+        return outEdges;
+    }
+
+}

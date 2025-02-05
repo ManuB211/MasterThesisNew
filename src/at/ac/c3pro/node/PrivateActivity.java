@@ -15,4 +15,9 @@ public class PrivateActivity extends PrivateNode {
         this.setId(id);
     }
 
+    public PublicNode getPublicActivity() {
+        return new PublicNode(this.getName()) {
+        };
+    }
+
 }

@@ -2,10 +2,7 @@ package at.ac.c3pro.chormodel.generation;
 
 import at.ac.c3pro.chormodel.*;
 import at.ac.c3pro.chormodel.compliance.*;
-import at.ac.c3pro.io.ChoreographyModel2Bpmn;
-import at.ac.c3pro.io.ChoreographyModelToCPN;
-import at.ac.c3pro.io.Collaboration2Bpmn;
-import at.ac.c3pro.io.PrivateModel2Bpmn;
+import at.ac.c3pro.io.*;
 import at.ac.c3pro.node.Edge;
 import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
@@ -134,11 +131,13 @@ public class ChoreographyController {
 
                 // Export Models
                 exportPublicModels(choreo);
-                List<PrivateModel> privateModels = exportPrivateModels(choreo);
+                Map<Role, PrivateModel> privateModels = exportPrivateModels(choreo);
 
                 // Transform Private Models to a PNML file
                 try {
-                    ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, formattedDate);
+                    List<PrivateModel> list = new ArrayList<PrivateModel>(privateModels.values());
+
+                    ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(list, formattedDate);
                     choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
                 } catch (IOException | InterruptedException e) {
                     // TODO Auto-generated catch block
@@ -146,18 +145,27 @@ public class ChoreographyController {
                 }
 
                 // Transform Models to bpmn
-                Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
-                        "autogen_collab_" + formattedDate, folder);
+
 
                 for (Role role : choreo.collaboration.roles) {
                     IPrivateModel prModel = choreo.R2PrM.get(role);
+                    IPublicModel model = privateModels.get(role).BehavioralInterface2();
+                    Set<Edge> uniqueToTable1 = new HashSet<>(model.getdigraph().getEdges());
+                    uniqueToTable1.removeAll(privateModels.get(role).getdigraph().getEdges());
                     PrivateModel2Bpmn prModel2bpmn = new PrivateModel2Bpmn(prModel,
                             "autogen_prModel_" + role.name + "_" + formattedDate + ".bpmn", folder);
                     prModel2bpmn.buildXML();
                 }
 
+                Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
+                        "autogen_collab_" + formattedDate, folder);
+
+                Collaboration2BpmnPrivate collab2bpmnIOprivate = new Collaboration2BpmnPrivate(choreo.collaboration, choreo,
+                        "autogen_collab_private" + formattedDate, folder, formattedDate);
+
                 choreo2bpmnIO.buildXML();
                 collab2bpmnIO.buildXML();
+                collab2bpmnIOprivate.buildXML();
 
                 System.out.println("lülülül");
 
@@ -199,22 +207,22 @@ public class ChoreographyController {
      * Exports the public models to the target folder, named after the timestamp the
      * generation was started
      */
-    private static List<PrivateModel> exportPrivateModels(Choreography choreo) {
+    private static Map<Role, PrivateModel> exportPrivateModels(Choreography choreo) {
         FragmentGenerator fragGen = null;
 
-        List<PrivateModel> rst = new ArrayList<>();
+        HashMap<Role, PrivateModel> rst = new HashMap<Role, PrivateModel>();
 
         // Sort roles so we can be sure that the returned list of private models is in
         // order
-        List<Role> rolesSorted = new ArrayList<>(choreo.collaboration.roles);
-        rolesSorted.sort(Comparator.comparing(Role::getName));
+        //List<Role> rolesSorted = new ArrayList<>(choreo.collaboration.roles);
+        //rolesSorted.sort(Comparator.comparing(Role::getName));
 
         // Export private model graphs
-        for (Role role : rolesSorted) {
+        for (Role role : choreo.collaboration.roles) {
             IPrivateModel prModel = choreo.R2PrM.get(role);
             fragGen = new FragmentGenerator((PrivateModel) prModel, formattedDate);
             prModel = fragGen.enhance();
-            rst.add((PrivateModel) prModel);
+            rst.put(role, (PrivateModel) prModel);
 
             IOUtils.toFile(formattedDate + "/" + formattedDate + "_prModel_" + role.name + ".dot",
                     prModel.getdigraph().toDOT()); // assigned with compliance rules interactions

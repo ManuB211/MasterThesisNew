@@ -5,8 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ec2e7313-cace-4265-bb9c-8817a99b10c2" name="Default" comment="">
+      <change afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/GlobalTimestamp.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/VisualizationHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN_notCurr.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/config.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/generatePetrinetVisualization.py" beforeDir="false" afterPath="$PROJECT_DIR$/resources/generatePetrinetVisualization.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/generatePetrinetVisualization.py.bak" beforeDir="false" afterPath="$PROJECT_DIR$/resources/generatePetrinetVisualization.py.bak" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChoreographyController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChoreographyController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -267,13 +275,13 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Application.ChoreographyController.executor": "Debug",
+    "Application.ChoreographyController.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "master",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Admin/Desktop/Implementierung/data",
+    "last_opened_file_path": "C:/Users/Admin/Desktop/Implementierung/data/util",
     "settings.editor.selected.configurable": "preferences.keymap"
   }
 }]]></component>
@@ -453,6 +461,21 @@
           <url>file://$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java</url>
           <line>107</line>
           <option name="timeStamp" value="37" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java</url>
+          <line>154</line>
+          <option name="timeStamp" value="39" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java</url>
+          <line>177</line>
+          <option name="timeStamp" value="41" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java</url>
+          <line>64</line>
+          <option name="timeStamp" value="44" />
         </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.lang.NullPointerException" package="java.lang" />

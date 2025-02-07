@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  */
 
 /**
+ *
  */
 
 public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> implements IRpstModel<E, N> {
@@ -236,8 +237,8 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
     /**
      * a fragment in the RPST is determined by its root element in the tree
      *
-     * @param <E>
-     * @param <N>
+     * @param fragment
+     * @param graph
      */
     public IDirectedGraph<E, N> innerDelete(IRPSTNode<E, N> fragment, IDirectedGraph<E, N> graph) {
         // IDirectedGraph<E, N> graph = this.cloneDiGraph();
@@ -719,8 +720,7 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
      * returns the list of all rpst nodes of the sub-rpst-tree with the root
      * element: rpstNode
      *
-     * @param <E>
-     * @param <N>
+     * @param rpstNode
      */
 
     public List<IRPSTNode<E, N>> getallChildren(IRPSTNode<E, N> rpstNode) {
@@ -739,8 +739,8 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
     /**
      * @return This function returns a map between the edges of the original graph
-     *         and and the trivial nodes of the corresponding Rpst. A trivial node
-     *         in the rpst represents an edge.
+     * and and the trivial nodes of the corresponding Rpst. A trivial node
+     * in the rpst represents an edge.
      */
 
     protected Map<E, E> getOriginal2RpstMap(IDirectedGraph<E, N> graph) {
@@ -1044,7 +1044,7 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
     /**
      * @return this function projects a given Model on a role. It returns a
-     *         structured model where the nodes are all reltated to this role.
+     * structured model where the nodes are all reltated to this role.
      */
     public IRpstModel<E, N> projectionRole(Role role, boolean doGraphReduce) {
         IRpstModel<E, N> projectedModel = null;
@@ -1116,8 +1116,8 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
     /**
      * @return this function returns the list of next nodes of type gateway, Event,
-     *         InteractionActivity or Interactions having the Role role of a given
-     *         node
+     * InteractionActivity or Interactions having the Role role of a given
+     * node
      */
     private List<N> getnextRoleActivities(N node, Role role) {
         List<N> L = new LinkedList<N>();

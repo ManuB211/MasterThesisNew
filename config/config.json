@@ -1,11 +1,13 @@
 {
-	participantCount: 3,
-	xorSplitCount: 2,
-	andSplitCount: 3,
-	maxBranching: 3,
-	amountMessageExchange: 4,
-	amountHandoverOfWork: 1,
-	amountRessourceSharing: 2,
-	amountSynchronousActivity: 2,
-	visualizeAllCPNs: true
+  "participantCount": 5,
+  "xorSplitCount": 2,
+  "andSplitCount": 3,
+  "maxBranching": 3,
+  "amountMessageExchange": 15,
+  "amountHandoverOfWork": 0,
+  "amountRessourceSharing": 0,
+  "amountSynchronousActivity": 0,
+  "visualizeAllCPNs": true,
+  "visualizePrivModels": true,
+  "visualizePubModels": true
 }

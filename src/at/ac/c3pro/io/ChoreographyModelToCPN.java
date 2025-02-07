@@ -3,6 +3,8 @@ package at.ac.c3pro.io;
 import at.ac.c3pro.chormodel.PrivateModel;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.node.Interaction.InteractionType;
+import at.ac.c3pro.util.OutputHandler;
+import at.ac.c3pro.util.VisualizationHandler;
 import org.jbpt.graph.abs.IDirectedGraph;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -24,11 +26,9 @@ public class ChoreographyModelToCPN {
     private final List<String> alreadyCreated;
     private final List<String> alreadyCreatedGlobal;
 
+    private final OutputHandler outputHandler;
     private final File outputFolder;
     private static String formattedDate;
-
-    // The parent element of the complete CPN
-
 
     private final Map<String, Element> privateNets;
 
@@ -45,9 +45,9 @@ public class ChoreographyModelToCPN {
     private boolean globalEndCreated;
 
 
-    public ChoreographyModelToCPN(List<PrivateModel> pPrivateModels, String pFormattedDate) throws IOException {
-        this.privateModels = pPrivateModels;
-        formattedDate = pFormattedDate;
+    public ChoreographyModelToCPN(List<PrivateModel> privateModels, OutputHandler outputFolderCreator) throws IOException {
+        this.privateModels = privateModels;
+        this.outputHandler = outputFolderCreator;
         this.alreadyVisited = new ArrayList<>();
         this.alreadyCreated = new ArrayList<>();
         this.alreadyCreatedGlobal = new ArrayList<>();
@@ -60,7 +60,7 @@ public class ChoreographyModelToCPN {
         this.interactionTransitions.put(InteractionType.SHARED_RESOURCE, new ArrayList<>());
         this.interactionTransitions.put(InteractionType.SYNCHRONOUS_ACTIVITY, new ArrayList<>());
 
-        this.outputFolder = createOutputFolder();
+        this.outputFolder = outputFolderCreator.createOutputFolder("CPNs_private");
 
         this.netComplete = new Element("net");
         this.netComplete.setAttribute("type", "http://www.yasper.org/specs/epnml-1.1"); // TODO
@@ -70,7 +70,7 @@ public class ChoreographyModelToCPN {
         this.netCompleteElementsRelevantSync = new ArrayList<>();
 
         // Generate petri model for each private model of the participants
-        for (int i = 0; i < privateModels.size(); i++) {
+        for (int i = 0; i < this.privateModels.size(); i++) {
 
             this.currentParticipant = i;
 
@@ -80,7 +80,7 @@ public class ChoreographyModelToCPN {
             String cpnId = "CPN" + i;
 
 
-            this.privateNets.putIfAbsent(cpnId, buildPNMLForSingleParticipant(privateModels.get(i), cpnId));
+            this.privateNets.putIfAbsent(cpnId, buildPNMLForSingleParticipant(this.privateModels.get(i), cpnId));
         }
 
         createPetriNetInteractions();
@@ -323,12 +323,7 @@ public class ChoreographyModelToCPN {
         printOneXML("CPN_complete", this.netComplete);
 
         if (visualRepresentation) {
-            ProcessBuilder processBuilder = new ProcessBuilder("python", "resources/generatePetrinetVisualization.py",
-                    outputFolder.toString().substring(7, 26));
-            processBuilder.redirectErrorStream(true);
-
-            Process process = processBuilder.start();
-            process.waitFor();
+            VisualizationHandler.visualize(this.outputHandler.getFormattedDate(), VisualizationHandler.VisualizationType.PETRI_NET);
         }
 
     }
@@ -347,26 +342,6 @@ public class ChoreographyModelToCPN {
 
         String cpnName = "/" + name + ".pnml";
         xmlOutput.output(doc, new FileWriter(outputFolder + cpnName));
-    }
-
-    /**
-     * @throws Exception
-     */
-    private static File createOutputFolder() throws IOException {
-        File dir = new File("target/" + formattedDate + "/CPNs_private");
-
-        if (!dir.exists()) {
-            boolean created = dir.mkdir();
-            if (created) {
-                System.out.println("Directory created successfully!");
-            } else {
-                throw new IOException("Failed to create the directory.");
-            }
-        } else {
-            System.out.println("Directory already exists.");
-        }
-
-        return dir;
     }
 
     private void trackNodeForBuildingOverallPetriNet(String name) {

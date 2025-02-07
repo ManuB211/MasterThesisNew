@@ -11,6 +11,9 @@ import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
 import at.ac.c3pro.node.Interaction.InteractionType;
 import at.ac.c3pro.util.ChoreographyGenerator;
+import at.ac.c3pro.util.OutputHandler;
+import at.ac.c3pro.util.VisualizationHandler;
+import at.ac.c3pro.util.VisualizationHandler.VisualizationType;
 import org.jbpt.utils.IOUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,15 +29,18 @@ public class ChoreographyController {
     private static final String lineSep = "----------------------------------------------------------\n";
 
     private static final String formattedDate = getTimestampFormatted();
+    private static final OutputHandler outputHandler = new OutputHandler(formattedDate);
     private static final ArrayList<CompliancePattern> complianceRules = new ArrayList<>();
 
-    public static void main(String[] args) throws IOException, JSONException {
+    public static void main(String[] args) throws IOException, JSONException, InterruptedException {
+
         MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> graph = new MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode>();
         Boolean buildSuccess = Boolean.FALSE;
         int buildIterationCount = 0;
         BuildAnaylse buildAnaylse = null;
 
-        File dir = createOutputFolder();
+
+        File dir = outputHandler.createOutputFolder(null);
 
         // Read config file
         String configString = "";
@@ -61,15 +67,22 @@ public class ChoreographyController {
         int amountSynchronousActivity = configObject.getInt("amountSynchronousActivity");
 
         Map<InteractionType, Integer> remainingInteractionTypes = new HashMap<>();
-        remainingInteractionTypes.put(InteractionType.MESSAGE_EXCHANGE, Integer.valueOf(2));
-        remainingInteractionTypes.put(InteractionType.HANDOVER_OF_WORK, Integer.valueOf(1));
-        remainingInteractionTypes.put(InteractionType.SHARED_RESOURCE, Integer.valueOf(1));
-        remainingInteractionTypes.put(InteractionType.SYNCHRONOUS_ACTIVITY, Integer.valueOf(1));
+//        remainingInteractionTypes.put(InteractionType.MESSAGE_EXCHANGE, Integer.valueOf(2));
+//        remainingInteractionTypes.put(InteractionType.HANDOVER_OF_WORK, Integer.valueOf(1));
+//        remainingInteractionTypes.put(InteractionType.SHARED_RESOURCE, Integer.valueOf(1));
+//        remainingInteractionTypes.put(InteractionType.SYNCHRONOUS_ACTIVITY, Integer.valueOf(1));
+
+        remainingInteractionTypes.put(InteractionType.MESSAGE_EXCHANGE, amountMessageExchange);
+        remainingInteractionTypes.put(InteractionType.HANDOVER_OF_WORK, amountHandoverOfWork);
+        remainingInteractionTypes.put(InteractionType.SHARED_RESOURCE, amountRessourceSharing);
+        remainingInteractionTypes.put(InteractionType.SYNCHRONOUS_ACTIVITY, amountSynchronousActivity);
 
         int interactionCount = amountHandoverOfWork + amountMessageExchange + amountRessourceSharing
                 + amountSynchronousActivity;
 
         boolean printPetriNetVisualizationsSeparateParticipants = configObject.getBoolean("visualizeAllCPNs");
+        boolean printVisualizationsForPrivModels = configObject.getBoolean("visualizePrivModels");
+        boolean printVisualizationsForPubModels = configObject.getBoolean("visualizePubModels");
 
         ChorModelGenerator modelGen;
         SplitTracking splitTracking = SplitTracking.getInstance();
@@ -133,12 +146,12 @@ public class ChoreographyController {
                 Choreography choreo = ChoreographyGenerator.generateChoreographyFromModel(choreoModel);
 
                 // Export Models
-                exportPublicModels(choreo);
-                List<PrivateModel> privateModels = exportPrivateModels(choreo);
+                exportPublicModels(choreo, printVisualizationsForPubModels);
+                List<PrivateModel> privateModels = exportPrivateModels(choreo, printVisualizationsForPrivModels);
 
                 // Transform Private Models to a PNML file
                 try {
-                    ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, formattedDate);
+                    ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, outputHandler);
                     choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
                 } catch (IOException | InterruptedException e) {
                     // TODO Auto-generated catch block
@@ -186,12 +199,24 @@ public class ChoreographyController {
      * Exports the public models to the target folder, named after the timestamp the
      * generation was started
      */
-    private static void exportPublicModels(Choreography choreo) {
+    private static void exportPublicModels(Choreography choreo, boolean visualize) throws IOException, InterruptedException {
+
+        //Generate PublicModels folder
+        outputHandler.createOutputFolder("PublicModels");
+        String path = outputHandler.getFormattedDate() + "/PublicModels/";
+
         // Export public model graphs
         for (Role role : choreo.collaboration.roles) {
             IPublicModel puModel = choreo.collaboration.R2PuM.get(role);
-            IOUtils.toFile(formattedDate + "/" + formattedDate + "_puModel_" + role.name + ".dot",
+
+            String filename = "puModel_" + role.name + ".dot";
+
+            IOUtils.toFile(path + filename,
                     puModel.getdigraph().toDOT()); // assigned with compliance rules interactions
+        }
+
+        if (visualize) {
+            VisualizationHandler.visualize(formattedDate, VisualizationType.PUB_MODEL);
         }
     }
 
@@ -199,7 +224,7 @@ public class ChoreographyController {
      * Exports the public models to the target folder, named after the timestamp the
      * generation was started
      */
-    private static List<PrivateModel> exportPrivateModels(Choreography choreo) {
+    private static List<PrivateModel> exportPrivateModels(Choreography choreo, boolean visualize) throws IOException, InterruptedException {
         FragmentGenerator fragGen = null;
 
         List<PrivateModel> rst = new ArrayList<>();
@@ -209,6 +234,10 @@ public class ChoreographyController {
         List<Role> rolesSorted = new ArrayList<>(choreo.collaboration.roles);
         rolesSorted.sort(Comparator.comparing(Role::getName));
 
+        //Generate PublicModels folder
+        outputHandler.createOutputFolder("PrivateModels");
+        String path = outputHandler.getFormattedDate() + "/PrivateModels/";
+
         // Export private model graphs
         for (Role role : rolesSorted) {
             IPrivateModel prModel = choreo.R2PrM.get(role);
@@ -216,9 +245,16 @@ public class ChoreographyController {
             prModel = fragGen.enhance();
             rst.add((PrivateModel) prModel);
 
-            IOUtils.toFile(formattedDate + "/" + formattedDate + "_prModel_" + role.name + ".dot",
+            String filename = "prModel_" + role.name + ".dot";
+
+            IOUtils.toFile(path + filename,
                     prModel.getdigraph().toDOT()); // assigned with compliance rules interactions
         }
+
+        if (visualize) {
+            VisualizationHandler.visualize(formattedDate, VisualizationType.PRIV_MODEL);
+        }
+
         return rst;
     }
 
@@ -321,26 +357,6 @@ public class ChoreographyController {
         Date date = new Date();
         date.setTime(timestamp.getTime());
         return new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(date);
-    }
-
-    /**
-     * @throws Exception
-     */
-    private static File createOutputFolder() throws IOException {
-        File dir = new File("target/" + formattedDate);
-
-        if (!dir.exists()) {
-            boolean created = dir.mkdir();
-            if (created) {
-                System.out.println("Directory created successfully!");
-            } else {
-                throw new IOException("Failed to create the directory.");
-            }
-        } else {
-            System.out.println("Directory already exists.");
-        }
-
-        return dir;
     }
 
     /**

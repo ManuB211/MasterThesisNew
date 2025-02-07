@@ -8,8 +8,6 @@ import os
 def display_pnml(directory):
     
     for CPN in os.listdir(directory):
-        print(CPN)
-        
         file_path_in = directory+"/"+CPN
         file_path_out = directory+"/"+CPN.split(".")[0]+"_Visualization.png"
     
@@ -31,10 +29,8 @@ def display_pnml(directory):
         except Exception as e:
             print(f"An error occurred: {e}")
 
-    
-# Example usage
+#Main
 if __name__ == "__main__":
     timestamp = sys.argv[1];
     directory = "target/{}/CPNs_private".format(timestamp)
-    output_file_path = "target/{}/CPN_Visualization.png".format(timestamp)
     display_pnml(directory)

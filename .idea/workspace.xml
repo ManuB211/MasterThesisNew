@@ -6,14 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="ec2e7313-cace-4265-bb9c-8817a99b10c2" name="Default" comment="separate outputs, externalize creation of directories and visualization and offer visualization for private/public models">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IRpstModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/IRpstModel.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChorModelGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChorModelGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChoreographyController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChoreographyController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/FragmentGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/FragmentGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/HOWHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/HOWHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/OutputHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/OutputHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/VisualizationHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/VisualizationHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/ChoreographyGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/ChoreographyGenerator.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -272,18 +267,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.ChoreographyController.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Admin/Desktop/Implementierung/data/util&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.ChoreographyController.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Admin/Desktop/Implementierung/data/util",
+    "settings.editor.selected.configurable": "preferences.keymap"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="at.ac.c3pro.io" />
@@ -490,9 +485,24 @@
           <option name="timeStamp" value="44" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/OutputHandler.java</url>
+          <line>21</line>
+          <option name="timeStamp" value="55" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java</url>
-          <line>416</line>
-          <option name="timeStamp" value="51" />
+          <line>418</line>
+          <option name="timeStamp" value="56" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java</url>
+          <line>1094</line>
+          <option name="timeStamp" value="57" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java</url>
+          <line>401</line>
+          <option name="timeStamp" value="58" />
         </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.lang.NullPointerException" package="java.lang" />

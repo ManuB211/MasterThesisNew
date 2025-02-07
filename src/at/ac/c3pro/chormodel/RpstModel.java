@@ -3,6 +3,7 @@ package at.ac.c3pro.chormodel;
 import at.ac.c3pro.ImpactAnalysis.ImpactAnalysisUtil.Pair;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.util.GlobalTimestamp;
+import at.ac.c3pro.util.OutputHandler;
 import org.jbpt.algo.tree.rpst.IRPSTNode;
 import org.jbpt.algo.tree.rpst.RPST;
 import org.jbpt.algo.tree.tctree.TCType;
@@ -10,6 +11,7 @@ import org.jbpt.graph.abs.IDirectedGraph;
 import org.jbpt.graph.abs.IFragment;
 import org.jbpt.utils.IOUtils;
 
+import java.io.IOException;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.*;
 import java.util.Map.Entry;
@@ -395,11 +397,11 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         return graph;
     }
 
-    public RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge) {
+    public RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge, String roleName) {
 
-        IOUtils.toFile(GlobalTimestamp.timestamp + "/ReductionStart.dot", this.getdigraph().toDOT());
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/Reductions/Reductions_" + roleName + "/ReductionStart_" + roleName + ".dot", this.getdigraph().toDOT());
 
-        return this.reduceGraph(xorsWithDirectEdgeToMerge, 1);
+        return this.reduceGraph(xorsWithDirectEdgeToMerge, 1, roleName);
     }
 
     /**
@@ -407,24 +409,40 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
      * possible.
      */
     public RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge,
-                                       Integer reduceCtr) {
+                                       Integer reduceCtr, String roleName) {
         RpstModel<E, N> model = this;
         // recursively reduce the graph until there are no more graph reductions
         // possible
         for (IRPSTNode<E, N> e : this.getFragmentsBottomUp()) {
             if (model.reduceGraph(xorsWithDirectEdgeToMerge, e)) {
 
-                IOUtils.toFile(GlobalTimestamp.timestamp + "/Reduction" + reduceCtr + ".dot", model.getdigraph().toDOT());
+                IOUtils.toFile(GlobalTimestamp.timestamp + "/Reductions/Reductions_" + roleName + "/Reduction" + reduceCtr + "_" + roleName + ".dot", model.getdigraph().toDOT());
 
                 // System.out.println("the reduced graph: "+model.getdigraph());
 
                 return model.reloadFromGraph(model.getdigraph()).reduceGraph(xorsWithDirectEdgeToMerge,
-                        reduceCtr + 1);
+                        reduceCtr + 1, roleName);
             }
         }
         // no more graph reductions possible
         return model;
     }
+
+    public RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge) {
+
+        RpstModel<E, N> model = this;
+        // recursively reduce the graph until there are no more graph reductions
+        // possible
+        for (IRPSTNode<E, N> e : this.getFragmentsBottomUp()) {
+            if (model.reduceGraph(xorsWithDirectEdgeToMerge, e)) {
+                return model.reloadFromGraph(model.getdigraph()).reduceGraph(xorsWithDirectEdgeToMerge);
+            }
+        }
+        // no more graph reductions possible
+        return model;
+
+    }
+
 
     public RpstModel<E, N> reloadFromGraph(IDirectedGraph<E, N> graph) {
         return new RpstModel((MultiDirectedGraph<E, N>) graph);
@@ -1076,6 +1094,12 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         projectedModel = new RpstModel<E, N>(graph, this.getName() + "Projection");
         if (doGraphReduce) {
 
+            try {
+                OutputHandler.createOutputFolder("/Reductions/Reductions_" + role.getName());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
             /**
              * We need to save the XOR nodes in the choreography model, that have a direct
              * connection to its merge. Otherwise they will be filtered out during the graph
@@ -1084,7 +1108,7 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
              */
             List<IChoreographyNode> xorsWithDirectConnectionToMerge = this.getAllXORsWithDirectConnectionToMerge();
 
-            return projectedModel.reduceGraph(xorsWithDirectConnectionToMerge);
+            return projectedModel.reduceGraph(xorsWithDirectConnectionToMerge, role.getName());
         } else {
             return projectedModel;
         }

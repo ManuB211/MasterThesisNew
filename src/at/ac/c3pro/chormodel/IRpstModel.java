@@ -45,6 +45,8 @@ public interface IRpstModel<E extends Edge<N>, N extends INode> extends IRPST<E,
 
     RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge);
 
+    RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge, String roleName);
+
     boolean reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge, IRPSTNode<E, N> fragment);
 
     // public void toDOT();

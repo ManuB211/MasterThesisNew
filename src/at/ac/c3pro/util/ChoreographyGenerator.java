@@ -5,6 +5,7 @@ import at.ac.c3pro.chormodel.*;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.node.Interaction.InteractionType;
 
+import java.io.IOException;
 import java.util.*;
 
 public class ChoreographyGenerator {
@@ -45,6 +46,12 @@ public class ChoreographyGenerator {
         choreography.choreo = chorModel;
         choreography.collaboration = new Collaboration("collab");
         choreography.collaboration.roles = FragmentUtil.extractRoles(chorModel.getRoot());
+
+        try {
+            OutputHandler.createOutputFolder("Reductions");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         // filling publicmodels, R2PuM, PuM2R
         for (Role role : choreography.collaboration.roles) {
             IPublicModel pum = ChoreographyGenerator.transformChorModel2PubModel(chorModel.projectionRole(role, true),

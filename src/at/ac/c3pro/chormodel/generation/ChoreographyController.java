@@ -11,6 +11,7 @@ import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
 import at.ac.c3pro.node.Interaction.InteractionType;
 import at.ac.c3pro.util.ChoreographyGenerator;
+import at.ac.c3pro.util.GlobalTimestamp;
 import at.ac.c3pro.util.OutputHandler;
 import at.ac.c3pro.util.VisualizationHandler;
 import at.ac.c3pro.util.VisualizationHandler.VisualizationType;
@@ -28,11 +29,12 @@ public class ChoreographyController {
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
     private static final String lineSep = "----------------------------------------------------------\n";
 
-    private static final String formattedDate = getTimestampFormatted();
-    private static final OutputHandler outputHandler = new OutputHandler(formattedDate);
+    private static OutputHandler outputHandler;
     private static final ArrayList<CompliancePattern> complianceRules = new ArrayList<>();
 
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
+        //Add timestamp as global attribute, so that it can be accessed anywhere without the need of giving it as a parameter everywhere
+        GlobalTimestamp.timestamp = getTimestampFormatted();
 
         MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> graph = new MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode>();
         Boolean buildSuccess = Boolean.FALSE;
@@ -101,7 +103,7 @@ public class ChoreographyController {
         while (!buildSuccess) {
             long startTime = System.currentTimeMillis();
             modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,
-                    loopCount, maxBranching, formattedDate, remainingInteractionTypes);
+                    loopCount, maxBranching, remainingInteractionTypes);
 
             // TODO: Put in Constructor?
             modelGen.setEarlyBranchClosing(Boolean.valueOf(false));
@@ -110,9 +112,9 @@ public class ChoreographyController {
             buildIterationCount++;
 
             // build choreography model
-            graph = modelGen.build(formattedDate);
-            IOUtils.toFile(formattedDate + "/finished_graph_preCompliance.dot", graph.toDOT()); // first build
-            IOUtils.toFile(formattedDate + "/finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched
+            graph = modelGen.build();
+            IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_preCompliance.dot", graph.toDOT()); // first build
+            IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched
             // with
             // message
             // flow
@@ -131,7 +133,7 @@ public class ChoreographyController {
 
                 String folder = dir.toString();
 
-                IOUtils.toFile(formattedDate + "/" + formattedDate + "_choreo_model.dot",
+                IOUtils.toFile(GlobalTimestamp.timestamp + "/" + GlobalTimestamp.timestamp + "_choreo_model.dot",
                         modelGen.getEnrichedGraph().toDOT()); // assigned with compliance rules interactions
 
                 createChoreoInfo(complianceController, folder, modelGen.getInteractions(),
@@ -139,7 +141,7 @@ public class ChoreographyController {
 
                 ChoreographyModel choreoModel = new ChoreographyModel(modelGen.getEnrichedGraph());
                 ChoreographyModel2Bpmn choreo2bpmnIO = new ChoreographyModel2Bpmn(choreoModel,
-                        "autogen_choreo_model_" + formattedDate, folder);
+                        "autogen_choreo_model_" + GlobalTimestamp.timestamp, folder);
 
                 // Generate Choreography (incl. all public models / private models)
                 ChoreographyGenerator chorGen = new ChoreographyGenerator();
@@ -151,7 +153,7 @@ public class ChoreographyController {
 
                 // Transform Private Models to a PNML file
                 try {
-                    ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels, outputHandler);
+                    ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels);
                     choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
                 } catch (IOException | InterruptedException e) {
                     // TODO Auto-generated catch block
@@ -160,12 +162,12 @@ public class ChoreographyController {
 
                 // Transform Models to bpmn
                 Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
-                        "autogen_collab_" + formattedDate, folder);
+                        "autogen_collab_" + GlobalTimestamp.timestamp, folder);
 
                 for (Role role : choreo.collaboration.roles) {
                     IPrivateModel prModel = choreo.R2PrM.get(role);
                     PrivateModel2Bpmn prModel2bpmn = new PrivateModel2Bpmn(prModel,
-                            "autogen_prModel_" + role.name + "_" + formattedDate + ".bpmn", folder);
+                            "autogen_prModel_" + role.name + "_" + GlobalTimestamp.timestamp + ".bpmn", folder);
                     prModel2bpmn.buildXML();
                 }
 
@@ -202,8 +204,8 @@ public class ChoreographyController {
     private static void exportPublicModels(Choreography choreo, boolean visualize) throws IOException, InterruptedException {
 
         //Generate PublicModels folder
-        outputHandler.createOutputFolder("PublicModels");
-        String path = outputHandler.getFormattedDate() + "/PublicModels/";
+        OutputHandler.createOutputFolder("PublicModels");
+        String path = GlobalTimestamp.timestamp + "/PublicModels/";
 
         // Export public model graphs
         for (Role role : choreo.collaboration.roles) {
@@ -216,7 +218,7 @@ public class ChoreographyController {
         }
 
         if (visualize) {
-            VisualizationHandler.visualize(formattedDate, VisualizationType.PUB_MODEL);
+            VisualizationHandler.visualize(VisualizationType.PUB_MODEL);
         }
     }
 
@@ -235,13 +237,13 @@ public class ChoreographyController {
         rolesSorted.sort(Comparator.comparing(Role::getName));
 
         //Generate PublicModels folder
-        outputHandler.createOutputFolder("PrivateModels");
-        String path = outputHandler.getFormattedDate() + "/PrivateModels/";
+        OutputHandler.createOutputFolder("PrivateModels");
+        String path = GlobalTimestamp.timestamp + "/PrivateModels/";
 
         // Export private model graphs
         for (Role role : rolesSorted) {
             IPrivateModel prModel = choreo.R2PrM.get(role);
-            fragGen = new FragmentGenerator((PrivateModel) prModel, formattedDate);
+            fragGen = new FragmentGenerator((PrivateModel) prModel);
             prModel = fragGen.enhance();
             rst.add((PrivateModel) prModel);
 
@@ -252,7 +254,7 @@ public class ChoreographyController {
         }
 
         if (visualize) {
-            VisualizationHandler.visualize(formattedDate, VisualizationType.PRIV_MODEL);
+            VisualizationHandler.visualize(VisualizationType.PRIV_MODEL);
         }
 
         return rst;
@@ -264,7 +266,7 @@ public class ChoreographyController {
     private static void createChoreoInfo(ComplianceController complianceController, String folder,
                                          ArrayList<Interaction> interactions, int numberOfInteractions, int buildIterationCount) {
         try (BufferedWriter bw = new BufferedWriter(
-                new FileWriter(folder + "/autogen_choreo_info_" + formattedDate + ".txt"))) {
+                new FileWriter(folder + "/autogen_choreo_info_" + GlobalTimestamp.timestamp + ".txt"))) {
             bw.write(lineSep);
             bw.write("ADDED RULES:\n");
             bw.write(lineSep);

@@ -6,6 +6,7 @@ import at.ac.c3pro.chormodel.MultiDirectedGraph;
 import at.ac.c3pro.chormodel.PrivateModel;
 import at.ac.c3pro.chormodel.RpstModel;
 import at.ac.c3pro.node.*;
+import at.ac.c3pro.util.GlobalTimestamp;
 import org.jbpt.algo.tree.rpst.IRPSTNode;
 import org.jbpt.graph.abs.IDirectedGraph;
 import org.jbpt.utils.IOUtils;
@@ -32,13 +33,10 @@ public class FragmentGenerator {
     private static final int MAX_BRANCHES = 3;
     private final ArrayList<PrivateActivity> prActivities = new ArrayList<PrivateActivity>();
 
-    // For ensuring uniform naming scheme
-    String formattedDate;
 
-    public FragmentGenerator(PrivateModel prModel, String formattedDate) {
+    public FragmentGenerator(PrivateModel prModel) {
         this.privateModel = prModel;
         // iaCount = determineInteractionCount(prModel);
-        this.formattedDate = formattedDate;
     }
 
     public PrivateModel enhance() {
@@ -70,7 +68,7 @@ public class FragmentGenerator {
 
         privateModel = addFragment(randomNode);
 
-        IOUtils.toFile(formattedDate + "/Insert_autogen_" + i + ".dot", privateModel.getdigraph().toDOT());
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/Insert_autogen_" + i + ".dot", privateModel.getdigraph().toDOT());
 
         return privateModel;
     }

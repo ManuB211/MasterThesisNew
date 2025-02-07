@@ -5,18 +5,11 @@ import java.io.IOException;
 
 public class OutputHandler {
 
-    private final String formattedDate;
-
-    public OutputHandler(String formattedDate) {
-        this.formattedDate = formattedDate;
-
-    }
-
     /**
      * Creates an output folder with the given name. If the name is null it creates the target folder itself
      */
-    public File createOutputFolder(String name) throws IOException {
-        File dir = new File("target/" + formattedDate + (name != null ? "/" + name : ""));
+    public static File createOutputFolder(String name) throws IOException {
+        File dir = new File("target/" + GlobalTimestamp.timestamp + (name != null ? "/" + name : ""));
 
         if (!dir.exists()) {
             boolean created = dir.mkdir();
@@ -30,9 +23,5 @@ public class OutputHandler {
         }
 
         return dir;
-    }
-
-    public String getFormattedDate() {
-        return this.formattedDate;
     }
 }

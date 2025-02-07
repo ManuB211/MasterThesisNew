@@ -63,7 +63,6 @@ public class HOWHandler {
 
     // For debug purposes
     private final boolean printDebugGraphs = false;
-    private final String formattedDate = getTimestampFormatted();
 
     public HOWHandler(IDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> pGraph, Role pCurrentRole) {
         this.graph = pGraph;
@@ -97,7 +96,7 @@ public class HOWHandler {
     }
 
     private void printGraphsDebug(String timeInfo) {
-        IOUtils.toFile(formattedDate + "/" + formattedDate + "_" + timeInfo + "_" + currentRole.name + ".dot",
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/" + GlobalTimestamp.timestamp + "_" + timeInfo + "_" + currentRole.name + ".dot",
                 graph.toDOT());
     }
 

@@ -5,6 +5,7 @@ import at.ac.c3pro.chormodel.Role;
 import at.ac.c3pro.chormodel.generation.Branch.BranchState;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.node.Interaction.InteractionType;
+import at.ac.c3pro.util.GlobalTimestamp;
 import at.ac.c3pro.util.WeightedRandomSelection;
 import org.jbpt.utils.IOUtils;
 
@@ -50,14 +51,11 @@ public class ChorModelGenerator {
     // interaction
     private List<Role> handoverReceivers;
 
-    // Formatted date for uniform naming schemes
-    String formattedDate;
-
     public ChorModelGenerator() {
     }
 
     public ChorModelGenerator(int participantCount, int interactionCount, int xorSplitCount, int andSpiltCount,
-                              int loopCount, int maxBranching, String formattedDate,
+                              int loopCount, int maxBranching,
                               Map<InteractionType, Integer> remainingInteractionTypes) {
         super();
         this.participantCount = participantCount;
@@ -67,14 +65,13 @@ public class ChorModelGenerator {
         this.initialNodeCounts.put(NodeType.LOOP, loopCount);
         this.maxBranching = maxBranching;
         this.remainingNodeCounts = this.initialNodeCounts;
-        this.formattedDate = formattedDate;
         this.remainingInteractionTypes = remainingInteractionTypes;
         this.randomSelectionInteractionType = new WeightedRandomSelection(remainingInteractionTypes, participantCount);
         this.handoverReceivers = new ArrayList<>();
         setupParticipants();
     }
 
-    public MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> build(String formattedDate) {
+    public MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> build() {
 
         int remSplits = getRemainingSplits();
         // check parameter
@@ -246,7 +243,7 @@ public class ChorModelGenerator {
         currentGraphToDot(loopCounter++);
         addMessageFlow();
         buildFinishedGraph();
-        IOUtils.toFile(formattedDate + "/enriched_graph" + ".dot", enrichedGraph.toDOT());
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/enriched_graph" + ".dot", enrichedGraph.toDOT());
         insertLoops(loops);
 
         return this.buildGraph;
@@ -623,7 +620,7 @@ public class ChorModelGenerator {
     }
 
     private void currentGraphToDot(int loopNo) {
-        IOUtils.toFile(formattedDate + "/autogen_" + loopNo + ".dot", buildGraph.toDOT());
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/autogen_" + loopNo + ".dot", buildGraph.toDOT());
     }
 
     public void setEarlyBranchClosing(Boolean earlyBranchClosing) {

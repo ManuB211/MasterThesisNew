@@ -4,8 +4,8 @@ import java.io.IOException;
 
 public class VisualizationHandler {
 
-    public static void visualize(String timestamp, VisualizationType type) throws InterruptedException, IOException {
-        ProcessBuilder processBuilder = new ProcessBuilder("python", type.getPath(), timestamp, type.getFolderName());
+    public static void visualize(VisualizationType type) throws InterruptedException, IOException {
+        ProcessBuilder processBuilder = new ProcessBuilder("python", type.getPath(), GlobalTimestamp.timestamp, type.getFolderName());
         processBuilder.redirectErrorStream(true);
 
         Process process = processBuilder.start();

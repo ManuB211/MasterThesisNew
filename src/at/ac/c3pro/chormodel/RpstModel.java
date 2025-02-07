@@ -2,6 +2,7 @@ package at.ac.c3pro.chormodel;
 
 import at.ac.c3pro.ImpactAnalysis.ImpactAnalysisUtil.Pair;
 import at.ac.c3pro.node.*;
+import at.ac.c3pro.util.GlobalTimestamp;
 import org.jbpt.algo.tree.rpst.IRPSTNode;
 import org.jbpt.algo.tree.rpst.RPST;
 import org.jbpt.algo.tree.tctree.TCType;
@@ -9,8 +10,6 @@ import org.jbpt.graph.abs.IDirectedGraph;
 import org.jbpt.graph.abs.IFragment;
 import org.jbpt.utils.IOUtils;
 
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.*;
 import java.util.Map.Entry;
@@ -398,24 +397,16 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
     public RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge) {
 
-        String formattedDate = getTimestampFormatted();
-        IOUtils.toFile(formattedDate + "/ReductionStart.dot", this.getdigraph().toDOT());
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/ReductionStart.dot", this.getdigraph().toDOT());
 
-        return this.reduceGraph(xorsWithDirectEdgeToMerge, formattedDate, 1);
-    }
-
-    private static String getTimestampFormatted() {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        Date date = new Date();
-        date.setTime(timestamp.getTime());
-        return new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(date);
+        return this.reduceGraph(xorsWithDirectEdgeToMerge, 1);
     }
 
     /**
      * Reduce the graph of the model by identifying fragments where reduction is
      * possible.
      */
-    public RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge, String formattedDate,
+    public RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge,
                                        Integer reduceCtr) {
         RpstModel<E, N> model = this;
         // recursively reduce the graph until there are no more graph reductions
@@ -423,11 +414,11 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         for (IRPSTNode<E, N> e : this.getFragmentsBottomUp()) {
             if (model.reduceGraph(xorsWithDirectEdgeToMerge, e)) {
 
-                IOUtils.toFile(formattedDate + "/Reduction" + reduceCtr + ".dot", model.getdigraph().toDOT());
+                IOUtils.toFile(GlobalTimestamp.timestamp + "/Reduction" + reduceCtr + ".dot", model.getdigraph().toDOT());
 
                 // System.out.println("the reduced graph: "+model.getdigraph());
 
-                return model.reloadFromGraph(model.getdigraph()).reduceGraph(xorsWithDirectEdgeToMerge, formattedDate,
+                return model.reloadFromGraph(model.getdigraph()).reduceGraph(xorsWithDirectEdgeToMerge,
                         reduceCtr + 1);
             }
         }

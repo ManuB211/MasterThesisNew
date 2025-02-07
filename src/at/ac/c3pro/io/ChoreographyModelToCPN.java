@@ -3,6 +3,7 @@ package at.ac.c3pro.io;
 import at.ac.c3pro.chormodel.PrivateModel;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.node.Interaction.InteractionType;
+import at.ac.c3pro.util.GlobalTimestamp;
 import at.ac.c3pro.util.OutputHandler;
 import at.ac.c3pro.util.VisualizationHandler;
 import org.jbpt.graph.abs.IDirectedGraph;
@@ -11,7 +12,6 @@ import org.jdom.Element;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -25,10 +25,6 @@ public class ChoreographyModelToCPN {
 
     private final List<String> alreadyCreated;
     private final List<String> alreadyCreatedGlobal;
-
-    private final OutputHandler outputHandler;
-    private final File outputFolder;
-    private static String formattedDate;
 
     private final Map<String, Element> privateNets;
 
@@ -45,9 +41,8 @@ public class ChoreographyModelToCPN {
     private boolean globalEndCreated;
 
 
-    public ChoreographyModelToCPN(List<PrivateModel> privateModels, OutputHandler outputFolderCreator) throws IOException {
+    public ChoreographyModelToCPN(List<PrivateModel> privateModels) throws IOException {
         this.privateModels = privateModels;
-        this.outputHandler = outputFolderCreator;
         this.alreadyVisited = new ArrayList<>();
         this.alreadyCreated = new ArrayList<>();
         this.alreadyCreatedGlobal = new ArrayList<>();
@@ -60,7 +55,7 @@ public class ChoreographyModelToCPN {
         this.interactionTransitions.put(InteractionType.SHARED_RESOURCE, new ArrayList<>());
         this.interactionTransitions.put(InteractionType.SYNCHRONOUS_ACTIVITY, new ArrayList<>());
 
-        this.outputFolder = outputFolderCreator.createOutputFolder("CPNs_private");
+        OutputHandler.createOutputFolder("CPNs_private");
 
         this.netComplete = new Element("net");
         this.netComplete.setAttribute("type", "http://www.yasper.org/specs/epnml-1.1"); // TODO
@@ -323,7 +318,7 @@ public class ChoreographyModelToCPN {
         printOneXML("CPN_complete", this.netComplete);
 
         if (visualRepresentation) {
-            VisualizationHandler.visualize(this.outputHandler.getFormattedDate(), VisualizationHandler.VisualizationType.PETRI_NET);
+            VisualizationHandler.visualize(VisualizationHandler.VisualizationType.PETRI_NET);
         }
 
     }
@@ -340,8 +335,10 @@ public class ChoreographyModelToCPN {
         // Pretty Print
         xmlOutput.setFormat(Format.getPrettyFormat());
 
+        String path = "target/" + GlobalTimestamp.timestamp + "/CPNs_private/";
         String cpnName = "/" + name + ".pnml";
-        xmlOutput.output(doc, new FileWriter(outputFolder + cpnName));
+
+        xmlOutput.output(doc, new FileWriter(path + cpnName));
     }
 
     private void trackNodeForBuildingOverallPetriNet(String name) {

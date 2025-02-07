@@ -4,7 +4,7 @@ import os
 from graphviz import Source
 
 
-def display_model(directory, folder):
+def display_model(directory):
     
     for model in os.listdir(directory):
         print(model)
@@ -32,7 +32,7 @@ def display_model(directory, folder):
             # Save the model as image
             model_graph.render(file_path_out, format="png", cleanup=True)
             print("Step 3 done")
-            print(f"Visualization saved to {file_path_out}. You can view it using an image viewer.")
+            print(f"Visualization saved to {file_path_out}")
 
         except Exception as e:
             raise Error(f"An error occurred: {e}")
@@ -42,6 +42,9 @@ def display_model(directory, folder):
 if __name__ == "__main__":
     timestamp = sys.argv[1]
     folder = sys.argv[2]
-    #Punkte weg!
-    directory = "target/{}/{}".format(timestamp, folder)
-    display_model(directory, folder)
+    
+    if folder == "":
+        directory = "target/{}".format(timestamp)
+    else:
+        directory = "target/{}/{}".format(timestamp, folder)
+    display_model(directory)

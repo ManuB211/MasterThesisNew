@@ -24,7 +24,7 @@ def display_pnml(directory):
             # Save the visualization to a file
             pn_visualizer.save(gviz, file_path_out)
 
-            print(f"Visualization saved to {file_path_out}. You can view it using an image viewer.")
+            print(f"Visualization saved to {file_path_out}")
 
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -32,5 +32,6 @@ def display_pnml(directory):
 #Main
 if __name__ == "__main__":
     timestamp = sys.argv[1];
-    directory = "target/{}/CPNs_private".format(timestamp)
+    folder = sys.argv[2]
+    directory = "target/{}/{}".format(timestamp, folder)
     display_pnml(directory)

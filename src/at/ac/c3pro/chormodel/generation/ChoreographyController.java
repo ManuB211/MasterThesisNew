@@ -115,6 +115,9 @@ public class ChoreographyController {
             graph = modelGen.build();
             IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_preCompliance.dot", graph.toDOT()); // first build
             IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched
+
+            VisualizationHandler.visualize(VisualizationType.FINISHED_GRAPH_ENRICHED);
+
             // with
             // message
             // flow

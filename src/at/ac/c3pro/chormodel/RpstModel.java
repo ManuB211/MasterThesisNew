@@ -401,8 +401,77 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
         IOUtils.toFile(GlobalTimestamp.timestamp + "/Reductions/Reductions_" + roleName + "/ReductionStart_" + roleName + ".dot", this.getdigraph().toDOT());
 
-        return this.reduceGraph(xorsWithDirectEdgeToMerge, 1, roleName);
+        RpstModel<E, N> reducedGraphRetainDirectXORConnections = this.reduceGraph(xorsWithDirectEdgeToMerge, 1, roleName);
+
+        return reduceGraphXORs(reducedGraphRetainDirectXORConnections, xorsWithDirectEdgeToMerge);
     }
+
+    /**
+     * Check the reduced graph again to eliminate direct XOR connections, in which the retained one is the only one left
+     */
+    public RpstModel<E, N> reduceGraphXORs(RpstModel<E, N> preReducedGraph, List<IChoreographyNode> xorsWithDirectEdgeToMerge) {
+
+        IDirectedGraph<E, N> preReducedDigraph = preReducedGraph.getdigraph();
+        boolean cont = true;
+
+        while (cont) {
+            cont = false;
+            Iterator<IChoreographyNode> iter = xorsWithDirectEdgeToMerge.iterator();
+
+            while (iter.hasNext()) {
+                N currXor = (N) iter.next();
+
+                List<N> currXorChildren = new ArrayList<>(preReducedDigraph.getDirectSuccessors(currXor));
+
+                //Only connection is direct connection -> nodes as well as edge need to go
+                //Connect parent of entry node with child(ren) of exit node
+                if (currXorChildren.size() == 1) {
+                    N xorChild = currXorChildren.get(0);
+
+                    //Either can only be one element, otherwise XOR fork would behave as a merge and XOR merge would behave as a fork
+                    //This option is eliminated by the correctness of the generation algorithm (famous last words lol)
+                    N connectFrom = new ArrayList<>(preReducedDigraph.getDirectPredecessors(currXor)).get(0);
+                    N connectTo = new ArrayList<>(preReducedDigraph.getDirectSuccessors(xorChild)).get(0);
+
+                    //Remove nodes and edge
+                    preReducedDigraph.removeVertex(currXor);
+                    preReducedDigraph.removeVertex(xorChild);
+                    preReducedDigraph.removeEdge(preReducedDigraph.getEdge(currXor, xorChild));
+
+                    //Connect new edge
+                    preReducedDigraph.addEdge(connectFrom, connectTo);
+
+                    cont = true;
+                }
+
+
+            }
+        }
+
+        preReducedGraph.setDiGraph(preReducedDigraph);
+        return preReducedGraph;
+    }
+
+    public RpstModel<E, N> reduceGraphXORs(List<IChoreographyNode> xorsWithDirectEdgeToMerge,
+                                           Integer reduceCtr, String roleName) {
+        RpstModel<E, N> model = this;
+        // recursively reduce the graph until there are no more graph reductions
+        // possible
+        for (IRPSTNode<E, N> e : this.getFragmentsBottomUp()) {
+            if (model.reduceGraph(xorsWithDirectEdgeToMerge, e)) {
+
+                IOUtils.toFile(GlobalTimestamp.timestamp + "/Reductions/Reductions_" + roleName + "/Reduction" + reduceCtr + "_" + roleName + ".dot", model.getdigraph().toDOT());
+
+                // System.out.println("the reduced graph: "+model.getdigraph());
+
+                return model.reloadFromGraph(model.getdigraph()).reduceGraph(xorsWithDirectEdgeToMerge,
+                        reduceCtr + 1, roleName);
+            }
+        }
+        // no more graph reductions possible
+        return model;
+    }
+
 
     /**
      * Reduce the graph of the model by identifying fragments where reduction is

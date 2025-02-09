@@ -403,13 +403,13 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
         RpstModel<E, N> reducedGraphRetainDirectXORConnections = this.reduceGraph(xorsWithDirectEdgeToMerge, 1, roleName);
 
-        return reduceGraphXORs(reducedGraphRetainDirectXORConnections, xorsWithDirectEdgeToMerge);
+        return reduceGraphXORs(reducedGraphRetainDirectXORConnections, xorsWithDirectEdgeToMerge, roleName);
     }
 
     /**
      * Check the reduced graph again to eliminate direct XOR connections, in which the retained one is the only one left
      */
-    public RpstModel<E, N> reduceGraphXORs(RpstModel<E, N> preReducedGraph, List<IChoreographyNode> xorsWithDirectEdgeToMerge) {
+    public RpstModel<E, N> reduceGraphXORs(RpstModel<E, N> preReducedGraph, List<IChoreographyNode> xorsWithDirectEdgeToMerge, String roleName) {
 
         IDirectedGraph<E, N> preReducedDigraph = preReducedGraph.getdigraph();
         boolean cont = true;
@@ -423,9 +423,12 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
                 List<N> currXorChildren = new ArrayList<>(preReducedDigraph.getDirectSuccessors(currXor));
 
-                //Only connection is direct connection -> nodes as well as edge need to go
-                //Connect parent of entry node with child(ren) of exit node
-                if (currXorChildren.size() == 1) {
+                /*
+                 * If we find a set of connections that is only XOR->XOR_m, we can remove the nodes as well as the edge
+                 * That means we connect the parent of XOR to the child of XOR_m
+                 * */
+                if (!currXorChildren.isEmpty()
+                        && currXorChildren.stream().allMatch(child -> child.getName().equals(currXor.getName() + "_m"))) {
                     N xorChild = currXorChildren.get(0);
 
                     //Either can only be one element, otherwise XOR fork would behave as a merge and XOR merge would behave as a fork
@@ -447,6 +450,8 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
             }
         }
+
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/Reductions/Reductions_" + roleName + "/ReductionFinal_" + roleName + ".dot", preReducedDigraph.toDOT());
 
         preReducedGraph.setDiGraph(preReducedDigraph);
         return preReducedGraph;

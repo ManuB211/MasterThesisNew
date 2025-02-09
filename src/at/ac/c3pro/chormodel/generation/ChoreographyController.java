@@ -1,7 +1,8 @@
 package at.ac.c3pro.chormodel.generation;
 
 import at.ac.c3pro.chormodel.*;
-import at.ac.c3pro.chormodel.compliance.*;
+import at.ac.c3pro.chormodel.compliance.ComplianceController;
+import at.ac.c3pro.chormodel.compliance.CompliancePattern;
 import at.ac.c3pro.io.ChoreographyModel2Bpmn;
 import at.ac.c3pro.io.ChoreographyModelToCPN;
 import at.ac.c3pro.io.Collaboration2Bpmn;
@@ -20,33 +21,25 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class ChoreographyController {
 
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
     private static final String lineSep = "----------------------------------------------------------\n";
-
-    private static OutputHandler outputHandler;
-    private static final ArrayList<CompliancePattern> complianceRules = new ArrayList<>();
 
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
         //Add timestamp as global attribute, so that it can be accessed anywhere without the need of giving it as a parameter everywhere
         GlobalTimestamp.timestamp = getTimestampFormatted();
+        MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> graph;
 
-        MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> graph = new MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode>();
-        Boolean buildSuccess = Boolean.FALSE;
-        int buildIterationCount = 0;
-        BuildAnaylse buildAnaylse = null;
-
-
-        File dir = outputHandler.createOutputFolder(null);
+        File dir = OutputHandler.createOutputFolder(null);
 
         // Read config file
         String configString = "";
-        InputStream fileStream = new FileInputStream(new File("config/config.json"));
+        InputStream fileStream = Files.newInputStream(new File("config/config.json").toPath());
 
         int inputChar;
         while ((inputChar = fileStream.read()) != -1) {
@@ -69,10 +62,6 @@ public class ChoreographyController {
         int amountSynchronousActivity = configObject.getInt("amountSynchronousActivity");
 
         Map<InteractionType, Integer> remainingInteractionTypes = new HashMap<>();
-//        remainingInteractionTypes.put(InteractionType.MESSAGE_EXCHANGE, Integer.valueOf(2));
-//        remainingInteractionTypes.put(InteractionType.HANDOVER_OF_WORK, Integer.valueOf(1));
-//        remainingInteractionTypes.put(InteractionType.SHARED_RESOURCE, Integer.valueOf(1));
-//        remainingInteractionTypes.put(InteractionType.SYNCHRONOUS_ACTIVITY, Integer.valueOf(1));
 
         remainingInteractionTypes.put(InteractionType.MESSAGE_EXCHANGE, amountMessageExchange);
         remainingInteractionTypes.put(InteractionType.HANDOVER_OF_WORK, amountHandoverOfWork);
@@ -98,106 +87,67 @@ public class ChoreographyController {
                     "The amount of interactions of the type handover-of-work cannot be equal or greater to the amount of participants");
         }
 
-        // TODO: Use buildSuccess in combination with custom exception to restart
-        // generation
-        while (!buildSuccess) {
-            long startTime = System.currentTimeMillis();
-            modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,
-                    loopCount, maxBranching, remainingInteractionTypes);
+        modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,
+                loopCount, maxBranching, remainingInteractionTypes);
 
-            // TODO: Put in Constructor?
-            modelGen.setEarlyBranchClosing(Boolean.valueOf(false));
-            modelGen.setStartWithInteraction(Boolean.valueOf(false));
+        // TODO: Put in Constructor?
+        modelGen.setEarlyBranchClosing(Boolean.valueOf(false));
+        modelGen.setStartWithInteraction(Boolean.valueOf(false));
 
-            buildIterationCount++;
+        // build choreography model
+        graph = modelGen.build();
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_preCompliance.dot", graph.toDOT()); // first build
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched
 
-            // build choreography model
-            graph = modelGen.build();
-            IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_preCompliance.dot", graph.toDOT()); // first build
-            IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched
+        VisualizationHandler.visualize(VisualizationType.FINISHED_GRAPH_ENRICHED);
 
-            VisualizationHandler.visualize(VisualizationType.FINISHED_GRAPH_ENRICHED);
+        String folder = dir.toString();
 
-            // with
-            // message
-            // flow
+        IOUtils.toFile(GlobalTimestamp.timestamp + "/" + GlobalTimestamp.timestamp + "_choreo_model.dot",
+                modelGen.getEnrichedGraph().toDOT()); // assigned with compliance rules interactions
 
-            // if compliance rules are defined, do interaction assignment
-            if (complianceRules.isEmpty()) {
-                buildSuccess = true;
-            } else {
-                complianceController.reloadSplitTracking();
-                buildSuccess = complianceController.assign();
-            }
+        createChoreoInfo(complianceController, folder, modelGen.getInteractions(),
+                splitTracking.getNumberOfInteractions());
 
-            if (buildSuccess) {
-                long stopTime = System.currentTimeMillis();
-                long elapsedTime = stopTime - startTime;
+        ChoreographyModel choreoModel = new ChoreographyModel(modelGen.getEnrichedGraph());
+        ChoreographyModel2Bpmn choreo2bpmnIO = new ChoreographyModel2Bpmn(choreoModel,
+                "autogen_choreo_model_" + GlobalTimestamp.timestamp, folder);
 
-                String folder = dir.toString();
+        // Generate Choreography (incl. all public models / private models)
+        ChoreographyGenerator chorGen = new ChoreographyGenerator();
+        Choreography choreo = ChoreographyGenerator.generateChoreographyFromModel(choreoModel);
 
-                IOUtils.toFile(GlobalTimestamp.timestamp + "/" + GlobalTimestamp.timestamp + "_choreo_model.dot",
-                        modelGen.getEnrichedGraph().toDOT()); // assigned with compliance rules interactions
+        // Export Models
+        exportPublicModels(choreo, printVisualizationsForPubModels);
+        List<PrivateModel> privateModels = exportPrivateModels(choreo, printVisualizationsForPrivModels);
 
-                createChoreoInfo(complianceController, folder, modelGen.getInteractions(),
-                        splitTracking.getNumberOfInteractions(), buildIterationCount);
-
-                ChoreographyModel choreoModel = new ChoreographyModel(modelGen.getEnrichedGraph());
-                ChoreographyModel2Bpmn choreo2bpmnIO = new ChoreographyModel2Bpmn(choreoModel,
-                        "autogen_choreo_model_" + GlobalTimestamp.timestamp, folder);
-
-                // Generate Choreography (incl. all public models / private models)
-                ChoreographyGenerator chorGen = new ChoreographyGenerator();
-                Choreography choreo = ChoreographyGenerator.generateChoreographyFromModel(choreoModel);
-
-                // Export Models
-                exportPublicModels(choreo, printVisualizationsForPubModels);
-                List<PrivateModel> privateModels = exportPrivateModels(choreo, printVisualizationsForPrivModels);
-
-                // Transform Private Models to a PNML file
-                try {
-                    ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels);
-                    choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
-                } catch (IOException | InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-
-                // Transform Models to bpmn
-                Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
-                        "autogen_collab_" + GlobalTimestamp.timestamp, folder);
-
-                for (Role role : choreo.collaboration.roles) {
-                    IPrivateModel prModel = choreo.R2PrM.get(role);
-                    PrivateModel2Bpmn prModel2bpmn = new PrivateModel2Bpmn(prModel,
-                            "autogen_prModel_" + role.name + "_" + GlobalTimestamp.timestamp + ".bpmn", folder);
-                    prModel2bpmn.buildXML();
-                }
-
-                choreo2bpmnIO.buildXML();
-                collab2bpmnIO.buildXML();
-
-                System.out.println("lülülül");
-
-                // if interaction assignment failed, increase interactionCount by one every 10
-                // iterations
-            } else if (!buildSuccess && (buildIterationCount % 10 == 0)) {
-                interactionCount = (int) (interactionCount * 1.1);
-            }
-
-            if (!buildSuccess && buildIterationCount > 4) {
-                System.out.println("HIER DRIN");
-                break;
-            }
-
-            complianceController.printComplianceData();
-            System.out.println("Success?: " + buildSuccess);
-            System.out.println("buildIterationCount: " + buildIterationCount);
-            modelGen.printInteractions();
-
-            splitTracking.terminate();
+        // Transform Private Models to a PNML file
+        try {
+            ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels);
+            choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
+        } catch (IOException | InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
+        // Transform Models to bpmn
+        Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
+                "autogen_collab_" + GlobalTimestamp.timestamp, folder);
+
+        for (Role role : choreo.collaboration.roles) {
+            IPrivateModel prModel = choreo.R2PrM.get(role);
+            PrivateModel2Bpmn prModel2bpmn = new PrivateModel2Bpmn(prModel,
+                    "autogen_prModel_" + role.name + "_" + GlobalTimestamp.timestamp + ".bpmn", folder);
+            prModel2bpmn.buildXML();
+        }
+
+        choreo2bpmnIO.buildXML();
+        collab2bpmnIO.buildXML();
+
+        complianceController.printComplianceData();
+        modelGen.printInteractions();
+
+        splitTracking.terminate();
     }
 
     /**
@@ -267,7 +217,7 @@ public class ChoreographyController {
      * Builds the ChoreoInfo, saved as autogen_choreo_info_[timestamp].txt
      */
     private static void createChoreoInfo(ComplianceController complianceController, String folder,
-                                         ArrayList<Interaction> interactions, int numberOfInteractions, int buildIterationCount) {
+                                         ArrayList<Interaction> interactions, int numberOfInteractions) {
         try (BufferedWriter bw = new BufferedWriter(
                 new FileWriter(folder + "/autogen_choreo_info_" + GlobalTimestamp.timestamp + ".txt"))) {
             bw.write(lineSep);
@@ -340,9 +290,6 @@ public class ChoreographyController {
             bw.write("Number Of Interactions: " + numberOfInteractions);
             bw.newLine();
             bw.write(lineSep);
-            bw.write("Number Of Iterations: " + buildIterationCount);
-            bw.newLine();
-            bw.write(lineSep);
             System.out.println("Done");
 
         } catch (IOException e1) {
@@ -363,67 +310,4 @@ public class ChoreographyController {
         date.setTime(timestamp.getTime());
         return new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(date);
     }
-
-    /**
-     * Defines Interaction List for Compliance Rules TODO: Needed?
-     *
-     * @returns List of interactions
-     */
-    private List<Interaction> createInteractionListAndDefineComplianceRules() {
-
-        // DEFINE INTERACTIONS FOR COMPLIANCE RULES
-        Interaction a = new Interaction();
-        a.setName("IA A");
-
-        Interaction b = new Interaction();
-        b.setName("IA B");
-
-        Interaction c = new Interaction();
-        c.setName("IA C");
-
-        Interaction d = new Interaction();
-        d.setName("IA D");
-
-        Interaction e = new Interaction();
-        e.setName("IA E");
-
-        Interaction f = new Interaction();
-        f.setName("IA F");
-
-        Interaction g = new Interaction();
-        g.setName("IA G");
-
-        Interaction h = new Interaction();
-        h.setName("IA H");
-
-        Interaction i = new Interaction();
-        i.setName("IA I");
-
-        ArrayList<Interaction> interactions = new ArrayList<Interaction>();
-        for (int x = 0; x < 10; x++) {
-            interactions.add(new Interaction());
-        }
-
-        // Define and add complianceRules
-        complianceRules.add(new LeadsTo("r1", a, b));
-        complianceRules.add(new LeadsTo("r2", a, c));
-        complianceRules.add(new LeadsTo("r3", b, f));
-        complianceRules.add(new Precedes("r4", d, h));
-        complianceRules.add(new LeadsTo("r5", g, d));
-        complianceRules.add(new Precedes("r6", b, c));
-        complianceRules.add(new Universal("r7", b));
-        complianceRules.add(new Precedes("r8", c, a));
-        complianceRules.add(new Universal("r9", e));
-        complianceRules.add(new Exists("r10", i));
-
-        return interactions;
-    }
-
-    /**
-     * Defines the compliance rules, which are
-     */
-    private void defineComplianceRules() {
-
-    }
-
 }

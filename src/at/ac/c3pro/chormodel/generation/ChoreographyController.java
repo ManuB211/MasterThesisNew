@@ -11,10 +11,7 @@ import at.ac.c3pro.node.Edge;
 import at.ac.c3pro.node.IChoreographyNode;
 import at.ac.c3pro.node.Interaction;
 import at.ac.c3pro.node.Interaction.InteractionType;
-import at.ac.c3pro.util.ChoreographyGenerator;
-import at.ac.c3pro.util.GlobalTimestamp;
-import at.ac.c3pro.util.OutputHandler;
-import at.ac.c3pro.util.VisualizationHandler;
+import at.ac.c3pro.util.*;
 import at.ac.c3pro.util.VisualizationHandler.VisualizationType;
 import org.jbpt.utils.IOUtils;
 import org.json.JSONException;
@@ -74,6 +71,7 @@ public class ChoreographyController {
         boolean printPetriNetVisualizationsSeparateParticipants = configObject.getBoolean("visualizeAllCPNs");
         boolean printVisualizationsForPrivModels = configObject.getBoolean("visualizePrivModels");
         boolean printVisualizationsForPubModels = configObject.getBoolean("visualizePubModels");
+        boolean useEasySoundnessChecker = configObject.getBoolean("useEasySoundnessChecker");
 
         ChorModelGenerator modelGen;
         SplitTracking splitTracking = SplitTracking.getInstance();
@@ -117,9 +115,16 @@ public class ChoreographyController {
         ChoreographyGenerator chorGen = new ChoreographyGenerator();
         Choreography choreo = ChoreographyGenerator.generateChoreographyFromModel(choreoModel);
 
+
         // Export Models
         exportPublicModels(choreo, printVisualizationsForPubModels);
         List<PrivateModel> privateModels = exportPrivateModels(choreo, printVisualizationsForPrivModels);
+
+        if (useEasySoundnessChecker) {
+            EasySoundnessChecker easySoundnessChecker = new EasySoundnessChecker(choreo);
+            easySoundnessChecker.run();
+        }
+
 
         // Transform Private Models to a PNML file
         try {

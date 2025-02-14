@@ -221,6 +221,8 @@ public class ChoreographyGenerator {
     private static void putNodeInC2PNode(Map<IChoreographyNode, IPublicNode> C2Pnode, Interaction node,
                                          Role currentRole) {
 
+        //TODO: Filter out instances, where one participant contains more than one HOW as receiver
+
         // Throw exception if interaction node has none of the defined types
         if (!InteractionType.MESSAGE_EXCHANGE.equals(node.getInteractionType())
                 && !InteractionType.HANDOVER_OF_WORK.equals(node.getInteractionType())

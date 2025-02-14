@@ -4,16 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ec2e7313-cace-4265-bb9c-8817a99b10c2" name="Default" comment="extend logging/output of reduction steps">
+    <list default="true" id="ec2e7313-cace-4265-bb9c-8817a99b10c2" name="Default" comment="clean up ChoreographyController">
+      <change afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/EasySoundnessChecker.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/config.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/config.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/generateDotVisualization.py" beforeDir="false" afterPath="$PROJECT_DIR$/resources/generateDotVisualization.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/generateDotVisualization.py.bak" beforeDir="false" afterPath="$PROJECT_DIR$/resources/generateDotVisualization.py.bak" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/generatePetrinetVisualization.py" beforeDir="false" afterPath="$PROJECT_DIR$/resources/generatePetrinetVisualization.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/generatePetrinetVisualization.py.bak" beforeDir="false" afterPath="$PROJECT_DIR$/resources/generatePetrinetVisualization.py.bak" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChorModelGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChorModelGenerator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChoreographyController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/chormodel/generation/ChoreographyController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/VisualizationHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/VisualizationHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/at/ac/c3pro/util/ChoreographyGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/at/ac/c3pro/util/ChoreographyGenerator.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -168,6 +165,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="jar://$PROJECT_DIR$/lib/jbpt-0.2.348.jar!/org/jbpt/hypergraph/abs/GObject.class" root0="SKIP_INSPECTION" />
+  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
@@ -272,18 +272,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.ChoreographyController.executor": "Debug",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Admin/Desktop/Implementierung/data/util",
-    "settings.editor.selected.configurable": "preferences.keymap"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.ChoreographyController.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Admin/Downloads/one-dark-theme.zip&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="at.ac.c3pro.io" />
@@ -378,7 +378,47 @@
       <option name="project" value="LOCAL" />
       <updated>1738942540717</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="changes to python scripts; allow visualization of finished_graph_enriched">
+      <option name="closed" value="true" />
+      <created>1738954702689</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1738954702689</updated>
+    </task>
+    <task id="LOCAL-00004" summary="more changes to python scripts as im blind">
+      <option name="closed" value="true" />
+      <created>1738954761193</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1738954761193</updated>
+    </task>
+    <task id="LOCAL-00005" summary="changed reduction algorithm for post projection; XORs with a valid connection to merge are now removed if it is the only edge that remains">
+      <option name="closed" value="true" />
+      <created>1738954834323</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1738954834323</updated>
+    </task>
+    <task id="LOCAL-00006" summary="change reduction algorithm so that also direct edges XOR-&gt;XOR_m with more than one edge get removed during XOR reduction">
+      <option name="closed" value="true" />
+      <created>1739104194270</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1739104194270</updated>
+    </task>
+    <task id="LOCAL-00007" summary="clean up ChoreographyController">
+      <option name="closed" value="true" />
+      <created>1739108001714</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1739108001714</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
@@ -457,17 +497,22 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="separate outputs, externalize creation of directories and visualization and offer visualization for private/public models" />
     <MESSAGE value="extend logging/output of reduction steps" />
-    <option name="LAST_COMMIT_MESSAGE" value="extend logging/output of reduction steps" />
+    <MESSAGE value="changes to python scripts; allow visualization of finished_graph_enriched" />
+    <MESSAGE value="more changes to python scripts as im blind" />
+    <MESSAGE value="changed reduction algorithm for post projection; XORs with a valid connection to merge are now removed if it is the only edge that remains" />
+    <MESSAGE value="change reduction algorithm so that also direct edges XOR-&gt;XOR_m with more than one edge get removed during XOR reduction" />
+    <MESSAGE value="clean up ChoreographyController" />
+    <option name="LAST_COMMIT_MESSAGE" value="clean up ChoreographyController" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
+        <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN_notCurr.java</url>
           <line>259</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
+        <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/src/at/ac/c3pro/io/ChoreographyModelToCPN_notCurr.java</url>
           <line>120</line>
           <option name="timeStamp" value="17" />
@@ -478,16 +523,50 @@
           <line>884</line>
           <option name="timeStamp" value="26" />
         </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
+        <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/OutputHandler.java</url>
           <line>21</line>
           <option name="timeStamp" value="55" />
         </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/ChoreographyGenerator.java</url>
+          <line>234</line>
+          <option name="timeStamp" value="111" />
+        </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/ChoreographyGenerator.java</url>
+          <line>188</line>
+          <option name="timeStamp" value="112" />
+        </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/ChoreographyGenerator.java</url>
+          <line>58</line>
+          <option name="timeStamp" value="113" />
+        </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/EasySoundnessChecker.java</url>
+          <line>135</line>
+          <option name="timeStamp" value="125" />
+        </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/EasySoundnessChecker.java</url>
+          <line>140</line>
+          <option name="timeStamp" value="126" />
+        </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <condition expression="currXorChildren.size() &gt; 1" language="JAVA" />
-          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/chormodel/RpstModel.java</url>
-          <line>427</line>
-          <option name="timeStamp" value="70" />
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/EasySoundnessChecker.java</url>
+          <line>284</line>
+          <option name="timeStamp" value="143" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/EasySoundnessChecker.java</url>
+          <line>253</line>
+          <option name="timeStamp" value="144" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/at/ac/c3pro/util/EasySoundnessChecker.java</url>
+          <line>234</line>
+          <option name="timeStamp" value="148" />
         </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.lang.NullPointerException" package="java.lang" />

@@ -270,7 +270,7 @@ public class ChorModelGenerator {
                             + branch.getNodes());
 
                     InteractionType interactionType = getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(
-                            null);
+                            null, null);
 
                     Interaction interaction = new Interaction();
                     interaction.setName("IA" + interactions.size());
@@ -341,7 +341,7 @@ public class ChorModelGenerator {
         IChoreographyNode node = null;
         switch (nodeType) {
             case INTERACTION:
-                InteractionType typeToBeSet = this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(null);
+                InteractionType typeToBeSet = this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(null, null);
                 remainingInteractionTypes.computeIfPresent(typeToBeSet, (k, v) -> v - 1);
                 node = new Interaction();
                 node.setName("IA" + interactions.size());
@@ -383,9 +383,9 @@ public class ChorModelGenerator {
      * chosen according to the distribution the types had in the beginning
      * <p>
      * Although Handover-Of-Work can only be set, if its not the first interaction
-     * (for a participant) //TODO: Clear up properties of HOW
+     * (for a participant) //TODO: Clear up properties of HOW and check validity of the check
      */
-    private InteractionType getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(Branch currBranch) {
+    private InteractionType getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(Branch currBranch, Role receiver) {
 
         List<InteractionType> rst = new ArrayList<>();
 
@@ -401,7 +401,8 @@ public class ChorModelGenerator {
             rst.add(InteractionType.SYNCHRONOUS_ACTIVITY);
         }
 
-        if (remainingInteractionTypes.get(InteractionType.HANDOVER_OF_WORK) > 0) { // && TODO)
+        //Handover-of-Work only when receiver was not already the receiver of another HOW
+        if (remainingInteractionTypes.get(InteractionType.HANDOVER_OF_WORK) > 0 && !handoverReceivers.contains(receiver)) {
             rst.add(InteractionType.HANDOVER_OF_WORK);
         }
 
@@ -545,7 +546,7 @@ public class ChorModelGenerator {
             participantsWorkingSet.removeAll(this.handoverReceivers);
 
             if (participantsWorkingSet.isEmpty()) {
-                // TODO: Generation should start again
+                // Should never happen, as there had to be equal or more HOWs than the amount of participants, which is handled at the beginning of the generation already
                 throw new IllegalStateException(
                         "There are no participants that could be receivers of the handover of work interaction. Sadface");
             }
@@ -705,6 +706,7 @@ public class ChorModelGenerator {
      *
      * @param split: The split to use as an entry point of the addition of the
      *               message flow
+     *               <p>
      */
     private void addMessageFlow(Split split) {
         if (split.getSplitNode() instanceof Event) {
@@ -780,7 +782,7 @@ public class ChorModelGenerator {
                                 sender = branch.getLastReceiver();
                                 receiver = split.getLastReceiver();
 
-                                Interaction ia = createInteraction(interactions.size(), sender, receiver);
+                                Interaction ia = createInteraction(sender, receiver);
                                 createMessageAndSetToCurrNode(sender, receiver, ia);
 
                                 interactions.add(ia);
@@ -834,7 +836,7 @@ public class ChorModelGenerator {
                                     sender = branch.getLastReceiver();
                                     receiver = split.getLastReceiver();
 
-                                    Interaction ia = createInteraction(interactions.size(), sender, receiver);
+                                    Interaction ia = createInteraction(sender, receiver);
                                     createMessageAndSetToCurrNode(sender, receiver, ia);
 
                                     interactions.add(ia);
@@ -853,17 +855,16 @@ public class ChorModelGenerator {
     /**
      * Creates a new Interaction
      *
-     * @param interactionId: The next free id to identify the IA
-     * @param sender:        The sending part of the interaction
-     * @param receiver:      The receiving part of the interaction
+     * @param sender:   The sending part of the interaction
+     * @param receiver: The receiving part of the interaction
      * @returns the newly created interaction
      */
-    private Interaction createInteraction(int interactionId, Role sender, Role receiver) {
+    private Interaction createInteraction(Role sender, Role receiver) {
 
         Interaction ia = new Interaction();
         ia.setName("IA" + interactions.size());
         ia.setId(UUID.randomUUID().toString());
-        ia.setInteractionType(this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(null));
+        ia.setInteractionType(this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(null, receiver));
         ia.setParticipant1(sender);
         ia.setParticipant2(receiver);
 

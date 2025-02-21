@@ -21,8 +21,6 @@ public class EasySoundnessChecker {
 
     List<List<IPublicNode>> traces;
 
-    //Tracks nodes that are eliminated, meaning they are contained in a cycle
-    Set<IPublicNode> eliminated;
 
     boolean continueSearchForCyclicWaits;
 
@@ -39,7 +37,6 @@ public class EasySoundnessChecker {
         participantsByName = new HashMap<>();
         endNodes = new HashMap<>();
         traces = new ArrayList<>();
-        eliminated = new HashSet<>();
         publicModelsByRole = new HashMap<>();
         conditionMap = new HashMap<>();
         continueSearchForCyclicWaits = true;
@@ -89,7 +86,12 @@ public class EasySoundnessChecker {
 
         int ctr = 0;
 
+        //TODO: Mechanism to dynamically stop when either all participants are eliminated or it could been shown that there are no more cycles and there are executable paths
+        //--> check mechanism with visited again to ensure
         while (ctr < 7) {
+
+            //TODO: Mechanism to choose other end node if needed and referesh graph after there may have been paths executed or the complete graph executed
+
 
             //Search one trace at a time, either a cycle or a trace from end to some start
             List<IPublicNode> trace = new ArrayList<>();
@@ -97,7 +99,7 @@ public class EasySoundnessChecker {
             searchTrace(firstGraph, firstEndNode, trace);
 
             System.out.println("Trace found: ");
-            System.out.println(trace.stream().map(IGObject::getName).collect(Collectors.joining(" --> ")));
+            System.out.println(trace.stream().map(IGObject::getName).collect(Collectors.joining("\n --> \n")));
             System.out.println("---------------------------------------------------------------------------------------------------------");
             System.out.println();
 
@@ -161,32 +163,67 @@ public class EasySoundnessChecker {
             if (isSynchronousTask && startingNode instanceof Receive) {
                 //CurrNode is Receive of a synchronous task -> consider corresponding Send next
                 IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfOtherParticipant = publicModelsByRole.get(participantsByName.get(participant1));
-                IPublicNode counterpartNode = getCounterpartNode(startingNode, graphOfOtherParticipant);
 
-                if (!visited.contains(counterpartNode)) {
-                    searchTrace(graphOfOtherParticipant, counterpartNode, trace);
-                    continueWithParents = false;
+                //If the graph of the other participant has already been eliminated, the interaction cannot be executed and we need to eliminate its context
+                if (graphOfOtherParticipant == null) {
+
+                    System.out.println("Interaction " + startingNode.getName() + " can never be executed because the graph of the other participant involved in this interaction is not executable at all.");
+                    System.out.println("Therefore, the Interaction " + startingNode.getName() + " needs to be eliminated as well as its context");
+
+                    eliminateContext(startingNode);
+                    return;
+                } else {
+                    IPublicNode counterpartNode = getCounterpartNode(startingNode, graphOfOtherParticipant);
+
+                    if (!visited.contains(counterpartNode)) {
+                        searchTrace(graphOfOtherParticipant, counterpartNode, trace);
+                        continueWithParents = false;
+                    }
                 }
-
             } else if (isSynchronousTask) {
                 //CurrNode is Send of a synchronous task -> consider corresponding Receive next
                 IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfOtherParticipant = publicModelsByRole.get(participantsByName.get(participant2));
-                IPublicNode counterpartNode = getCounterpartNode(startingNode, graphOfOtherParticipant);
 
-                if (!visited.contains(counterpartNode)) {
-                    searchTrace(graphOfOtherParticipant, counterpartNode, trace);
-                    continueWithParents = false;
+                //If the graph of the other participant has already been eliminated, the interaction cannot be executed and we need to eliminate its context
+                if (graphOfOtherParticipant == null) {
+
+                    System.out.println("Interaction " + startingNode.getName() + " can never be executed because the graph of the other participant involved in this interaction is not executable at all.");
+                    System.out.println("Therefore, the Interaction " + startingNode.getName() + " needs to be eliminated as well as its context");
+
+                    eliminateContext(startingNode);
+                    return;
+                } else {
+
+
+                    IPublicNode counterpartNode = getCounterpartNode(startingNode, graphOfOtherParticipant);
+
+                    if (!visited.contains(counterpartNode)) {
+                        searchTrace(graphOfOtherParticipant, counterpartNode, trace);
+                        continueWithParents = false;
+                    }
                 }
-
 
             } else {
                 //CurrNode is Receive of a MX or HOW -> Conditioned by corresponding Send
                 if (isMessageExchangeOrHOW) {
                     IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfOtherParticipant = publicModelsByRole.get(participantsByName.get(participant1));
-                    IPublicNode counterpartNode = getCounterpartNode(startingNode, graphOfOtherParticipant);
 
-                    searchTrace(graphOfOtherParticipant, counterpartNode, trace);
-                    continueWithParents = false;
+                    //If the graph of the other participant has already been eliminated, the interaction cannot be executed and we need to eliminate its context
+                    if (graphOfOtherParticipant == null) {
+
+                        System.out.println("Interaction " + startingNode.getName() + " can never be executed because the graph of the other participant involved in this interaction is not executable at all.");
+                        System.out.println("Therefore, the Interaction " + startingNode.getName() + " needs to be eliminated as well as its context");
+
+                        eliminateContext(startingNode);
+                        return;
+                    } else {
+                        IPublicNode counterpartNode = getCounterpartNode(startingNode, graphOfOtherParticipant);
+
+                        searchTrace(graphOfOtherParticipant, counterpartNode, trace);
+                        continueWithParents = false;
+                    }
+
+
                 }
 
             }
@@ -196,9 +233,7 @@ public class EasySoundnessChecker {
             //Get one parent of the current graph to continue execution with
             List<IPublicNode> parents = new ArrayList<>(graph.getDirectPredecessors(startingNode));
 
-            //TODO: integrate eliminated into consideration
             IPublicNode randomPossibleParent = getNextInTracePreferUnvisited(parents);
-//            IPublicNode randomPossibleParent = parents.get(0);
 
             searchTrace(graph, randomPossibleParent, trace);
         }
@@ -215,7 +250,7 @@ public class EasySoundnessChecker {
         List<IPublicNode> cycleTrace = trace.subList(cycleStartIndex, trace.size());
 
         System.out.println("Cycle found: ");
-        System.out.println(cycleTrace.stream().map(IGObject::getName).collect(Collectors.joining(" --> ")));
+        System.out.println(cycleTrace.stream().map(IGObject::getName).collect(Collectors.joining("\n --> \n")));
         System.out.println();
 
 
@@ -231,11 +266,12 @@ public class EasySoundnessChecker {
         }
 
         for (IPublicNode nodeToBeEliminated : eliminateBecauseOfCycle) {
-            System.out.println("Checking implications of interaction" + nodeToBeEliminated + " being eliminated");
+            System.out.println("Checking implications of interaction " + nodeToBeEliminated + " being eliminated");
+            System.out.println();
             eliminateContext(nodeToBeEliminated);
         }
 
-        System.out.println();
+
     }
 
     /**
@@ -251,38 +287,50 @@ public class EasySoundnessChecker {
 
         IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfNode = getGraphToNode(node);
 
-        List<IPublicNode> toEliminate = new ArrayList<>();
+        //Graph has already been eliminated -> can not execute at all
+        if (graphOfNode == null) {
+            System.out.println("Graph of the participant has already been eliminated, as its not exeuctable. Skipping validation for the node");
+            System.out.println();
+            return;
+        }
 
+        List<IPublicNode> toEliminate = new ArrayList<>();
 
         //Step 1: Traverse the graph backwards until you find either a XOR node or the start node
         //In case of XOR, the other branches of XOR can potentially be used to get from start to end
         //In case of start, the whole participant cannot execute
         eliminateContextUntilXOROrStart(graphOfNode, node, toEliminate);
 
-        Set<IPublicNode> toEliminateSet = new HashSet<>();
+//        Set<IPublicNode> toEliminateSet = new HashSet<>();
 
         IPublicNode stopNode = toEliminate.remove(toEliminate.size() - 1);
+
+        Role participantOfNode = participantsByName.get(getParticipantOfNode(node));
 
         if (stopNode instanceof Event) {
             //Stopped at start
             System.out.println("All nodes of the participants are not executable");
-            eliminated.addAll(graphOfNode.getVertices());
+            System.out.println();
+
+            //As the participant is not executable, set its graph to null
+
+            publicModelsByRole.put(participantOfNode, null);
             return;
         } else if (stopNode instanceof Gateway) {
             //Stopped at XOR
 
             //Get the first element on the XOR branch
-            IPublicNode firstNodeOnXORbranch = toEliminate.remove(toEliminate.size() - 1);
+            IPublicNode firstNodeOnXORbranch = toEliminate.get(toEliminate.size() - 1);
             String xorMergeName = stopNode.getName() + "_m";
 
-            //Step 2 Eliminate all children of the uppermost AND. This is because as the node inside of the AND-Branch cannot execute, the AND branch is never able to conclude
-            List<IPublicNode> toEliminateAND = new ArrayList<>();
+            //Step 2 Eliminate all nodes on the path from the XOR through the first node on the branch to the XOR merge
+            eliminateContextXORBranch(graphOfNode, firstNodeOnXORbranch, xorMergeName);
 
-            eliminateContextXORBranch(graphOfNode, firstNodeOnXORbranch, toEliminateAND, xorMergeName);
+            publicModelsByRole.put(participantOfNode, graphOfNode);
 
-            System.out.println("Nodes eliminated: " + toEliminateAND.stream().map(IGObject::getName).collect(Collectors.joining(",")));
+            System.out.println("Nodes eliminated: " + toEliminate.stream().map(IGObject::getName).collect(Collectors.joining(",")));
+            System.out.println();
 
-            eliminated.addAll(toEliminateAND);
 
         }
 
@@ -292,19 +340,36 @@ public class EasySoundnessChecker {
     /**
      * Iterates from the given AND-gateway downwards, eliminating all the interactions on all paths to its merge node
      */
-    private void eliminateContextXORBranch(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, IPublicNode node, List<IPublicNode> toEliminate, String gatewayMergeName) {
+    private void eliminateContextXORBranch(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, IPublicNode node, String gatewayMergeName) {
 
-        if (node.getName().equals(gatewayMergeName)) {
-            toEliminate.add(node);
-            return;
-        }
+        //Remove the node and the connection to its parents
+        List<IPublicNode> parents = new ArrayList<>(graph.getDirectPredecessors(node));
+
+        removeParentEdgesAndNode(graph, parents, node);
 
         List<IPublicNode> children = new ArrayList<>(graph.getDirectSuccessors(node));
 
         for (IPublicNode child : children) {
-            eliminateContextXORBranch(graph, child, toEliminate, gatewayMergeName);
+
+            //If the child is the gateway merge node, we have to only remove the connection to it and can return after
+            if (child.getName().equals(gatewayMergeName)) {
+                removeParentEdgesAndNode(graph, Collections.singletonList(node), child);
+                return;
+            }
+
+            eliminateContextXORBranch(graph, child, gatewayMergeName);
         }
 
+    }
+
+    /**
+     * Removes the edges from the parents to the node and the node itself
+     */
+    private void removeParentEdgesAndNode(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, List<IPublicNode> parents, IPublicNode node) {
+        for (IPublicNode parent : parents) {
+            graph.removeEdge(graph.getEdge(parent, node));
+        }
+        graph.removeVertex(node);
     }
 
     /**
@@ -400,7 +465,20 @@ public class EasySoundnessChecker {
         return new String[]{nameOfCounterpartInteraction, counterpartRole};
     }
 
+    /**
+     * Returns the participant of the interaction node
+     */
+    private String getParticipantOfNode(IPublicNode node) {
+        boolean isSenderOrParticipant1 = node.getName().contains("(s)") || node.getName().contains("(p1)");
 
+        String[] participantsOfNode = getParticipantsOfNode(node);
+
+        return participantsOfNode[isSenderOrParticipant1 ? 0 : 1];
+    }
+
+    /**
+     * Returns both participants of the interaction node
+     */
     private String[] getParticipantsOfNode(IPublicNode node) {
         String participant1 = "", participant2 = "";
 

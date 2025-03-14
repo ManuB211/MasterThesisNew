@@ -10,37 +10,7 @@ import java.util.*;
 
 public class ChoreographyGenerator {
 
-    public static Choreography generateChoreographyFromModel(IChoreographyModel chorModel) {
-
-        /*
-         * -- public Collaboration collaboration= null;//choreography model + all public
-         * models and roles map public List<IPrivateModel> privateModels= null; public
-         * String id; public Map<IPrivateModel, IPublicModel> P2P = new
-         * HashMap<IPrivateModel, IPublicModel>(); -- public
-         * Map<IPublicNode,IChoreographyNode> Pu2Ch = new
-         * HashMap<IPublicNode,IChoreographyNode>();
-         *
-         * public Map<IPrivateNode,IPublicNode> Pr2Pu = new
-         * HashMap<IPrivateNode,IPublicNode>(); public Map<IPublicNode,IPrivateNode>
-         * Pu2Pr = new HashMap<IPublicNode,IPrivateNode>(); -- public
-         * Map<IChoreographyNode, Pair<IPublicNode,IPublicNode>> Ch2PuPair = new
-         * HashMap<IChoreographyNode, Pair<IPublicNode,IPublicNode>>(); -- public
-         * Map<IGateway, Set<Pair<IRole, IGateway>>> ChGtw2PuGtws = new
-         * HashMap<IGateway, Set<Pair<IRole, IGateway>>>();
-         */
-
-        /*
-         * public String id; -- public Set<Role> roles = new HashSet<Role>(); -- public
-         * Set<IPublicModel> puModels = new HashSet<IPublicModel>(); -- public
-         * Map<Role,IPublicModel> R2PuM = new HashMap<Role,IPublicModel>(); -- public
-         * Map<IPublicModel, Role> PuM2R = new HashMap<IPublicModel, Role>(); -- public
-         * Map<IPublicNode,IPublicNode> Pu2Pu = new HashMap<IPublicNode,IPublicNode>();
-         * //Name2PuGtws is a map between A gateway Name and all its instances in the
-         * public models. Name-->Set((role,Gtw)). -- public Map<String,
-         * Set<Pair<IRole,IGateway>>> Name2PuGtws = new HashMap<String,
-         * Set<Pair<IRole,IGateway>>>(); -- public Map<IGateway, IGateway> PuGtw2chorGtw
-         * = new HashMap<IGateway, IGateway>();
-         */
+    public static Choreography generateChoreographyFromModel(IChoreographyModel chorModel, List<IChoreographyNode> xorsWithDirectConnectionToMerge) {
 
         Choreography choreography = new Choreography();
         choreography.choreo = chorModel;
@@ -54,7 +24,7 @@ public class ChoreographyGenerator {
         }
         // filling publicmodels, R2PuM, PuM2R
         for (Role role : choreography.collaboration.roles) {
-            IPublicModel pum = ChoreographyGenerator.transformChorModel2PubModel(chorModel.projectionRole(role, true),
+            IPublicModel pum = ChoreographyGenerator.transformChorModel2PubModel(chorModel.projectionRole(role, true, xorsWithDirectConnectionToMerge),
                     role);
             choreography.collaboration.puModels.add(pum);
             choreography.collaboration.R2PuM.put(role, pum);

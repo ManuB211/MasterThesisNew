@@ -98,6 +98,15 @@ public class ChoreographyController {
         IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_preCompliance.dot", graph.toDOT()); // first build
         IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched
 
+        /**
+         * We need to save the XOR nodes in the choreography model, that have a direct
+         * connection to its merge. Otherwise they will be filtered out during the graph
+         * reduction, resulting in graphs that are technically different from the
+         * original workflow
+         */
+        RpstModel<Edge<IChoreographyNode>, IChoreographyNode> tempRPSTModelForDirectXORconnections = new RpstModel<>(graph, "tempRPSTModelForDirectXORConnections");
+        List<IChoreographyNode> xorNodeWithDirectConnectionToMerge = tempRPSTModelForDirectXORconnections.getAllXORsWithDirectConnectionToMerge();
+
         VisualizationHandler.visualize(VisualizationType.FINISHED_GRAPH_ENRICHED);
 
         String folder = dir.toString();
@@ -114,7 +123,7 @@ public class ChoreographyController {
 
         // Generate Choreography (incl. all public models / private models)
         ChoreographyGenerator chorGen = new ChoreographyGenerator();
-        Choreography choreo = ChoreographyGenerator.generateChoreographyFromModel(choreoModel);
+        Choreography choreo = ChoreographyGenerator.generateChoreographyFromModel(choreoModel, xorNodeWithDirectConnectionToMerge);
 
 
         // Export Models

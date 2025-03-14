@@ -72,15 +72,6 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         return e;
     }
 
-    public E removeEdge(MultiDirectedGraph<E, N> g, E e) {
-        return g.removeEdge(e);
-    }
-
-    public void Model2Dot() {
-        IOUtils.toFile(this.name + "Rpst.dot", this.toDOT());
-        IOUtils.toFile(this.name + "Graph.dot", this.diGraph.toDOT());
-    }
-
     /**
      * common base function for getFragmentWith*, filters out the fragment with the
      * given node using the boolean function supplied by the callable
@@ -841,15 +832,6 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         return M;
     }
 
-    /*
-     * this maps Edge - RpstNode (trivial nodes) public Map<E,IRPSTNode<E,N>>
-     * getOriginal2RpstMap(){ Map<E,IRPSTNode<E,N>> M = new
-     * HashMap<E,IRPSTNode<E,N>>();
-     *
-     * for(IRPSTNode<E,N> e : this.getRPSTNodes(TCType.TRIVIAL)) for(E e1 :
-     * this.diGraph.getEdges()) if(e.getEntry() == e1.getSource() &&
-     * e.getExit()==e1.getTarget()) M.put(e1,e); return M; }
-     */
 
     protected void IdentifyLoops() {
 
@@ -870,28 +852,6 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
                 Loops.add(node);
             }
         }
-    }
-
-    // returns the set of loops (rppstnode root of the loop) that contains the given
-    // node
-    public Set<IRPSTNode<E, N>> getLoopsOfNode(N node) {
-        Set<IRPSTNode<E, N>> loopsSet = new HashSet<IRPSTNode<E, N>>();
-        for (IRPSTNode<E, N> n : Loops)
-            if (this.getNodes(n).contains(node))
-                loopsSet.add(n);
-
-        return loopsSet;
-    }
-
-    // returns the set of loops that contains a given rpstNode
-    public Set<IRPSTNode<E, N>> getLoopsOfRpstNode(IRPSTNode<E, N> node) {
-
-        return getLoopsOfNode(node.getEntry());
-    }
-
-    // checks if a given node is included in a given loop
-    public boolean LoopContainsNode(IRPSTNode<E, N> loop, N node) {
-        return this.getNodes(loop).contains(node);
     }
 
     // checks if the given node is encapsulated by any loop
@@ -1023,113 +983,11 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         return set;
     }
 
-    public Set<N> getTransitivePreSet(IRPSTNode<E, N> n, Role role) {
-        N firstElement = n.getEntry();
-        Set<N> finalSet = this.getTransitivePreSet(firstElement, role, new HashSet<N>());
-        return finalSet;
-    }
-
-    public Set<N> getTransitivePreSet(N n, Role role, HashSet<N> set) {
-        for (N next : this.diGraph.getDirectPredecessors(n)) {
-            if (this.isActivity(next) && next.hasRole(role)) {
-                set.add(next);
-            } else {
-                this.getTransitivePreSet(next, role, set);
-            }
-        }
-        return set;
-    }
-
-    // returns also gateways as tr-preset
-    // excludes n from the t-preset
-    public Set<N> getTransitivePreSetWithGateways(N n, Role role) {
-        // System.out.println("Projection On Role "+role);
-        // System.out.println("Model to be projected "+this.diGraph);
-        RpstModel<E, N> projectedmodel = (RpstModel<E, N>) this.projectionRole(role, true);
-        // System.out.println("Projection result "+projectedmodel.diGraph);
-        if (projectedmodel.diGraph.contains(n))
-            return (Set<N>) projectedmodel.diGraph.getDirectPredecessors(n);
-        Set<N> set = new HashSet<N>();
-        for (N previous : this.diGraph.getDirectPredecessors(n)) {
-            if (projectedmodel.diGraph.contains(previous))
-                set.add(previous);
-            else
-                set.addAll(getTransitivePreSetWithGateways(previous, role));
-        }
-        return set;
-    }
-
-    // if the projection includes n then return n itself
-    public Set<N> getInclusiveTransitivePreSetWithGateways(N n, Role role) {
-        // System.out.println("Projection On Role "+role);
-        // System.out.println("Model to be projected "+this.diGraph);
-        RpstModel<E, N> projectedmodel = (RpstModel<E, N>) this.projectionRole(role, true);
-        // System.out.println("Projection result "+projectedmodel.diGraph);
-        Set<N> set = new HashSet<N>();
-        if (projectedmodel.diGraph.contains(n)) {
-            set.add(n);
-            return set;
-        }
-        for (N previous : this.diGraph.getDirectPredecessors(n)) {
-            if (projectedmodel.diGraph.contains(previous))
-                set.add(previous);
-            else
-                set.addAll(getInclusiveTransitivePreSetWithGateways(previous, role));
-        }
-        return set;
-    }
-
-    // includes n in the t-postset
-    public Set<N> getInclusiveTransitivePostSetWithGateways(N n, Role role) {
-        RpstModel<E, N> projectedmodel = (RpstModel<E, N>) this.projectionRole(role, true);
-        Set<N> set = new HashSet<N>();
-        if (projectedmodel.diGraph.contains(n)) {
-            set.add(n);
-            return set;
-        }
-        for (N next : this.diGraph.getDirectSuccessors(n)) {
-            if (projectedmodel.diGraph.contains(next))
-                set.add(next);
-            else
-                set.addAll(getInclusiveTransitivePostSetWithGateways(next, role));
-        }
-        return set;
-    }
-
-    // returns also gateways as tr-postset - excludes n from the t-preset
-    public Set<N> getTransitivePostSetWithGateways(N n, Role role) {
-        RpstModel<E, N> projectedmodel = (RpstModel<E, N>) this.projectionRole(role, true);
-        if (projectedmodel.diGraph.contains(n))
-            return (Set<N>) projectedmodel.diGraph.getDirectSuccessors(n);
-        Set<N> set = new HashSet<N>();
-        for (N next : this.diGraph.getDirectSuccessors(n)) {
-            if (projectedmodel.diGraph.contains(next))
-                set.add(next);
-            else
-                set.addAll(getTransitivePreSetWithGateways(next, role));
-        }
-        return set;
-    }
-
-    public IRPSTNode<E, N> getTransitivePreSetF(IRPSTNode<E, N> n, Role role) {
-        List<IRPSTNode<E, N>> finalList = new LinkedList<IRPSTNode<E, N>>();
-        Set<N> postset = this.getTransitivePreSet(n, role);
-        for (N node : postset) {
-            IRPSTNode<E, N> x = this.getFragmentWithSourceOrTarget(node);
-            finalList.add(x);
-        }
-        return this.getsmallestFragment(finalList);
-    }
-
-    public IRpstModel<E, N> projectionRole(Role role) {
-        return this.projectionRole(role, true);
-    }
-
     /**
      * @return this function projects a given Model on a role. It returns a
      * structured model where the nodes are all reltated to this role.
      */
-    public IRpstModel<E, N> projectionRole(Role role, boolean doGraphReduce) {
+    public IRpstModel<E, N> projectionRole(Role role, boolean doGraphReduce, List<IChoreographyNode> xorsWithDirectConnectionToMerge) {
         IRpstModel<E, N> projectedModel = null;
         MultiDirectedGraph<E, N> graph = new MultiDirectedGraph<E, N>();
         boolean var = false;
@@ -1174,13 +1032,7 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
                 throw new RuntimeException(e);
             }
 
-            /**
-             * We need to save the XOR nodes in the choreography model, that have a direct
-             * connection to its merge. Otherwise they will be filtered out during the graph
-             * reduction, resulting in graphs that are technically different from the
-             * original workflow
-             */
-            List<IChoreographyNode> xorsWithDirectConnectionToMerge = this.getAllXORsWithDirectConnectionToMerge();
+//            List<IChoreographyNode> xorsWithDirectConnectionToMerge = this.getAllXORsWithDirectConnectionToMerge();
 
             return projectedModel.reduceGraph(xorsWithDirectConnectionToMerge, role.getName());
         } else {

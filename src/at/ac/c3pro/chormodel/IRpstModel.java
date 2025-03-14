@@ -7,7 +7,6 @@ import org.jbpt.algo.tree.rpst.IRPST;
 import org.jbpt.algo.tree.rpst.IRPSTNode;
 import org.jbpt.graph.abs.IDirectedGraph;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -42,10 +41,6 @@ public interface IRpstModel<E extends Edge<N>, N extends INode> extends IRPST<E,
     boolean reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge, IRPSTNode<E, N> fragment);
 
     Set<N> getNodes(IRPSTNode<E, N> rpstNode);
-
-    IRPSTNode<E, N> getFragmentBoundedBy(final N sourceNode, final N targetNode);
-
-    Set<N> getTransitivePostSet(N n, Role role, HashSet<N> set);
 
     RpstModel<E, N> delete(N node);
 

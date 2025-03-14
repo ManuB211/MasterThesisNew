@@ -4,7 +4,10 @@ package at.ac.c3pro.chormodel.generation;
 
 import at.ac.c3pro.chormodel.Role;
 import at.ac.c3pro.chormodel.generation.ChorModelGenerator.NodeType;
-import at.ac.c3pro.node.*;
+import at.ac.c3pro.node.AndGateway;
+import at.ac.c3pro.node.IChoreographyNode;
+import at.ac.c3pro.node.Interaction;
+import at.ac.c3pro.node.XorGateway;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -16,22 +19,12 @@ public class Branch {
     }
 
     private Split split = null;
-    private int number = 0;
     private BranchState state = BranchState.OPEN;
     private ArrayList<IChoreographyNode> nodes = new ArrayList<IChoreographyNode>();
     private SplitTracking splitTracking = null;
     private Role lastReceiver = null;
-    private Boolean isClosable = false;
-//	private List<Role> possibleReceivers = new ArrayList<Role>();
-//	private List<Role> possibleSenders = new ArrayList<Role>();
 
-    public Branch(int number) {
-        this.number = number;
-        this.splitTracking = SplitTracking.getInstance();
-    }
-
-    public Branch(int number, Split split) {
-        this.number = number;
+    public Branch(Split split) {
         this.split = split;
         this.splitTracking = SplitTracking.getInstance();
     }
@@ -61,9 +54,9 @@ public class Branch {
                 return false;
             } else // lastNode is Interaction
                 if ((lastNode instanceof AndGateway || lastNode instanceof XorGateway)
-                    && splitTracking.getSplit(lastNode) == null) { // lastNode is Merge
-                return true;
-            } else return lastNode instanceof Interaction;
+                        && splitTracking.getSplit(lastNode) == null) { // lastNode is Merge
+                    return true;
+                } else return lastNode instanceof Interaction;
         } else {
             if ((lastNode instanceof AndGateway || lastNode instanceof XorGateway)
                     && splitTracking.getSplit(lastNode) == null) { // lastNode is Merge
@@ -107,18 +100,6 @@ public class Branch {
             return this.nodes.isEmpty();
         }
         return false;
-    }
-
-    // TODO maybe implement a force close function, that adds needed interaction(s)
-    // and then closes branch.
-    public void forceClose() {
-        Interaction interaction = new Interaction();
-        interaction.setMessage(new Message("message"));
-        this.addNode(interaction);
-
-        if (split.getMergeNode() != null) {
-
-        }
     }
 
     /*
@@ -175,20 +156,8 @@ public class Branch {
         return null;
     }
 
-    public int getNumber() {
-        return number;
-    }
-
-    public void setNumber(int number) {
-        this.number = number;
-    }
-
     public ArrayList<IChoreographyNode> getNodes() {
         return nodes;
-    }
-
-    public void setNodes(ArrayList<IChoreographyNode> nodes) {
-        this.nodes = nodes;
     }
 
     public boolean isOpen() {
@@ -197,10 +166,6 @@ public class Branch {
 
     public boolean isClosed() {
         return state == BranchState.CLOSED;
-    }
-
-    public void setClosability(Boolean isCloseable) {
-        this.isClosable = isCloseable;
     }
 
     public void setState(BranchState state) {
@@ -213,10 +178,6 @@ public class Branch {
 
     public Split getSplit() {
         return split;
-    }
-
-    public void setSplit(Split split) {
-        this.split = split;
     }
 
     public void addNode(IChoreographyNode node) {
@@ -247,18 +208,6 @@ public class Branch {
                 interactions.add((Interaction) node);
         }
         return interactions;
-    }
-
-    public boolean subsequentInteraction(IChoreographyNode merge) {
-        boolean flag = false;
-        for (IChoreographyNode node : this.getNodes()) {
-            if (flag && node instanceof Interaction) {
-                return true;
-            } else if (node == merge) {
-                flag = true;
-            }
-        }
-        return false;
     }
 
 }

@@ -1,9 +1,9 @@
 package at.ac.c3pro.chormodel;
 
-import at.ac.c3pro.ImpactAnalysis.ImpactAnalysisUtil.Pair;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.util.GlobalTimestamp;
 import at.ac.c3pro.util.OutputHandler;
+import at.ac.c3pro.util.Pair;
 import org.jbpt.algo.tree.rpst.IRPSTNode;
 import org.jbpt.algo.tree.rpst.RPST;
 import org.jbpt.algo.tree.tctree.TCType;
@@ -934,54 +934,37 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         return set;
     }
 
-    public Set<N> getTransitivePostSet(IRPSTNode<E, N> n, Role role) {
-        N lastElement = n.getExit();
-        Set<N> finalSet = this.getTransitivePostSet(lastElement, role, new HashSet<N>());
-        // System.out.println("Transitive postset of " + n + ": " + finalSet);
-        return finalSet;
-    }
+//    public Set<N> getTransitivePostSet(IRPSTNode<E, N> n, Role role) {
+//        N lastElement = n.getExit();
+//        Set<N> finalSet = this.getTransitivePostSet(lastElement, role, new HashSet<N>());
+//        // System.out.println("Transitive postset of " + n + ": " + finalSet);
+//        return finalSet;
+//    }
 
     // TODO: refactor getPostSet, getPreSet, getTransitivePostSet,
     // getTransitivePreSet to use one common base function
-    public Set<N> getTransitivePostSet(N n, Role role, HashSet<N> set) {
-        for (N next : this.diGraph.getDirectSuccessors(n)) {
-            if (this.isActivity(next) && next.hasRole(role)) {
-                set.add(next);
-            } else {
-                this.getTransitivePostSet(next, role, set);
-            }
-        }
-        return set;
-    }
+//    public Set<N> getTransitivePostSet(N n, Role role, HashSet<N> set) {
+//        for (N next : this.diGraph.getDirectSuccessors(n)) {
+//            if (this.isActivity(next) && next.hasRole(role)) {
+//                set.add(next);
+//            } else {
+//                this.getTransitivePostSet(next, role, set);
+//            }
+//        }
+//        return set;
+//    }
 
-    // TODO: refactor common logic from getTransitivePreSetF (different: call to
-    // getTransitivePostSet)
-    public IRPSTNode<E, N> getTransitivePostSetF(IRPSTNode<E, N> n, Role role) {
-        List<IRPSTNode<E, N>> finalList = new LinkedList<IRPSTNode<E, N>>();
-        Set<N> postset = this.getTransitivePostSet(n, role);
-        for (N node : postset) {
-            IRPSTNode<E, N> x = this.getFragmentWithSourceOrTarget(node);
-            finalList.add(x);
-        }
-        return this.getsmallestFragment(finalList);
-    }
-
-    public Set<N> getPreSet(IRPSTNode<E, N> n) {
-        N firstElement = n.getEntry();
-        Set<N> finalSet = this.getPreSet(firstElement, new HashSet<N>());
-        // System.out.println("PreSet of " + n + ": " + finalSet);
-        return finalSet;
-    }
-
-    public Set<N> getPreSet(N n, HashSet<N> set) {
-        for (N next : this.diGraph.getDirectPredecessors(n)) {
-            if (this.isActivity(next)) {
-                set.add(next);
-            }
-            this.getPreSet(next, set);
-        }
-        return set;
-    }
+//    // TODO: refactor common logic from getTransitivePreSetF (different: call to
+//    // getTransitivePostSet)
+//    public IRPSTNode<E, N> getTransitivePostSetF(IRPSTNode<E, N> n, Role role) {
+//        List<IRPSTNode<E, N>> finalList = new LinkedList<IRPSTNode<E, N>>();
+//        Set<N> postset = this.getTransitivePostSet(n, role);
+//        for (N node : postset) {
+//            IRPSTNode<E, N> x = this.getFragmentWithSourceOrTarget(node);
+//            finalList.add(x);
+//        }
+//        return this.getsmallestFragment(finalList);
+//    }
 
     /**
      * @return this function projects a given Model on a role. It returns a

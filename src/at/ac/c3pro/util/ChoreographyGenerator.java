@@ -1,6 +1,5 @@
 package at.ac.c3pro.util;
 
-import at.ac.c3pro.ImpactAnalysis.ImpactAnalysisUtil.Pair;
 import at.ac.c3pro.chormodel.*;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.node.Interaction.InteractionType;
@@ -13,7 +12,6 @@ public class ChoreographyGenerator {
     public static Choreography generateChoreographyFromModel(IChoreographyModel chorModel, List<IChoreographyNode> xorsWithDirectConnectionToMerge) {
 
         Choreography choreography = new Choreography();
-        choreography.choreo = chorModel;
         choreography.collaboration = new Collaboration("collab");
         choreography.collaboration.roles = FragmentUtil.extractRoles(chorModel.getRoot());
 

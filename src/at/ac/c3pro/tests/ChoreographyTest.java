@@ -1,6 +1,7 @@
 package at.ac.c3pro.tests;
 
-import at.ac.c3pro.ChangeNegotiation.NegotiationSimulation;
+//import at.ac.c3pro.ChangeNegotiation.NegotiationSimulation;
+
 import at.ac.c3pro.chormodel.*;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.util.FragmentUtil;
@@ -9,7 +10,6 @@ import org.jbpt.utils.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -19,11 +19,9 @@ public class ChoreographyTest {
     // RPST of choreography model
     private RpstModel<Edge<IChoreographyNode>, IChoreographyNode> BookTrip;
     private RpstModel<Edge<IPublicNode>, IPublicNode> pum_acquirer;
-    private RpstModel<Edge<IPrivateNode>, IPrivateNode> prm_acquirer;
     private RpstModel<Edge<IPublicNode>, IPublicNode> pum_travelAgency;
     private RpstModel<Edge<IPublicNode>, IPublicNode> pum_airline;
     private RpstModel<Edge<IPublicNode>, IPublicNode> pum_traveler;
-    private Choreography bookTripChoreography;
     private Collaboration collab;
 
     private Role traveler, acquirer, travelAgency, airline;
@@ -39,11 +37,6 @@ public class ChoreographyTest {
     private IPublicNode s11, s12, s13, s14;
     private Event e11, e12;
 
-    // private model elements
-    private IPrivateNode pr11, ps11, ps12, ps13, ps14;
-    private Gateway pg11, pg12, pg13, pg14, pg15, pg16;
-    private Event pe11, pe12;
-    private IPrivateNode pa11, pa12, pa13;
 
     // TA public model elements
     private Receive ta3;
@@ -146,8 +139,6 @@ public class ChoreographyTest {
         this.e11 = new Event("start");
         this.e12 = new Event("end");
 
-        Receive r11copy = this.r11.clone();
-
         // System.out.println(r11.Complement(r11.role));
         PuM1.addEdge(e11, r11);
         PuM1.addEdge(r11, g11);
@@ -169,19 +160,6 @@ public class ChoreographyTest {
         IOUtils.toFile("AcquirerPubModel.dot", PuM1.toDOT());
         IOUtils.toFile("PuMAcuirerRpst.dot", pum_acquirer.toDOT());
         this.pum_acquirer = pum_acquirer;
-        // IOUtils.toFile("AcquirerPubModelprojection.dot",pum_acquirer.projection(travelAgency,
-        // "partner").toDOT());
-
-        // Test for Complement function
-        /*
-         * for (IRPSTNode<Edge<IPublicNode>, IPublicNode> node :
-         * pum_acquirer.getRPSTNodes()) { //System.out.print(node.getName() +
-         * ": fragment = " + node.getFragment()); if(node.getName().equals("P1") ||
-         * node.getName().equals("P4")) { System.out.println(node.getFragment());
-         *
-         * System.out.println(pum_acquirer.Complement(node.getFragment(),
-         * acquirer).getGraph()); } }
-         */
     }
 
 
@@ -242,8 +220,6 @@ public class ChoreographyTest {
     private void buildPublicAirlineModel() {
         // public model for airline
         MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> AGraph = new MultiDirectedGraph<Edge<IPublicNode>, IPublicNode>();
-
-        Message m15 = new Message("ticket_purchase_canceled");
 
         Event Astart = new Event("start");
         Event Aend = new Event("end");
@@ -324,7 +300,6 @@ public class ChoreographyTest {
     }
 
     private void buildChoreography2() {
-        List<Role> roles = new LinkedList<Role>(Arrays.asList(traveler, acquirer, travelAgency, airline));
         this.collab = new Collaboration("booktrip");
         this.collab.addPublicModel(acquirer, (PublicModel) pum_acquirer);
         this.collab.addPublicModel(travelAgency, (PublicModel) pum_travelAgency);
@@ -335,8 +310,8 @@ public class ChoreographyTest {
         this.collab.roles.add(travelAgency);
         this.collab.roles.add(traveler);
         List<IPrivateModel> privateModels = new LinkedList<IPrivateModel>();
-        this.bookTripChoreography = new Choreography("booktripChoreo", collab, privateModels,
-                (ChoreographyModel) BookTrip);
+//        this.bookTripChoreography = new Choreography("booktripChoreo", collab, privateModels,
+//                (ChoreographyModel) BookTrip);
 
     }
 
@@ -377,41 +352,6 @@ public class ChoreographyTest {
         Set<String> uuids2 = FragmentUtil.collectNodeIds(model2.getRoot());
         uuids1.addAll(Arrays.asList(uuids_to_add));
         assertEquals(msg, uuids1, uuids2);
-    }
-
-    private <E extends Edge<N>, N extends INode> void assertNodeIdsAddedAndRemoved(String msg, RpstModel<E, N> model1,
-                                                                                   RpstModel<E, N> model2, String[] uuids_to_add, String[] uuids_to_remove) {
-        Set<String> uuids1 = FragmentUtil.collectNodeIds(model1.getRoot());
-        Set<String> uuids2 = FragmentUtil.collectNodeIds(model2.getRoot());
-        uuids1.addAll(Arrays.asList(uuids_to_add));
-        uuids1.removeAll(Arrays.asList(uuids_to_remove));
-        assertEquals(msg, uuids1, uuids2);
-    }
-
-    private <E extends Edge<N>, N extends INode> void compareModels(RpstModel<E, N> model1, RpstModel<E, N> model2) {
-        Set<String> uuids1 = FragmentUtil.collectNodeIds(model1.getRoot());
-        Set<String> uuids2 = FragmentUtil.collectNodeIds(model2.getRoot());
-        HashMap<String, N> uuids2N1 = FragmentUtil.collectNodeIdMap(model1.getRoot());
-        HashMap<String, N> uuids2N2 = FragmentUtil.collectNodeIdMap(model2.getRoot());
-
-        // added? model1 -> model2
-        for (String s : uuids1) {
-            if (!uuids2.contains(s)) {
-                System.out.println("removed (model1 -> model2): " + s + " N:" + uuids2N1.get(s));
-            }
-        }
-
-        // removed? model1 -> model2
-        for (String s : uuids2) {
-            if (!uuids1.contains(s)) {
-                System.out.println("added (model1 -> model2): " + s + " N:" + uuids2N2.get(s));
-            }
-        }
-    }
-
-    private <E extends Edge<N>, N extends INode> void assertNodeExists(String msg, RpstModel<E, N> model, N node) {
-        Set<String> uuids = FragmentUtil.collectNodeIds(model.getRoot());
-        assertTrue(msg, uuids.contains(node.getId()));
     }
 
     @Test
@@ -637,110 +577,4 @@ public class ChoreographyTest {
         this.assertNodeIdsRemoved("The identical replace should result in an intact graph:", pum_acquirer,
                 pum_acquirer_after, new String[]{});
     }
-
-
-    private Set<String> getIdSetFromNodes(INode[] nodes) {
-        Set<String> nodeIds = new HashSet<String>();
-        for (INode n : nodes) {
-            nodeIds.add(n.getId());
-        }
-        return nodeIds;
-    }
-
-    private <E extends Edge<N>, N extends INode> void assertNodes(String msg, N[] expected, N[] actual) {
-        Set<String> expectedNodes = this.getIdSetFromNodes(expected);
-        Set<String> actualNodes = this.getIdSetFromNodes(actual);
-        assertEquals(msg, expectedNodes, actualNodes);
-    }
-
-    // ====
-    // ==== PostSet Tests ====//
-    // ====
-
-    @Test
-    public void postSetChoreographyTest() {
-
-        // postSet on choreography model
-        // i2: i3,i4,i5,i6,i7,i8,i9
-        Set<IChoreographyNode> postset = BookTrip.getPostSet(BookTrip.getFragmentWithSource(this.i2));
-        this.assertNodes("the post set of choreography model BookTrip should be",
-                new INode[]{this.i3, this.i4, this.i5, this.i6, this.i7, this.i8, this.i9},
-                postset.toArray(new INode[0]));
-
-        // transitive postset on choreography model
-        // i2, role=travelAgency: i7,i8,i9,i3
-        Set<IChoreographyNode> tPostSet = BookTrip.getTransitivePostSet(BookTrip.getFragmentWithSource(this.i2),
-                travelAgency);
-        this.assertNodes("the transitive post set of choreography model BookTrip:",
-                new INode[]{this.i7, this.i8, this.i9, this.i3}, tPostSet.toArray(new INode[0]));
-
-        // get the smallest fragment of the transitive post set
-        IRPSTNode<Edge<IChoreographyNode>, IChoreographyNode> smallestF = BookTrip
-                .getTransitivePostSetF(BookTrip.getFragmentWithSource(this.i2), travelAgency);
-        assertEquals("Smallest fragment of transitive postset (choreography model):", smallestF,
-                BookTrip.getFragmentBoundedBy(this.g1, this.g8));
-
-        Set<IChoreographyNode> postset1 = BookTrip.getPostSet(BookTrip.getFragmentBoundedBy(this.g2, this.g3));
-        assertEquals("postset of Fragment(g2,g3) is an empty set", postset1.size(), 0);
-
-        Set<IChoreographyNode> tPostSet1 = BookTrip
-                .getTransitivePostSet(BookTrip.getFragmentBoundedBy(this.g2, this.g3), travelAgency);
-        assertEquals("transitive postset of Fragment(g2,g3) is an empty set", tPostSet1.size(), 0);
-
-        IRPSTNode<Edge<IChoreographyNode>, IChoreographyNode> smallestF1 = BookTrip
-                .getTransitivePostSetF(BookTrip.getFragmentBoundedBy(this.g2, this.g3), travelAgency);
-        assertNull("Smallest fragment of transitive postset Fragment(g2,g3) is null", smallestF1);
-    }
-
-    @Test
-    public void postSetPublicTest() {
-        // postSet on public model
-        // receive_TA_check(r11): send_A_failure(s11), send_TA_failre(s12),
-        // send_A_paymen(s13), send_TA_approval(s14)
-        Set<IPublicNode> postset = pum_acquirer.getPostSet(pum_acquirer.getFragmentWithSource(this.r11));
-        this.assertNodes("the postset of public model pum_acquirer should be",
-                new INode[]{this.s11, this.s12, this.s13, this.s14}, postset.toArray(new INode[0]));
-
-        // transitive postset on public model
-        // receive_TA_check(r11), role=travelAgency: send_TA_failure(s12),
-        // send_TA_approval(s14)
-        Set<IPublicNode> tPostSet = pum_acquirer.getTransitivePostSet(pum_acquirer.getFragmentWithSource(this.r11),
-                travelAgency);
-        this.assertNodes("the transitive postset of public model pum_acquirer", new INode[]{this.s12, this.s14},
-                tPostSet.toArray(new INode[0]));
-
-        // get the smallest fragment of the transitive post set
-        IRPSTNode<Edge<IPublicNode>, IPublicNode> smallestF = pum_acquirer
-                .getTransitivePostSetF(pum_acquirer.getFragmentWithSource(this.r11), travelAgency);
-        assertEquals("Smallest fragment of transitive postset (public model):", smallestF,
-                pum_acquirer.getFragmentBoundedBy(this.g11, this.g16));
-    }
-
-    // @Test
-    public void postSetPrivateTest() {
-        // postSet on private model
-        // priv_activity(pa13): send_TA_approval(ps13), send_A_payment(ps14)
-        Set<IPrivateNode> postset = prm_acquirer.getPostSet(prm_acquirer.getFragmentWithSource(this.pa13));
-        this.assertNodes("the postset of private model prm_acquirer should be", new INode[]{this.ps13, this.ps14},
-                postset.toArray(new INode[0]));
-
-        // transitive postset on private model
-        // priv_activity3(pa13), role=travelAgency: send_TA_approval(ps14)
-        Set<IPrivateNode> tPostSet = prm_acquirer.getTransitivePostSet(prm_acquirer.getFragmentWithSource(this.pa13),
-                travelAgency);
-        this.assertNodes("the transitive postset of prm_acquirer should be", new INode[]{this.ps14},
-                tPostSet.toArray(new INode[0]));
-
-        // get the smallest fragment of the transitive post set
-        IRPSTNode<Edge<IPrivateNode>, IPrivateNode> smallestF = prm_acquirer
-                .getTransitivePostSetF(prm_acquirer.getFragmentWithSource(this.pa13), travelAgency);
-        assertEquals("Smallest fragment of transitive postset (private model):", smallestF,
-                prm_acquirer.getFragmentWithSourceOrTarget(this.ps14));
-    }
-
-    @Test
-    public void testNegotiationSimulationData() throws IOException {
-        NegotiationSimulation negosim = new NegotiationSimulation(this.bookTripChoreography, 3, 1000);
-    }
-
 }

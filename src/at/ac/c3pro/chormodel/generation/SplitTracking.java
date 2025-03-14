@@ -45,8 +45,7 @@ public class SplitTracking {
                     }
                 }
             } else {
-                int numberBranches = split.getNumberBranches();
-                int resSplit = numberBranches;
+                int resSplit = split.getBranches().size();
                 for (Branch branch : split.getBranches()) {
                     if (!branch.getNodes().isEmpty()) {
                         resSplit = resSplit - 1;

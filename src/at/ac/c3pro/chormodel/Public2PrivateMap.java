@@ -36,17 +36,4 @@ public class Public2PrivateMap {
         }
         return p;
     }
-
-    public boolean ConsistencyCheck() {
-        for (PrivateModel p : p2p.keySet())
-            if (!ConsistencyCheck(p, p2p.get(p)))
-                return false;
-        return true;
-    }
-
-    public boolean ConsistencyCheck(PrivateModel pr, PublicModel pu) {
-        //To be imlemented...
-        return true;
-    }
-
 }

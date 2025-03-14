@@ -30,12 +30,10 @@ public class EasySoundnessChecker {
     //Stores all the interactions from which we try to find traces back to a start node
     List<IPublicNode> interactionsToCheck;
 
-    boolean continueSearchForCyclicWaits;
-
     /*Maps a node to an interaction it is conditioned by meaning
      * that for an entry x->y: x can only be executed if y has been executed before
      * */
-    Map<IPublicNode, List<IPublicNode>> conditionMap;
+//    Map<IPublicNode, List<IPublicNode>> conditionMap;
 
     Pattern regEx = Pattern.compile("P_\\d+>P_\\d+");
 
@@ -50,8 +48,7 @@ public class EasySoundnessChecker {
         endNodes = new HashMap<>();
         traces = new ArrayList<>();
         publicModelsByRole = new HashMap<>();
-        conditionMap = new HashMap<>();
-        continueSearchForCyclicWaits = true;
+//        conditionMap = new HashMap<>();
         interactionsToCheck = new ArrayList<>();
         this.visualize = visualize;
         eliminationStepsForParticipantsGraph = new HashMap<>();
@@ -115,16 +112,11 @@ public class EasySoundnessChecker {
 
         //Get one arbitrary end node and corresponding graph
         Role firstRole = new ArrayList<>(participantsByName.values()).get(0);
-        IPublicNode firstEndNode = endNodes.get(firstRole);
-        IDirectedGraph<Edge<IPublicNode>, IPublicNode> firstGraph = publicModelsByRole.get(firstRole);
 
         //TODO: Mechanism to dynamically stop when either all participants are eliminated or it could been shown that there are no more cycles and there are executable paths
         //--> check mechanism with visited again to ensure
 
         while (!interactionsToCheck.isEmpty()) {
-
-            //TODO: Mechanism to choose other end node if needed and referesh graph after there may have been paths executed or the complete graph executed
-            //TODO: Done?
 
             outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.INTERACTIONS_TO_CHECK_DELIM);
             outputHandler.printEasySoundness("Current Set of Interactions to find trace to start from");

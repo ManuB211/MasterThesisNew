@@ -51,9 +51,6 @@ public class ChorModelGenerator {
     // interaction
     private List<Role> handoverReceivers;
 
-    public ChorModelGenerator() {
-    }
-
     public ChorModelGenerator(int participantCount, int interactionCount, int xorSplitCount, int andSpiltCount,
                               int loopCount, int maxBranching,
                               Map<InteractionType, Integer> remainingInteractionTypes) {
@@ -73,7 +70,6 @@ public class ChorModelGenerator {
 
     public MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> build() {
 
-        int remSplits = getRemainingSplits();
         // check parameter
         if (getResInteractionsGateways() > remainingNodeCounts.get(NodeType.INTERACTION))
             return null;
@@ -270,7 +266,7 @@ public class ChorModelGenerator {
                             + branch.getNodes());
 
                     InteractionType interactionType = getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(
-                            null, null);
+                            null);
 
                     Interaction interaction = new Interaction();
                     interaction.setName("IA" + interactions.size());
@@ -341,7 +337,7 @@ public class ChorModelGenerator {
         IChoreographyNode node = null;
         switch (nodeType) {
             case INTERACTION:
-                InteractionType typeToBeSet = this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(null, null);
+                InteractionType typeToBeSet = this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(null);
                 remainingInteractionTypes.computeIfPresent(typeToBeSet, (k, v) -> v - 1);
                 node = new Interaction();
                 node.setName("IA" + interactions.size());
@@ -385,7 +381,7 @@ public class ChorModelGenerator {
      * Although Handover-Of-Work can only be set, if its not the first interaction
      * (for a participant) //TODO: Clear up properties of HOW and check validity of the check
      */
-    private InteractionType getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(Branch currBranch, Role receiver) {
+    private InteractionType getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(Role receiver) {
 
         List<InteractionType> rst = new ArrayList<>();
 
@@ -520,9 +516,9 @@ public class ChorModelGenerator {
         return branchCount;
     }
 
-    private int getRemainingSplits() {
-        return remainingNodeCounts.get(NodeType.XOR) + remainingNodeCounts.get(NodeType.AND);
-    }
+//    private int getRemainingSplits() {
+//        return remainingNodeCounts.get(NodeType.XOR) + remainingNodeCounts.get(NodeType.AND);
+//    }
 
     private int getRemainingXOR() {
         return remainingNodeCounts.get(NodeType.XOR);
@@ -632,9 +628,9 @@ public class ChorModelGenerator {
         this.startWithInteraction = startWithInteraction;
     }
 
-    public void setMaxBranching(int maxBranching) {
-        this.maxBranching = maxBranching;
-    }
+//    public void setMaxBranching(int maxBranching) {
+//        this.maxBranching = maxBranching;
+//    }
 
     /**
      * Prints the current interaction state, containing, i.e. remaining interaction
@@ -714,7 +710,7 @@ public class ChorModelGenerator {
         }
 
         System.out.println("SPLIT: " + split.getSplitNode());
-        System.out.println("Number of Branches: " + split.getNumberBranches());
+        System.out.println("Number of Branches: " + split.getBranches().size());
         System.out.println("-------------------");
         System.out.println();
 
@@ -864,7 +860,7 @@ public class ChorModelGenerator {
         Interaction ia = new Interaction();
         ia.setName("IA" + interactions.size());
         ia.setId(UUID.randomUUID().toString());
-        ia.setInteractionType(this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(null, receiver));
+        ia.setInteractionType(this.getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(receiver));
         ia.setParticipant1(sender);
         ia.setParticipant2(receiver);
 
@@ -956,13 +952,13 @@ public class ChorModelGenerator {
         }
     }
 
-    public SplitTracking getSplitTracking() {
-        return this.splitTracking;
-    }
+//    public SplitTracking getSplitTracking() {
+//        return this.splitTracking;
+//    }
 
-    public void terminateSplitTracking() {
-        this.splitTracking.terminate();
-    }
+//    public void terminateSplitTracking() {
+//        this.splitTracking.terminate();
+//    }
 
     public ArrayList<Interaction> getInteractions() {
         return this.interactions;
@@ -972,9 +968,9 @@ public class ChorModelGenerator {
         return enrichedGraph;
     }
 
-    public List<Role> getParticipants() {
-        return this.participants;
-    }
+//    public List<Role> getParticipants() {
+//        return this.participants;
+//    }
 
     private void insertLoops(HashMap<IChoreographyNode, IChoreographyNode> loops) {
         int count = 0;

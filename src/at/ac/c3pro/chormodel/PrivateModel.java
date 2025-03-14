@@ -51,11 +51,6 @@ public class PrivateModel extends RpstModel<Edge<IPrivateNode>, IPrivateNode> im
         return L;
     }
 
-    public boolean isConsistentWith(PublicModel p) {
-        // to be implemented
-        return true;
-    }
-
     public boolean isActivity(IPrivateNode n) {
         return (n instanceof InteractionActivity || n instanceof PrivateActivity);
     }

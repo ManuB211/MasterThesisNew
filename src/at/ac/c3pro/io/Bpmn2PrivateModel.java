@@ -1,6 +1,9 @@
 package at.ac.c3pro.io;
 
-import at.ac.c3pro.chormodel.*;
+import at.ac.c3pro.chormodel.IPrivateModel;
+import at.ac.c3pro.chormodel.MultiDirectedGraph;
+import at.ac.c3pro.chormodel.PrivateModel;
+import at.ac.c3pro.chormodel.Role;
 import at.ac.c3pro.node.*;
 import org.apache.log4j.Logger;
 import org.jdom.Document;
@@ -21,13 +24,10 @@ public class Bpmn2PrivateModel {
     protected List<Element> messages;
     protected List<Element> messageFlow;
     protected List<Element> processes;
-    private final String modelName;
     public IPrivateModel privateModel = null;
     public Map<IPrivateNode, String> PrivateNode2PublicNodeIDMap = new HashMap<IPrivateNode, String>();
 
     public Bpmn2PrivateModel(String model_path_tpl, String model_name) throws Exception {
-        // super();
-        this.modelName = model_name;
         String fileName = String.format(model_path_tpl, model_name);
         System.out.print(fileName);
         if (logger.isInfoEnabled())
@@ -78,7 +78,6 @@ public class Bpmn2PrivateModel {
         // we parse the participants and build the corresponding graphs
         for (Object obj : processes) {
             Element processElem = (Element) obj;
-            String processId = processElem.getAttributeValue("id");
             String processName = processElem.getAttributeValue("name");
 
             if (processElem.getAttributeValue("processType").equals("Private")) {
@@ -187,10 +186,6 @@ public class Bpmn2PrivateModel {
 
     }
 
-    public String getModelName() {
-        return this.modelName;
-    }
-
     private IPrivateNode getNode(String id, Set<IPrivateNode> nodes) {
         for (IPrivateNode node : nodes)
             if (node.getId().equals(id))
@@ -212,34 +207,6 @@ public class Bpmn2PrivateModel {
                 return t;
 
         return null;
-    }
-
-    public Map<IPrivateNode, IPublicNode> getMapPr2puNode(IPublicModel pum) {
-
-        Map<IPrivateNode, IPublicNode> pr2puNodeMap = new HashMap<IPrivateNode, IPublicNode>();
-
-        for (IPrivateNode prn : this.PrivateNode2PublicNodeIDMap.keySet()) {
-            for (IPublicNode pun : pum.getdigraph().getVertices()) {
-                if (pun.getId().equals(PrivateNode2PublicNodeIDMap.get(prn)))
-                    pr2puNodeMap.put(prn, pun);
-            }
-        }
-
-        return pr2puNodeMap;
-    }
-
-    public Map<IPublicNode, IPrivateNode> getMapPu2prNode(IPublicModel pum) {
-
-        Map<IPublicNode, IPrivateNode> pu2prNodeMap = new HashMap<IPublicNode, IPrivateNode>();
-
-        for (IPrivateNode prn : this.PrivateNode2PublicNodeIDMap.keySet()) {
-            for (IPublicNode pun : pum.getdigraph().getVertices()) {
-                if (pun.getId().equals(PrivateNode2PublicNodeIDMap.get(prn)))
-                    pu2prNodeMap.put(pun, prn);
-            }
-        }
-
-        return pu2prNodeMap;
     }
 
     public class Triple {

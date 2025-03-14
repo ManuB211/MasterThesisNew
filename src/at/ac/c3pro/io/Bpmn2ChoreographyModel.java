@@ -25,13 +25,10 @@ public class Bpmn2ChoreographyModel {
     protected Element choreography;
     protected List<Element> messages;
     protected List<Element> messageFlow;
-    private final String modelName;
     public IChoreographyModel choreoModel = null;
     public Set<Role> roles = new HashSet<Role>();
 
     public Bpmn2ChoreographyModel(String model_path_tpl, String model_name) throws Exception {
-        // super();
-        this.modelName = model_name;
 
         // BasicConfigurator.configure();
         PropertyConfigurator.configure("./log4j.properties");
@@ -194,10 +191,6 @@ public class Bpmn2ChoreographyModel {
             logger.info("Graph created");
         if (digraph != null)
             choreoModel = new ChoreographyModel(digraph);
-    }
-
-    public String getModelName() {
-        return this.modelName;
     }
 
     private IChoreographyNode getNode(String id, Set<IChoreographyNode> nodes) {

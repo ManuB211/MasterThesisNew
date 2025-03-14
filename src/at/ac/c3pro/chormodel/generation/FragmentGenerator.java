@@ -8,7 +8,6 @@ import at.ac.c3pro.chormodel.RpstModel;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.util.GlobalTimestamp;
 import org.jbpt.algo.tree.rpst.IRPSTNode;
-import org.jbpt.graph.abs.IDirectedGraph;
 import org.jbpt.utils.IOUtils;
 
 import java.util.ArrayList;
@@ -27,11 +26,8 @@ public class FragmentGenerator {
     }
 
     private PrivateModel privateModel;
-    private int iaCount;
     private final ArrayList<IPrivateNode> nodes = new ArrayList<IPrivateNode>();
     private static final int MAX_ACTIVITIES = 5;
-    private static final int MAX_BRANCHES = 3;
-    private final ArrayList<PrivateActivity> prActivities = new ArrayList<PrivateActivity>();
 
 
     public FragmentGenerator(PrivateModel prModel) {
@@ -41,9 +37,6 @@ public class FragmentGenerator {
 
     public PrivateModel enhance() {
         int i = 0;
-        RpstModel<Edge<IPrivateNode>, IPrivateNode> afterModel = null;
-
-        IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> digraph = privateModel.getdigraph();
 
         // TODO: TF is this -> only logging, do i need this
         for (IRPSTNode<Edge<IPrivateNode>, IPrivateNode> v : privateModel.getVertices()) {
@@ -266,18 +259,6 @@ public class FragmentGenerator {
 
         return newFragmentGraph;
 
-    }
-
-    private int determineInteractionCount(PrivateModel prModel) {
-        int interactionCount = 0;
-
-        for (INode node : prModel.getdigraph().getVertices()) {
-            if (node instanceof InteractionActivity) {
-                interactionCount++;
-            }
-        }
-
-        return interactionCount;
     }
 
     private int randomInteger(int min, int max) {

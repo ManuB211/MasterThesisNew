@@ -12,9 +12,4 @@ public class Edge<N extends INode> extends AbstractDirectedEdge<N> implements ID
         super(g, source, target);
     }
 
-    public Edge(AbstractMultiDirectedGraph<?, N> g, N source, N target, String id) {
-        super(g, source, target);
-        this.setId(id);
-    }
-
 }

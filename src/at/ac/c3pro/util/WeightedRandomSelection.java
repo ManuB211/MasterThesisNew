@@ -59,8 +59,6 @@ public class WeightedRandomSelection {
     }
 
     public InteractionType chooseAccordingToDistribution() {
-        double weight = 0.0;
-
         double random = Math.random() * this.completeWeight;
 
         double weightCounter = 0;

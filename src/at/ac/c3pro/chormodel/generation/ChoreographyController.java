@@ -1,15 +1,12 @@
 package at.ac.c3pro.chormodel.generation;
 
 import at.ac.c3pro.chormodel.*;
-import at.ac.c3pro.chormodel.compliance.ComplianceController;
-import at.ac.c3pro.chormodel.compliance.CompliancePattern;
 import at.ac.c3pro.io.ChoreographyModel2Bpmn;
 import at.ac.c3pro.io.ChoreographyModelToCPN;
 import at.ac.c3pro.io.Collaboration2Bpmn;
 import at.ac.c3pro.io.PrivateModel2Bpmn;
 import at.ac.c3pro.node.Edge;
 import at.ac.c3pro.node.IChoreographyNode;
-import at.ac.c3pro.node.Interaction;
 import at.ac.c3pro.node.Interaction.InteractionType;
 import at.ac.c3pro.util.*;
 import at.ac.c3pro.util.VisualizationHandler.VisualizationType;
@@ -17,15 +14,15 @@ import org.jbpt.utils.IOUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class ChoreographyController {
-
-    private static final String lineSep = "----------------------------------------------------------\n";
 
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
         //Add timestamp as global attribute, so that it can be accessed anywhere without the need of giving it as a parameter everywhere
@@ -76,10 +73,6 @@ public class ChoreographyController {
 
         ChorModelGenerator modelGen;
         SplitTracking splitTracking = SplitTracking.getInstance();
-        ComplianceController complianceController = new ComplianceController();
-
-        complianceController.orderInteractions();
-        complianceController.printInteractionOrderWithAffectedRules();
 
         if (amountHandoverOfWork >= participantCount) {
             throw new IllegalArgumentException(
@@ -114,15 +107,11 @@ public class ChoreographyController {
         IOUtils.toFile(GlobalTimestamp.timestamp + "/" + GlobalTimestamp.timestamp + "_choreo_model.dot",
                 modelGen.getEnrichedGraph().toDOT()); // assigned with compliance rules interactions
 
-        createChoreoInfo(complianceController, folder, modelGen.getInteractions(),
-                splitTracking.getNumberOfInteractions());
-
         ChoreographyModel choreoModel = new ChoreographyModel(modelGen.getEnrichedGraph());
         ChoreographyModel2Bpmn choreo2bpmnIO = new ChoreographyModel2Bpmn(choreoModel,
                 "autogen_choreo_model_" + GlobalTimestamp.timestamp, folder);
 
         // Generate Choreography (incl. all public models / private models)
-        ChoreographyGenerator chorGen = new ChoreographyGenerator();
         Choreography choreo = ChoreographyGenerator.generateChoreographyFromModel(choreoModel, xorNodeWithDirectConnectionToMerge);
 
 
@@ -159,7 +148,7 @@ public class ChoreographyController {
         choreo2bpmnIO.buildXML();
         collab2bpmnIO.buildXML();
 
-        complianceController.printComplianceData();
+//        complianceController.printComplianceData();
         modelGen.printInteractions();
 
         splitTracking.terminate();
@@ -226,90 +215,6 @@ public class ChoreographyController {
         }
 
         return rst;
-    }
-
-    /**
-     * Builds the ChoreoInfo, saved as autogen_choreo_info_[timestamp].txt
-     */
-    private static void createChoreoInfo(ComplianceController complianceController, String folder,
-                                         ArrayList<Interaction> interactions, int numberOfInteractions) {
-        try (BufferedWriter bw = new BufferedWriter(
-                new FileWriter(folder + "/autogen_choreo_info_" + GlobalTimestamp.timestamp + ".txt"))) {
-            bw.write(lineSep);
-            bw.write("ADDED RULES:\n");
-            bw.write(lineSep);
-            for (CompliancePattern cr : complianceController.getComplianceRules()) {
-                bw.write(complianceController.printRule(cr));
-                bw.newLine();
-            }
-            bw.write(lineSep);
-            bw.write("CONFLICTED RULES:\n");
-            bw.write(lineSep);
-            for (CompliancePattern cr : complianceController.getConflictedRules()) {
-                bw.write(complianceController.printRule(cr));
-                bw.newLine();
-            }
-            bw.write(lineSep);
-            bw.write("ORDER DEPENDENCIES:\n");
-            bw.write(lineSep);
-            for (Map.Entry<Interaction, ArrayList<Interaction>> entry : complianceController.getOrderDependencies()
-                    .entrySet()) {
-                bw.write("Key : " + entry.getKey() + " Value : " + entry.getValue());
-                bw.newLine();
-            }
-            bw.write(lineSep);
-            bw.write("UNIVERSAL IAs:\n");
-            bw.write(lineSep);
-            for (Interaction universalIA : complianceController.getUniversalInteractions()) {
-                bw.write("[" + universalIA.getName() + "] ");
-            }
-            bw.newLine();
-            bw.write(lineSep);
-            bw.write("EXISTS IAs:\n");
-            bw.write(lineSep);
-            for (Interaction existIA : complianceController.getExistInteractions()) {
-                bw.write("[" + existIA.getName() + "] ");
-            }
-            bw.newLine();
-            bw.write(lineSep);
-            bw.write("INTERACTION ORDER:\n");
-            bw.write(lineSep);
-            for (Interaction ia : complianceController.getInteractionOrder()) {
-                bw.write(ia + " - related rules: ");
-                for (CompliancePattern cr : complianceController.getAffectedRules(ia)) {
-                    bw.write(cr.getLabel() + " ");
-                }
-                bw.newLine();
-            }
-            bw.write(lineSep);
-            bw.write("INTERACTIONS:\n");
-            bw.write(lineSep);
-            System.out.println(interactions.size());
-            for (Interaction ia : interactions) {
-                if (ia == null) {
-                    System.out.println("asdasd");
-                } else {
-                    System.out.println(ia);
-                    System.out.println(ia.getName());
-                    System.out.println(ia.getParticipant1());
-                    System.out.println(ia.getParticipant2());
-                    System.out.println(ia.getMessage());
-                    System.out.println(ia.getMessage().getId());
-
-                    bw.write(ia.getName() + ": " + ia.getParticipant1().name + " -> " + ia.getParticipant2().name + " "
-                            + ia.getMessage().name + " " + ia.getMessage() + " : " + ia.getInteractionType());
-                    bw.newLine();
-                }
-            }
-            bw.write(lineSep);
-            bw.write("Number Of Interactions: " + numberOfInteractions);
-            bw.newLine();
-            bw.write(lineSep);
-            System.out.println("Done");
-
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        }
     }
 
     /**

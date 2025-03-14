@@ -32,7 +32,6 @@ public class ChoreographyModel2Bpmn {
     private final Collection<Edge<IChoreographyNode>> chorEdges;
     private final Set<IChoreographyNode> chorNodes = new HashSet<IChoreographyNode>();
     private final String modelName;
-    public IChoreographyModel choreoModel = null;
     public Set<Role> roles = new HashSet<Role>();
 
     private final String outputFolder;
@@ -42,7 +41,6 @@ public class ChoreographyModel2Bpmn {
     }
 
     public ChoreographyModel2Bpmn(IChoreographyModel choreoModel, String modelName, String folder) {
-        this.choreoModel = choreoModel;
         this.modelName = modelName;
         this.chorEdges = choreoModel.getdigraph().getEdges();
         this.outputFolder = folder;
@@ -314,10 +312,6 @@ public class ChoreographyModel2Bpmn {
                 return;
         }
         roles.add(role);
-    }
-
-    private Set<Role> getRoles() {
-        return roles;
     }
 
     private Set<Element> getIncomingEdges(IChoreographyNode node) {

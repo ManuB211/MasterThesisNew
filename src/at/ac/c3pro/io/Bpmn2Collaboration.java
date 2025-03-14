@@ -1,8 +1,8 @@
 package at.ac.c3pro.io;
 
-import at.ac.c3pro.ImpactAnalysis.ImpactAnalysisUtil.Pair;
 import at.ac.c3pro.chormodel.*;
 import at.ac.c3pro.node.*;
+import at.ac.c3pro.util.Pair;
 import org.apache.log4j.Logger;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -27,14 +27,10 @@ public class Bpmn2Collaboration {
     protected List<Element> messages;
     protected List<Element> messageFlow;
     protected List<Element> processes;
-    private String modelName;
-    public IChoreographyModel choreoModel = null;
     public Collaboration collab = null;
     private final Map<IPublicNode, String> MapPuNodeID2ChoreoNode = new HashMap<IPublicNode, String>();
 
     public Bpmn2Collaboration(String model_path_tpl, String model_name) throws Exception {
-        // super();
-        this.modelName = model_name;
         String fileName = String.format(model_path_tpl, model_name);
         System.out.print(fileName);
         if (logger.isInfoEnabled())
@@ -225,94 +221,6 @@ public class Bpmn2Collaboration {
             collab.Pu2Pu.put(getNode(t.sourceRef, pumNodes), getNode(t.targetRef, pumNodes));
             collab.Pu2Pu.put(getNode(t.targetRef, pumNodes), getNode(t.sourceRef, pumNodes));
         }
-    }
-
-    // this method returns the mapping between the public nodes and the matching
-    // choreography nodes in the choreoModel
-    public Map<IPublicNode, IChoreographyNode> getMapPu2ChoreoNode(IChoreographyModel cm) {
-
-        Map<IPublicNode, IChoreographyNode> pu2choreoNodeMap = new HashMap<IPublicNode, IChoreographyNode>();
-
-        for (IPublicNode pun : this.MapPuNodeID2ChoreoNode.keySet()) {
-            for (IChoreographyNode cn : cm.getdigraph().getVertices()) {
-                if (cn.getId().equals(this.MapPuNodeID2ChoreoNode.get(pun)))
-                    pu2choreoNodeMap.put(pun, cn);
-            }
-        }
-        return pu2choreoNodeMap;
-    }
-
-    // this method returns the mapping between the choreography nodes and the pair
-    // nodes in the matching public modes
-    public Map<IChoreographyNode, Pair<IPublicNode, IPublicNode>> getChoreoNode2PuNPairMap(IChoreographyModel cm) {
-
-        Map<IChoreographyNode, Pair<IPublicNode, IPublicNode>> ChoreoNode2PuNPairMap = new HashMap<IChoreographyNode, Pair<IPublicNode, IPublicNode>>();
-
-        for (IChoreographyNode cn : cm.getdigraph().getVertices()) {
-            IPublicNode first = null;
-            IPublicNode second = null;
-            int aux = 0;
-            for (IPublicNode pun : this.MapPuNodeID2ChoreoNode.keySet()) {
-                if (cn.getId().equals(this.MapPuNodeID2ChoreoNode.get(pun))) {
-                    if (aux == 0) {
-                        first = pun;
-                        aux++;
-                    }
-                    if (aux == 1) {
-                        second = pun;
-                    }
-                }
-            }
-            if (aux == 1 && first != null && second != null)
-                ChoreoNode2PuNPairMap.put(cn, new Pair<IPublicNode, IPublicNode>(first, second));
-            else
-                logger.fatal("Matching problem chorNode2PuNodePair: " + cn.getId()
-                        + " do not have corresonding public nodes");
-        }
-
-        return ChoreoNode2PuNPairMap;
-    }
-
-    // this method returns the mapping between the choreography gateways and the set
-    // of gateways in the matching public modes. it also fills the map between
-    // public gateways and chor gateway
-    public Map<IGateway, Set<Pair<IRole, IGateway>>> getchorGtw2PuGtws(IChoreographyModel cm) {
-
-        Map<IGateway, Set<Pair<IRole, IGateway>>> chorGtw2PuGtws = new HashMap<IGateway, Set<Pair<IRole, IGateway>>>();
-        for (IChoreographyNode cn : cm.getdigraph().getVertices()) {
-            if (cn instanceof IGateway) {
-                if (collab.Name2PuGtws.containsKey(cn.getName())) {
-                    chorGtw2PuGtws.put((IGateway) cn, collab.Name2PuGtws.get(cn.getName()));
-                } else
-                    logger.fatal("Matching problem: " + cn.getId() + " do not have corresonding public nodes");
-
-            }
-        }
-        for (IGateway gtw : chorGtw2PuGtws.keySet()) {
-            for (Pair<IRole, IGateway> pair : chorGtw2PuGtws.get(gtw))
-                collab.PuGtw2chorGtw.put(pair.second, gtw);
-        }
-
-        return chorGtw2PuGtws;
-    }
-
-    /*
-     * public Map<Pair<IPublicNode,IPublicNode>,IChoreographyNode>
-     * getMapPr2puNode(IChoreographyModel cm){
-     *
-     * Map<IPublicNode,IChoreographyNode> pu2choreoNodeMap = new
-     * HashMap<IPublicNode,IChoreographyNode>();
-     *
-     * for(IPublicNode pun: this.MapPuNodeID2ChoreoNode.keySet()){
-     * for(IChoreographyNode cn: cm.getdigraph().getVertices()){
-     * if(cn.getId().equals(this.MapPuNodeID2ChoreoNode.get(pun)))
-     * pu2choreoNodeMap.put(pun,cn); } }
-     *
-     * return pu2choreoNodeMap; }
-     */
-
-    public String getModelName() {
-        return this.modelName;
     }
 
     private IPublicNode getNode(String id, Set<IPublicNode> nodes) {

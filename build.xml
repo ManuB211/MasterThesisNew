@@ -67,38 +67,6 @@
         <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
         <antcall target="build"/>
     </target>
-    <target name="bpmn2ChoreographyModelTest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="at.ac.c3pro.tests.bpmn2ChoreographyModelTest" todir="${junit.output.dir}"/>
-            <classpath refid="Version1.classpath"/>
-        </junit>
-    </target>
-    <target name="Bpmn2ChoreographyTest.bpmn2chortest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr" showoutput="true">
-            <formatter type="xml"/>
-            <test name="at.ac.c3pro.tests.Bpmn2ChoreographyTest" todir="${junit.output.dir}"/>
-            <classpath refid="Version1.classpath"/>
-        </junit>
-    </target>
-    <target name="Bpmn2ChoreographyTest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="at.ac.c3pro.tests.Bpmn2ChoreographyTest" todir="${junit.output.dir}"/>
-            <classpath refid="Version1.classpath"/>
-        </junit>
-    </target>
-    <target name="Bpmn2ChoreographyTest.test">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="at.ac.c3pro.tests.Bpmn2ChoreographyTest" todir="${junit.output.dir}"/>
-            <classpath refid="Version1.classpath"/>
-        </junit>
-    </target>
     <target name="Bpmn2CollaborationTest">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
@@ -263,7 +231,6 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="at.ac.c3pro.tests.Bpmn2ChoreographyTest" todir="${junit.output.dir}"/>
             <test name="at.ac.c3pro.tests.Bpmn2CollaborationTest" todir="${junit.output.dir}"/>
             <test name="at.ac.c3pro.tests.ChoreographyModelTest" todir="${junit.output.dir}"/>
             <test name="at.ac.c3pro.tests.ChoreographyTest" todir="${junit.output.dir}"/>
@@ -271,7 +238,6 @@
             <test name="at.ac.c3pro.tests.PrivateModelTest" todir="${junit.output.dir}"/>
             <test name="at.ac.c3pro.tests.PublicModelTest" todir="${junit.output.dir}"/>
             <test name="at.ac.c3pro.tests.Rpsttest" todir="${junit.output.dir}"/>
-            <test name="at.ac.c3pro.tests.bpmn2ChoreographyModelTest" todir="${junit.output.dir}"/>
             <classpath refid="Version1.classpath"/>
         </junit>
     </target>

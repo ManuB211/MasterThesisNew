@@ -4,8 +4,6 @@ import at.ac.c3pro.chormodel.Role;
 
 public class Event extends Node implements IEvent {
 
-    //public static enum Name {start, end};
-    public String id;
     //The role the Event belongs to
     private Role role;
 
@@ -18,9 +16,6 @@ public class Event extends Node implements IEvent {
         super(name);
     }
 
-    public String type() {
-        return "event";
-    }
 
     public Event clone() {
         return new Event(this.getName());

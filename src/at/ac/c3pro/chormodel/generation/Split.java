@@ -38,7 +38,7 @@ public class Split {
 
     private void addBranches(int numberBranches) {
         for (int i = 1; i < numberBranches + 1; i++) {
-            branches.add(new Branch(i, this));
+            branches.add(new Branch(this));
         }
     }
 

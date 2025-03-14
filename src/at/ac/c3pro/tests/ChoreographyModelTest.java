@@ -4,20 +4,10 @@ import at.ac.c3pro.chormodel.ChoreographyModel;
 import at.ac.c3pro.chormodel.MultiDirectedGraph;
 import at.ac.c3pro.chormodel.Role;
 import at.ac.c3pro.node.*;
-import org.jbpt.algo.tree.rpst.IRPSTNode;
-import org.jbpt.algo.tree.rpst.RPST;
-import org.jbpt.graph.DirectedEdge;
-import org.jbpt.hypergraph.abs.Vertex;
 import org.jbpt.utils.IOUtils;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
-import static org.junit.Assert.assertTrue;
-
 public class ChoreographyModelTest {
-    enum Name {start, end}
 
     @Test
     public void test() {
@@ -79,31 +69,5 @@ public class ChoreographyModelTest {
 		assertEquals("end",M1.getRPSTNodes(TCType.RIGID).iterator().next().getExit().getName());
 		assertEquals(5,M1.getRPSTNodes(TCType.RIGID).iterator().next().getFragment().size());*/
         System.out.println("-----------------------------------------------------------------------");
-    }
-
-    private void performBasicChecks1(MultiDirectedGraph g, RPST<Edge<IChoreographyNode>, IChoreographyNode> rpst) {
-        for (IRPSTNode<Edge<IChoreographyNode>, IChoreographyNode> node : rpst.getRPSTNodes()) {
-            assertTrue(g.getEdges().containsAll(node.getFragment()));
-
-            Collection<Edge<IChoreographyNode>> edges = new ArrayList<Edge<IChoreographyNode>>();
-            for (IRPSTNode<Edge<IChoreographyNode>, IChoreographyNode> child : rpst.getChildren(node)) {
-                edges.addAll(child.getFragment());
-            }
-
-            assertTrue(node.getFragment().containsAll(edges));
-        }
-    }
-
-    private void performBasicChecks(MultiDirectedGraph g, RPST<DirectedEdge, Vertex> rpst) {
-        for (IRPSTNode<DirectedEdge, Vertex> node : rpst.getRPSTNodes()) {
-            assertTrue(g.getEdges().containsAll(node.getFragment()));
-
-            Collection<DirectedEdge> edges = new ArrayList<DirectedEdge>();
-            for (IRPSTNode<DirectedEdge, Vertex> child : rpst.getChildren(node)) {
-                edges.addAll(child.getFragment());
-            }
-
-            assertTrue(node.getFragment().containsAll(edges));
-        }
     }
 }

@@ -24,7 +24,6 @@ public class ChoreographyModelToCPN {
     private final List<String> alreadyVisited;
 
     private final List<String> alreadyCreated;
-    private final List<String> alreadyCreatedGlobal;
 
     private final Map<String, Element> privateNets;
 
@@ -45,7 +44,6 @@ public class ChoreographyModelToCPN {
         this.privateModels = privateModels;
         this.alreadyVisited = new ArrayList<>();
         this.alreadyCreated = new ArrayList<>();
-        this.alreadyCreatedGlobal = new ArrayList<>();
         this.privateNets = new HashMap<>();
 
         //Initialize the datastructure to save the interaction-transitions

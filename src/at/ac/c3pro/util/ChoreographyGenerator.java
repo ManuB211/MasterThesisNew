@@ -195,7 +195,7 @@ public class ChoreographyGenerator {
         }
 
         // Ensure a clean handling of the Handover-of-Work interaction type
-        HOWHandler howHandler = new HOWHandler(choreoM.getdigraph(), currentRole);
+        HOWHandler howHandler = new HOWHandler(choreoM, currentRole);
         howHandler.run();
 
         Collection<Edge<IChoreographyNode>> edges = howHandler.getEdges();

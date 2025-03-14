@@ -15,6 +15,8 @@ public interface IRpstModel<E extends Edge<N>, N extends INode> extends IRPST<E,
 
     IDirectedGraph<E, N> getdigraph();
 
+    void setDiGraph(IDirectedGraph<E, N> graph);
+
     E addEdge(MultiDirectedGraph<E, N> g, N s, N t);
 
     E removeEdge(MultiDirectedGraph<E, N> g, E e);
@@ -79,5 +81,7 @@ public interface IRpstModel<E extends Edge<N>, N extends INode> extends IRPST<E,
     Set<N> getsuccessorsOfNode(N node, Set<N> resultSet);
 
     Set<N> getpredecessorsOfNode(N node, Set<N> resultSet);
+
+    List<IChoreographyNode> getAllXORsWithDirectConnectionToMerge();
 
 }

@@ -1188,7 +1188,7 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         }
     }
 
-    private List<IChoreographyNode> getAllXORsWithDirectConnectionToMerge() {
+    public List<IChoreographyNode> getAllXORsWithDirectConnectionToMerge() {
         List<IChoreographyNode> rst = new ArrayList<>();
 
         for (Edge<?> e : this.diGraph.getEdges()) {

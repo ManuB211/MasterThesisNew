@@ -1,13 +1,12 @@
 package at.ac.c3pro.util;
 
+import at.ac.c3pro.chormodel.IRpstModel;
 import at.ac.c3pro.chormodel.Role;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.node.Interaction.InteractionType;
 import org.jbpt.graph.abs.IDirectedGraph;
 import org.jbpt.utils.IOUtils;
 
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -57,18 +56,23 @@ import java.util.stream.Collectors;
 public class HOWHandler {
 
     private final IDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> graph;
+    private final IRpstModel<Edge<IChoreographyNode>, IChoreographyNode> graphRpstModel;
     private final Role currentRole;
     private final Event start;
     private boolean cleanNecessary;
+    private List<IChoreographyNode> xorsWithDirectConnectionToMerge;
 
     // For debug purposes
     private final boolean printDebugGraphs = false;
 
-    public HOWHandler(IDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> pGraph, Role pCurrentRole) {
-        this.graph = pGraph;
+    //TODO: entferne weil deprecated
+    public HOWHandler(IRpstModel<Edge<IChoreographyNode>, IChoreographyNode> pGraphRpstModel, Role pCurrentRole) {
+        this.graphRpstModel = pGraphRpstModel;
+        this.graph = pGraphRpstModel.getdigraph();
         this.currentRole = pCurrentRole;
         this.start = this.findStartNode();
         this.cleanNecessary = false;
+        this.xorsWithDirectConnectionToMerge = pGraphRpstModel.getAllXORsWithDirectConnectionToMerge();
     }
 
     public void run() {
@@ -80,6 +84,12 @@ public class HOWHandler {
         if (printDebugGraphs)
             printGraphsDebug("AfterCropOutBeforeClean");
 
+        //Setze den digraph zurück ins RPSTModel
+        this.graphRpstModel.setDiGraph(this.graph);
+
+        this.graphRpstModel.reduceGraph(this.xorsWithDirectConnectionToMerge);
+
+        /*
         int cleanCtr = 1;
         while (this.cleanNecessary) {
             this.cleanGraph();
@@ -89,7 +99,7 @@ public class HOWHandler {
                 printGraphsDebug(cleanCounterTimeInfo);
             }
             cleanCtr++;
-        }
+        }*/
 
         // TODO Comment in again when problem that graph is split up in case of HOW
         // this.removeOrphanParents();
@@ -98,13 +108,6 @@ public class HOWHandler {
     private void printGraphsDebug(String timeInfo) {
         IOUtils.toFile(GlobalTimestamp.timestamp + "/" + GlobalTimestamp.timestamp + "_" + timeInfo + "_" + currentRole.name + ".dot",
                 graph.toDOT());
-    }
-
-    private static String getTimestampFormatted() {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        Date date = new Date();
-        date.setTime(timestamp.getTime());
-        return new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(date);
     }
 
     private Event findStartNode() {

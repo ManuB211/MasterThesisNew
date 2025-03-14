@@ -7,6 +7,10 @@ from graphviz import Source
 def display_model(directory):
     
     for model in os.listdir(directory):
+    
+        if model == "Analysis":
+            continue;
+    
         print(model)
         
         file_path_in = directory+"/"+model

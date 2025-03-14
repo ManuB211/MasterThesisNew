@@ -72,6 +72,7 @@ public class ChoreographyController {
         boolean printVisualizationsForPrivModels = configObject.getBoolean("visualizePrivModels");
         boolean printVisualizationsForPubModels = configObject.getBoolean("visualizePubModels");
         boolean useEasySoundnessChecker = configObject.getBoolean("useEasySoundnessChecker");
+        boolean easySoundnessCheckVisualization = configObject.getBoolean("easySoundnessCheckVisualization");
 
         ChorModelGenerator modelGen;
         SplitTracking splitTracking = SplitTracking.getInstance();
@@ -121,7 +122,7 @@ public class ChoreographyController {
         List<PrivateModel> privateModels = exportPrivateModels(choreo, printVisualizationsForPrivModels);
 
         if (useEasySoundnessChecker) {
-            EasySoundnessChecker easySoundnessChecker = new EasySoundnessChecker(choreo);
+            EasySoundnessChecker easySoundnessChecker = new EasySoundnessChecker(choreo, easySoundnessCheckVisualization);
             easySoundnessChecker.run();
         }
 

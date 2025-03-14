@@ -32,7 +32,7 @@ def display_model(directory):
             # Save the model as image
             model_graph.render(file_path_out, format="png", cleanup=True)
             print("Step 3 done")
-            print(f"Visualization saved to {file_path_out}. You can view it using an image viewer.")
+            print(f"Visualization saved to {file_path_out}")
 
         except Exception as e:
             raise Error(f"An error occurred: {e}")

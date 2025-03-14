@@ -182,7 +182,9 @@ public class ChoreographyGenerator {
         for (IChoreographyNode node : choreoM.getdigraph().getVertices()) {
             System.out.println("Node:" + node);
             if (node instanceof Event) {
-                C2Pnode.put(node, (Event) node);
+                Event eventNode = (Event) node;
+                eventNode.setRole(currentRole);
+                C2Pnode.put(node, eventNode);
             } else if (node instanceof Gateway) {
                 C2Pnode.put(node, (Gateway) node);
             } else if (node instanceof Interaction) {

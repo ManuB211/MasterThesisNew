@@ -24,11 +24,12 @@ public class VisualizationHandler {
         PETRI_NET("resources/generatePetrinetVisualization.py", "CPNs_private", ""),
         PRIV_MODEL("resources/generateDotVisualization.py", "PrivateModels", ""),
         PUB_MODEL("resources/generateDotVisualization.py", "PublicModels", ""),
+        EASY_SOUNDNESS("resources/generateDotVisualization.py", "EasySoundness", ""),
         FINISHED_GRAPH_ENRICHED("resources/generateDotVisualizationSingleFile.py", "", "finished_graph_enriched.dot");
 
-        private String path;
-        private String folderName;
-        private String fileName;
+        private final String path;
+        private final String folderName;
+        private final String fileName;
 
         VisualizationType(String path, String folderName, String fileName) {
             this.path = path;

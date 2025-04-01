@@ -58,10 +58,10 @@ public class ChoreographyController {
         int amountSynchronousActivity = configObject.getInt("amountSynchronousActivity");
 
         Map<InteractionType, Integer> remainingInteractionTypes = new HashMap<>();
-        remainingInteractionTypes.put(InteractionType.MESSAGE_EXCHANGE, Integer.valueOf(2));
-        remainingInteractionTypes.put(InteractionType.HANDOVER_OF_WORK, Integer.valueOf(1));
-        remainingInteractionTypes.put(InteractionType.SHARED_RESOURCE, Integer.valueOf(1));
-        remainingInteractionTypes.put(InteractionType.SYNCHRONOUS_ACTIVITY, Integer.valueOf(1));
+        remainingInteractionTypes.put(InteractionType.MESSAGE_EXCHANGE, amountMessageExchange);
+        remainingInteractionTypes.put(InteractionType.HANDOVER_OF_WORK, amountHandoverOfWork);
+        remainingInteractionTypes.put(InteractionType.SHARED_RESOURCE, amountRessourceSharing);
+        remainingInteractionTypes.put(InteractionType.SYNCHRONOUS_ACTIVITY, amountSynchronousActivity);
 
         int interactionCount = amountHandoverOfWork + amountMessageExchange + amountRessourceSharing
                 + amountSynchronousActivity;

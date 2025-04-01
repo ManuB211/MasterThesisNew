@@ -117,10 +117,10 @@ public class Collaboration2BpmnPrivate {
             process.setAttribute(new Attribute("processType", "Public"));
 
             // XML:process - lane
-            Element laneSet = new Element("laneSet", BPMN2NS);
-            laneSet.setAttribute(new Attribute("id", "sid-" + UUID.randomUUID()));
-            Element lane = new Element("lane", BPMN2NS);
-            lane.setAttribute(new Attribute("id", "sid-" + UUID.randomUUID()));
+            //Element laneSet = new Element("laneSet", BPMN2NS);
+            //laneSet.setAttribute(new Attribute("id", "sid-" + UUID.randomUUID()));
+            //Element lane = new Element("lane", BPMN2NS);
+            //lane.setAttribute(new Attribute("id", "sid-" + UUID.randomUUID()));
 
             for (Edge<IPrivateNode> edge : prModel.getdigraph().getEdges()) {
                 // XML:process - seqFlow
@@ -264,19 +264,21 @@ public class Collaboration2BpmnPrivate {
                     + processNodes.size());
 
             // put process together
-            lane.addContent(flowNodeRefs);
-            laneSet.addContent(lane);
-            process.addContent(laneSet);
+            //lane.addContent(flowNodeRefs);
+            //laneSet.addContent(lane);
+            //process.addContent(laneSet);
             process.addContent(processNodes);
             process.addContent(seqFlows);
             processes.add(process);
         }
 
         // put doc together
-        doc.getRootElement().addContent(messages);
+        doc.getRootElement().addContent(collaboration);
+
+        //collaboration.addContent(messages);
         collaboration.addContent(participants);
         collaboration.addContent(messageFlows);
-        doc.getRootElement().addContent(collaboration);
+
         doc.getRootElement().addContent(processes);
 
         XMLOutputter xmlOutput = new XMLOutputter();

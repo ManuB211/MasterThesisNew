@@ -207,187 +207,6 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
 
     }
 
-    /**
-     * deleting a singular node, use the the set-based delete
-     */
-    public RpstModel<E, N> delete(N node) {
-        Set<IRPSTNode<E, N>> s = new HashSet<IRPSTNode<E, N>>();
-        s.add(this.getFragmentWithSource(node));
-        s.add(this.getFragmentWithTarget(node));
-        // System.out.println("s= "+s);
-        return this.delete(s);
-    }
-
-    public RpstModel<E, N> delete(IRPSTNode<E, N> fragment) {
-        return reloadFromGraph(this.innerDelete(fragment, this.cloneDiGraph())).reduceGraph(new ArrayList<>());
-    }
-
-    public RpstModel<E, N> delete(Set<IRPSTNode<E, N>> sequenceFragment) {
-        return reloadFromGraph(this.innerDelete(sequenceFragment, this.cloneDiGraph())).reduceGraph(new ArrayList<>());
-    }
-
-    /**
-     * a fragment in the RPST is determined by its root element in the tree
-     *
-     * @param fragment
-     * @param graph
-     */
-    public IDirectedGraph<E, N> innerDelete(IRPSTNode<E, N> fragment, IDirectedGraph<E, N> graph) {
-        // IDirectedGraph<E, N> graph = this.cloneDiGraph();
-        return removefragment(fragment.getFragment(), fragment.getEntry(), fragment.getExit(), graph);
-        // return new RpstModel<E,N>((MultiDirectedGraph<E, N>) newDiGraph);
-        // return newDiGraph;
-    }
-
-    public IDirectedGraph<E, N> innerDelete(Set<IRPSTNode<E, N>> Sequencefragment, IDirectedGraph<E, N> graph) {
-        // we first check if the set contains anly trivial nodes and it corresponds to a
-        // connected sequence of nodes
-        Iterator<IRPSTNode<E, N>> I = Sequencefragment.iterator();
-        if (Sequencefragment == null)
-            return graph;
-        if (Sequencefragment.size() == 1) {
-            System.out.println("error: single edge"); // to be replaced by throw exception ...
-            return graph;
-        }
-
-        IRPSTNode<E, N> parent = this.getParent(I.next());
-        for (IRPSTNode<E, N> node : Sequencefragment) {
-            if (node.getType() != TCType.TRIVIAL || this.getParent(node) != parent) {
-                System.out.println("error: the fragment is not a sequence");
-                return graph;
-            }
-        }
-
-        // Checking if the edges are in sequence and finding the entry and the exit of
-        // this sequence
-        Map<N, Integer> Occurence = new HashMap<N, Integer>();
-        for (IRPSTNode<E, N> node1 : Sequencefragment) {
-            int nb1 = 1;
-            int nb2 = -1;
-            if (!Occurence.containsKey(node1.getEntry())) {
-                for (IRPSTNode<E, N> node2 : Sequencefragment) {
-                    if (node1.getEntry() == node2.getExit())
-                        nb1--;
-                }
-                Occurence.put(node1.getEntry(), nb1);
-            }
-
-            if (!Occurence.containsKey(node1.getExit())) {
-                for (IRPSTNode<E, N> node2 : Sequencefragment) {
-                    if (node1.getExit() == node2.getEntry())
-                        nb2++;
-                }
-                Occurence.put(node1.getExit(), nb2);
-            }
-        }
-        int nbEntry = 0;
-        int nbExit = 0;
-        N Fentry = null;
-        N Fexit = null;
-        for (N node : Occurence.keySet()) {
-            if (Occurence.get(node) == 1) {
-                nbEntry++;
-                Fentry = node;
-            }
-            if (Occurence.get(node) == -1) {
-                nbExit++;
-                Fexit = node;
-            }
-        }
-        if (nbEntry > 1 || nbExit > 1) {
-            System.out.println("error: the fragment is not a connected sequence");
-            return graph;
-        }
-        // At this level it is sure that it is a correct sequence with Fentry and Fexit
-        // as boundaries, so we proceed to the delete
-
-        // TODO: extract this sequence checking as a method to be reused wherever we
-        // need
-
-        I = Sequencefragment.iterator();
-        // IFragment<E,N> Fragment = new Fragment<E,N>(null);
-        Set<E> Fragment = new HashSet<E>();
-        while (I.hasNext()) {
-
-            Iterator<E> it = I.next().getFragment().iterator();
-            while (it.hasNext()) {
-                E edge = it.next();
-                Fragment.add(edge);
-                // System.out.println("edge =="+edge + Sequencefragment.size());
-            }
-        }
-
-        // IDirectedGraph<E, N> newDiGraph = removefragment(Fragment,Fentry, Fexit,
-        // graph);
-        // return new RpstModel<E,N>((MultiDirectedGraph<E, N>) newDiGraph);
-        // return newDiGraph;
-
-        return removefragment(Fragment, Fentry, Fexit, graph);
-    }
-
-    /**
-     * This Function reduces a graph for the delete
-     */
-    private IDirectedGraph<E, N> removefragment(Set<E> Fragment, N predecessor, N successor,
-                                                IDirectedGraph<E, N> graph) {
-        Iterator<E> i = Fragment.iterator();
-        // System.out.println("********"+Fragment);
-        List<E> L = new LinkedList<E>();
-        while (i.hasNext()) {
-            E rpstEdge = i.next(); // rpst edges
-            for (E graphEdge : original2RpstEdge.keySet())
-                if (this.original2RpstEdge.get(graphEdge).getId().equals(rpstEdge.getId()))
-                    L.add(graphEdge);
-        }
-
-        // System.out.println("L: " + L.size());
-        // System.out.println("L.size(): " + L.size());
-
-        // TODO: merge the graph reduction logic in reduceGraph() and here
-
-        if (L.size() > 0) {
-            // graph reduction
-            if (predecessor instanceof AndGateway && successor instanceof AndGateway) {
-                Gateway source = (Gateway) predecessor;
-                Gateway target = (Gateway) successor;
-                // System.out.println("gateways to reduce "+ source+" "+target);
-                if (source.isSplit(this) && target.isJoin(this)) {
-                    // System.out.println("removed = "+graph.removeEdges(L));
-                    Collection<E> deleted = graph.removeEdges(L);
-                    // System.out.println("(XOR) case 1 deleted: " + deleted);
-                    if (graph.getDirectSuccessors(predecessor).size() == 1
-                            && graph.getDirectPredecessors(successor).size() == 1) {
-                        Iterator<N> It1 = graph.getDirectPredecessors(predecessor).iterator();
-                        Iterator<N> It2 = graph.getDirectSuccessors(predecessor).iterator();
-                        Iterator<N> It3 = graph.getDirectPredecessors(successor).iterator();
-                        Iterator<N> It4 = graph.getDirectSuccessors(successor).iterator();
-                        if (It1.hasNext() && It2.hasNext())
-                            graph.addEdge(It1.next(), It2.next());
-                        if (It3.hasNext() && It4.hasNext())
-                            graph.addEdge(It3.next(), It4.next());
-                        graph.removeVertex(predecessor);
-                        graph.removeVertex(successor);
-                        // System.out.println("(AND Case) Graph Reduction done !");
-                    }
-                } else {
-                    Collection<E> deleted = graph.removeEdges(L);
-                    // System.out.println("(XOR) case 2 deleted: " + deleted);
-                }
-            } else { // xor, sequence, ..
-                // System.out.println("XOR case");
-                Collection<E> deleted = graph.removeEdges(L);
-                // System.out.println("(XOR) deleted: " + deleted);
-                graph.addEdge(predecessor, successor);
-            }
-        }
-
-        // System.out.println("graph after reduction: " + graph);
-        // System.out.println("this.diGraph after reduction: " + this.diGraph);
-
-        graph.removeVertices(graph.getDisconnectedVertices());
-        return graph;
-    }
-
     public RpstModel<E, N> reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge, String roleName) {
 
         IOUtils.toFile(GlobalTimestamp.timestamp + "/Reductions/Reductions_" + roleName + "/ReductionStart_" + roleName + ".dot", this.getdigraph().toDOT());
@@ -683,14 +502,12 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
                 // and reconnect the relevant nodes");
                 // remove this bond, connect the predecessors of entry to successors of exit
 
-                // TODO: Lookup if XOR -> XOR_m existed in original model and if yes keep one of
-                // them?
-
                 this.removeAndReconnect(entry, exit, directEntryExitEdges, entryEdgesWithOtherExit,
                         exitEdgesWithOtherEntry, xorsWithDirectEdgeToMerge);
                 // System.out.println("#### RETURN TRUE ####");
                 return true;
             } else {
+                //TODO: wrong XOR connection with one direct edge?
                 // System.out.println("\tXOR case (staying intact)");
             }
         } else {
@@ -718,17 +535,33 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         boolean retainOneDirectEdgeXOR = false;
         if (entry instanceof XorGateway && exit instanceof XorGateway) {
 
-            Iterator<E> iter = directEntryExitEdges.iterator();
+            /**
+             * As the directEntryExitEdges list contains only all the edges between a single XOR and its Merge-Node, it suffices to only check one of them,
+             * as for the outcome there are only two possibilities: either we need to retain exaclty one direct edge, as the entry node has other children than
+             * the merge node (in which case its irrelevant which direct edge we retain) or the only edges from the XOR are directly to its merge node, in which case
+             * all of them are deleted.
+             * Therefore simply the first direct edge in the list is considered
+             * */
+            E currentNodeToRemove = directEntryExitEdges.get(0);
 
-            while (iter.hasNext()) {
-                E currentNodeToRemove = iter.next();
+            if (xorsWithDirectEdgeToMerge.contains(currentNodeToRemove.getSource())) {
 
-                if (xorsWithDirectEdgeToMerge.contains(currentNodeToRemove.getSource())) {
-                    iter.remove();
-                    retainOneDirectEdgeXOR = true;
-                    break;
+                //Check that although a direct edge from XOR to XOR_m is present, it is not the only edge that would remain
+                Collection<N> childrenOfDirectEdgeSource = this.diGraph.getDirectSuccessors(entry);
+
+                for (N child : childrenOfDirectEdgeSource) {
+                    if (!child.equals(exit)) {
+                        retainOneDirectEdgeXOR = true;
+                        break;
+                    }
+                }
+                //In case there are more than two direct edges, and the retainOneDirectEdgeXOR flag is set, we need to remove all but one direct XOR connections
+                //DirectEntryExitEdges will only contain direct edges between one particular gateway and its merge
+                if (retainOneDirectEdgeXOR) {
+                    directEntryExitEdges.remove(0);
                 }
             }
+
         }
 
         this.diGraph.removeEdges(directEntryExitEdges);

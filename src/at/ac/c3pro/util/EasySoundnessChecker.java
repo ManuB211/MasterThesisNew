@@ -110,9 +110,6 @@ public class EasySoundnessChecker {
 
         outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.START);
 
-        //Get one arbitrary end node and corresponding graph
-        Role firstRole = new ArrayList<>(participantsByName.values()).get(0);
-
         //TODO: Mechanism to dynamically stop when either all participants are eliminated or it could been shown that there are no more cycles and there are executable paths
         //--> check mechanism with visited again to ensure
 
@@ -123,7 +120,6 @@ public class EasySoundnessChecker {
             outputHandler.printEasySoundness(interactionsToCheck.stream().map(IGObject::getName).collect(Collectors.joining(", ")));
             outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.INTERACTIONS_TO_CHECK_DELIM);
 
-
             //Search one trace at a time, either a cycle or a trace from end to some start
             List<IPublicNode> trace = new ArrayList<>();
 
@@ -131,7 +127,7 @@ public class EasySoundnessChecker {
             IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphForNodeToCheckNext = getGraphToNode(nodeToCheckNext);
 
             //We set the attribute to true initially. Once the trace cannot be executed further as for a node the graph of the other participant
-            // has already been eliminated from consideration, we set it to false
+            // has already been eliminated from consideration, we set it to false TODO
             boolean traceValid = true;
 
             searchTrace(graphForNodeToCheckNext, nodeToCheckNext, trace, traceValid);
@@ -354,6 +350,12 @@ public class EasySoundnessChecker {
             return;
         }
 
+        //Check if the current node to eliminate with its context is still present, because it might have been eliminated in a previous elimination step
+        if (!graphOfNode.getVertices().contains(node)) {
+            outputHandler.printEasySoundness("Node has already been eliminated in a previous step, Continuing with the next one");
+            return;
+        }
+
         List<IPublicNode> toEliminate = new ArrayList<>();
 
         //Step 1: Traverse the graph backwards until you find either a XOR node or the start node
@@ -399,8 +401,10 @@ public class EasySoundnessChecker {
             outputHandler.printEasySoundness("Eliminating nodes on the XOR branch that cannot be executed");
             eliminateContextXORBranch(graphOfNode, firstNodeOnXORbranch, xorMergeName);
 
+            //TODO: Move into actual elimination to get all nodes (in case of branches, only one branch is eliminated currently)
             interactionsToCheck.removeAll(toEliminate);
 
+            //TODO Fix toEliminate, also needs to add the nodes further down
             outputHandler.printEasySoundness("Nodes eliminated: " + toEliminate.stream().map(IGObject::getName).collect(Collectors.joining(",")));
             outputHandler.printEasySoundness("These nodes are also eliminated from consideration to find a path to a start node from");
 
@@ -552,8 +556,16 @@ public class EasySoundnessChecker {
             return null;
         }
 
-        return counterpartGraph.getVertices().stream()
-                .filter(n -> n.getName().equals(nameOfCounterpartInteraction)).collect(Collectors.toList()).get(0);
+        //If counterpart node cannot be found in counterpartGraph it has been eliminated before
+        List<IPublicNode> counterpartNode = counterpartGraph.getVertices().stream()
+                .filter(n -> n.getName().equals(nameOfCounterpartInteraction)).collect(Collectors.toList());
+
+        if (counterpartNode.isEmpty()) {
+            return null;
+        } else {
+            return counterpartNode.get(0);
+        }
+
     }
 
     private IPublicNode getCounterpartNode(IPublicNode node, IDirectedGraph<Edge<IPublicNode>, IPublicNode> counterpartGraph) {

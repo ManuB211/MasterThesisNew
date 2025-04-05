@@ -20,8 +20,6 @@ public interface IRpstModel<E extends Edge<N>, N extends INode> extends IRPST<E,
 
     IRPSTNode<E, N> getsmallestFragment(List<IRPSTNode<E, N>> L);
 
-    RpstModel<E, N> delete(IRPSTNode<E, N> fragment);
-
     List<IRPSTNode<E, N>> getallChildren(IRPSTNode<E, N> rpstNode);
 
     IRpstModel<E, N> projectionRole(Role role, boolean doGraphReduce, List<IChoreographyNode> xorsWithDirectConnectionToMerge);
@@ -41,8 +39,6 @@ public interface IRpstModel<E extends Edge<N>, N extends INode> extends IRPST<E,
     boolean reduceGraph(List<IChoreographyNode> xorsWithDirectEdgeToMerge, IRPSTNode<E, N> fragment);
 
     Set<N> getNodes(IRPSTNode<E, N> rpstNode);
-
-    RpstModel<E, N> delete(N node);
 
     boolean isEmpty();
 

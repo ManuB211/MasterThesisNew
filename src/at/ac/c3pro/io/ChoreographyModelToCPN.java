@@ -15,7 +15,6 @@ import org.jdom.output.XMLOutputter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ChoreographyModelToCPN {
 
@@ -259,13 +258,11 @@ public class ChoreographyModelToCPN {
     private void buildPetriNet(IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> participantModelGraph,
                                IPrivateNode node, Element netCurr) {
 
-        List<IPrivateNode> nodeChildren = participantModelGraph.getDirectSuccessors(node).stream()
-                .collect(Collectors.toList());
+        List<IPrivateNode> nodeChildren = new ArrayList<>(participantModelGraph.getDirectSuccessors(node));
 
         if (!this.alreadyVisited.contains(node.getId())) {
 
-            List<IPrivateNode> nodeParents = participantModelGraph.getDirectPredecessors(node).stream()
-                    .collect(Collectors.toList());
+            List<IPrivateNode> nodeParents = new ArrayList<>(participantModelGraph.getDirectPredecessors(node));
 
             if (node instanceof Event) {
                 if (node.getName().equals("start")) {
@@ -373,11 +370,15 @@ public class ChoreographyModelToCPN {
         createTransition(id, net);
 
         // In case of a IA -> IA connection we connect them directly without
-        // intermediate transaction
+        // intermediate transaction TODO wtf comment?
         if (!(parent instanceof Send || parent instanceof Receive || parent instanceof PrivateActivity)) {
             createPlace(idIn, net);
             createArc(idIn, id, net);
         }
+
+//        if(id.startsWith("S: ")){
+//
+//        }
 
         createPlace(idOut, net);
         createArc(id, idOut, net);
@@ -420,8 +421,12 @@ public class ChoreographyModelToCPN {
             createArc(idOut, child.getName(), net);
         } else if (child instanceof Send || child instanceof Receive || child instanceof PrivateActivity) {
             // IA1 -> IA2 (IA1 (t) -> IA2_in (p) )
-            createArc(id, child.getNameIn(), net);
 
+            if (child.getName().startsWith("S: ")) {
+                createArcSpecialHandlingSync(idOut, child.getName(), net);
+            } else {
+                createArc(id, child.getNameIn(), net);
+            }
         }
 
     }
@@ -810,19 +815,25 @@ public class ChoreographyModelToCPN {
      * ===================================================TAG-CREATION========================================================================
      */
 
+    /***
+     *  Wrapper method to generate arc that needs to be in the local and global petri net while marking the arc for the special handling of synchronous tasks
+     */
+    private void createArcSpecialHandlingSync(String sourceId, String targetId, Element net) {
+        createArcImpl(sourceId, targetId, net, false, true);
+    }
 
     /***
      *  Wrapper method to generate arc that needs to be in the local and global petri net
      */
     private void createArc(String sourceId, String targetId, Element net) {
-        createArcImpl(sourceId, targetId, net, false);
+        createArcImpl(sourceId, targetId, net, false, false);
     }
 
     /**
      * Wrapper method to generate arc that only needs to be in the global petri net
      */
     private void createArcGlobal(String sourceId, String targetId) {
-        createArcImpl(sourceId, targetId, this.netComplete, true);
+        createArcImpl(sourceId, targetId, this.netComplete, true, false);
     }
 
     /**
@@ -833,7 +844,7 @@ public class ChoreographyModelToCPN {
      * @param net:      The net to add the arc in
      * @return an <arc>-tag
      */
-    private void createArcImpl(String sourceId, String targetId, Element net, boolean onlyGlobal) {
+    private void createArcImpl(String sourceId, String targetId, Element net, boolean onlyGlobal, boolean specialHandlingSync) {
         String id = sourceId + "_to_" + targetId;
 
         if (!this.alreadyCreated.contains(id)) {
@@ -861,7 +872,7 @@ public class ChoreographyModelToCPN {
             boolean isSourceSyncTask = sourceId.startsWith("S: ");
             boolean isTargetSyncTask = targetId.startsWith("S: ");
 
-            if (isSourceSyncTask && isTargetSyncTask)
+            if ((isSourceSyncTask && isTargetSyncTask) || specialHandlingSync)
                 this.netCompleteElementsRelevantSync.add(arcElemGlobal);
             else
                 this.netCompleteElementsWithoutRelevantSync.add(arcElemGlobal);
@@ -1001,6 +1012,7 @@ public class ChoreographyModelToCPN {
     }
 
     private String localIdToGlobalId(String localId) {
+
         return localId + "(P" + this.currentParticipant + ")";
     }
 

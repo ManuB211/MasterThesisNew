@@ -449,7 +449,7 @@ public class EasySoundnessChecker {
                 removeParentEdgesAndNode(graph, Collections.singletonList(node), child, false);
                 interactionsToCheck.remove(node);
 
-                addCounterpartNodeToPathConsiderationAgain(node);
+//                addCounterpartNodeToPathConsiderationAgain(node);
 
                 outputHandler.printEasySoundness("Eliminating " + node.getName());
                 return;

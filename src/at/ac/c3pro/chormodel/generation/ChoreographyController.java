@@ -1,6 +1,8 @@
 package at.ac.c3pro.chormodel.generation;
 
 import at.ac.c3pro.chormodel.*;
+import at.ac.c3pro.chormodel.exceptions.CustomExceptionEnum;
+import at.ac.c3pro.chormodel.exceptions.PrivateModelDisconnectedException;
 import at.ac.c3pro.io.ChoreographyModel2Bpmn;
 import at.ac.c3pro.io.ChoreographyModelToCPN;
 import at.ac.c3pro.io.Collaboration2Bpmn;
@@ -25,6 +27,9 @@ import java.util.*;
 public class ChoreographyController {
 
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
+        //To establish a retry logic
+        Map<CustomExceptionEnum, Integer> countCustomExceptions = new HashMap<>();
+
         //Add timestamp as global attribute, so that it can be accessed anywhere without the need of giving it as a parameter everywhere
         GlobalTimestamp.timestamp = getTimestampFormatted();
         MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> graph;
@@ -42,6 +47,26 @@ public class ChoreographyController {
         fileStream.close();
 
         JSONObject configObject = new JSONObject(configString);
+
+
+    }
+
+    private static void runWrapper(File dir, JSONObject configObject, Map<CustomExceptionEnum, Integer> countCustomExceptions) throws IOException, InterruptedException {
+        try {
+            run(dir, configObject);
+        } catch (PrivateModelDisconnectedException e) {
+            countCustomExceptions.putIfAbsent(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED, 0);
+            countCustomExceptions.put(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED, countCustomExceptions.get(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED) + 1);
+
+            //TODO Retry dynamisch machen
+            if (countCustomExceptions.get(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED) <= 5) {
+                runWrapper(dir, configObject, countCustomExceptions);
+            }
+        }
+    }
+
+    private static void run(File dir, JSONObject configObject) throws IOException, InterruptedException, PrivateModelDisconnectedException {
+
 
         // MODEL GENERATOR PARAMETERS
         int participantCount = configObject.getInt("participantCount"); // number of participants
@@ -71,13 +96,13 @@ public class ChoreographyController {
         boolean useEasySoundnessChecker = configObject.getBoolean("useEasySoundnessChecker");
         boolean easySoundnessCheckVisualization = configObject.getBoolean("easySoundnessCheckVisualization");
 
-        ChorModelGenerator modelGen;
-        SplitTracking splitTracking = SplitTracking.getInstance();
-
         if (amountHandoverOfWork >= participantCount) {
             throw new IllegalArgumentException(
                     "The amount of interactions of the type handover-of-work cannot be equal or greater to the amount of participants");
         }
+
+        ChorModelGenerator modelGen;
+        SplitTracking splitTracking = SplitTracking.getInstance();
 
         modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,
                 loopCount, maxBranching, remainingInteractionTypes);
@@ -87,7 +112,7 @@ public class ChoreographyController {
         modelGen.setStartWithInteraction(Boolean.valueOf(false));
 
         // build choreography model
-        graph = modelGen.build();
+        MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> graph = modelGen.build();
         IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_preCompliance.dot", graph.toDOT()); // first build
         IOUtils.toFile(GlobalTimestamp.timestamp + "/finished_graph_enriched.dot", modelGen.getEnrichedGraph().toDOT()); // enriched
 
@@ -119,11 +144,15 @@ public class ChoreographyController {
         exportPublicModels(choreo, printVisualizationsForPubModels);
         List<PrivateModel> privateModels = exportPrivateModels(choreo, printVisualizationsForPrivModels);
 
+        //Additional Check if any of the private models is disconnected. If yes an exception is thrown and the generation is started again.
+        //If the error with disconnectedness still persists (noticed by Janik in the scope of the paper) then it has have to do with the translation to CPN
+        checkDisconnectedNess(privateModels);
+
+
         if (useEasySoundnessChecker) {
             EasySoundnessChecker easySoundnessChecker = new EasySoundnessChecker(choreo, easySoundnessCheckVisualization);
             easySoundnessChecker.run();
         }
-
 
         // Transform Private Models to a PNML file
         try {
@@ -153,6 +182,7 @@ public class ChoreographyController {
 
         splitTracking.terminate();
     }
+
 
     /**
      * Exports the public models to the target folder, named after the timestamp the
@@ -229,5 +259,35 @@ public class ChoreographyController {
         Date date = new Date();
         date.setTime(timestamp.getTime());
         return new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(date);
+    }
+
+    /**
+     * Checks a list of private models for disconnectedness.
+     * This is done using a BFS and comparing the nodes from the BFS-result to the nodes of the model
+     * If a disconnected model is found the methos throws a PrivateModelDisconnectedException
+     */
+    private static void checkDisconnectedNess(List<PrivateModel> prModels) throws PrivateModelDisconnectedException {
+        for (PrivateModel prModel : prModels) {
+
+            //Get Role name from prModelName (Name is always P_x_prModel)
+            String[] prModelNameSplit = prModel.getName().split("_");
+            String roleName = prModelNameSplit[0] + "_" + prModelNameSplit[1];
+
+            //TODO Check if trustworthy
+            if (!prModel.getDisconnectedVertices().isEmpty()) {
+                throw new PrivateModelDisconnectedException(roleName, "Disconnected Nodes found");
+            }
+
+            /*
+            IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> graph = prModel.getdigraph();
+            List<IPrivateNode> nodes = new ArrayList<>(graph.getVertices());
+
+            IPrivateNode endNode = nodes.stream().filter(node -> node instanceof Event && node.getName().equals("end")).collect(Collectors.toList()).get(0);
+
+            List<IPrivateNode> bfsResult = GraphHelper.performBackwardsBFSPrivate(graph, endNode, false);
+            */
+
+
+        }
     }
 }

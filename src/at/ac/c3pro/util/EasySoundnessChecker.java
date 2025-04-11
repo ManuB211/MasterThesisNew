@@ -652,32 +652,7 @@ public class EasySoundnessChecker {
      * Additional checks occur every time when a path is found from a node to a start node that goes through a graph/an XOR branch that gets eliminated afterwards
      */
     private List<IPublicNode> getInteractionsToCheckInOrderBFS(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, IPublicNode endNode) {
-        List<IPublicNode> queue = new ArrayList<>(Collections.singleton(endNode));
-        List<IPublicNode> explored = new ArrayList<>(Collections.singletonList(endNode));
-
-        List<IPublicNode> nodesToConsiderInOrder = new ArrayList<>(Collections.singletonList(endNode));
-        while (!queue.isEmpty()) {
-
-            IPublicNode currNode = queue.remove(0);
-
-//            if (currNode.getName().equals("start") && queue.isEmpty()) {
-//                return nodesToConsiderInOrder;
-//            }
-
-            if (currNode instanceof Receive || currNode instanceof Send) {
-                nodesToConsiderInOrder.add(currNode);
-            }
-
-            List<IPublicNode> parentsOfCurr = new ArrayList<>(graph.getDirectPredecessors(currNode));
-
-            for (IPublicNode parent : parentsOfCurr) {
-                if (!explored.contains(parent)) {
-                    explored.add(parent);
-                    queue.add(parent);
-                }
-            }
-        }
-        return nodesToConsiderInOrder;
+        return GraphHelper.performBackwardsBFSPublic(graph, endNode, true);
     }
 
 }

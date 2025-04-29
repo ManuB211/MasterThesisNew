@@ -1,7 +1,6 @@
 package at.ac.c3pro.util;
 
-import at.ac.c3pro.chormodel.Choreography;
-import at.ac.c3pro.chormodel.Role;
+import at.ac.c3pro.chormodel.*;
 import at.ac.c3pro.node.*;
 import org.jbpt.graph.abs.IDirectedGraph;
 import org.jbpt.hypergraph.abs.IGObject;
@@ -17,7 +16,8 @@ public class EasySoundnessChecker {
 
     boolean visualize;
 
-    Map<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> publicModelsByRole;
+    //    Map<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> publicModelsByRole;
+    Map<Role, IPublicModel> publicModelsByRole;
 
     List<IPublicNode> visited;
     Map<String, Role> participantsByName;
@@ -30,10 +30,16 @@ public class EasySoundnessChecker {
     //Stores all the interactions from which we try to find traces back to a start node
     List<IPublicNode> interactionsToCheck;
 
-    /*Maps a node to an interaction it is conditioned by meaning
-     * that for an entry x->y: x can only be executed if y has been executed before
-     * */
-//    Map<IPublicNode, List<IPublicNode>> conditionMap;
+    /**
+     * Stores for each edge x a set of edges {y1,...,yn} it is incompatible with;
+     * meaning when x is executed, none of y1,...,yn can be executed in the same trace
+     * this is due to the fact that x and y1,...,yn are on different branches of the same XOR
+     */
+    Map<Edge<IPublicNode>, Set<Edge<IPublicNode>>> incompatibilityMap;
+    Map<Role, List<XorGateway>> xors;
+
+    List<IChoreographyNode> xorWithDirectEdgeToMerge;
+
 
     Pattern regEx = Pattern.compile("P_\\d+>P_\\d+");
 
@@ -48,18 +54,24 @@ public class EasySoundnessChecker {
         endNodes = new HashMap<>();
         traces = new ArrayList<>();
         publicModelsByRole = new HashMap<>();
-//        conditionMap = new HashMap<>();
         interactionsToCheck = new ArrayList<>();
         this.visualize = visualize;
         eliminationStepsForParticipantsGraph = new HashMap<>();
+        incompatibilityMap = new HashMap<>();
+        xors = new HashMap<>();
+        xorWithDirectEdgeToMerge = new ArrayList<>();
         setupDeconstructionOfPuModels(choreography);
     }
 
     public void run() throws IOException, InterruptedException {
         try {
             //Step 1: Check for cyclic waits
-            this.checkForCyclicWaits();
-            //Step 2: Check other property
+            checkForCyclicWaits();
+
+            //Step 2: Check for valid traces
+            searchForValidTraces();
+
+
         } catch (Exception e) {
             outputHandler.closePrintWriter();
             throw e;
@@ -67,15 +79,623 @@ public class EasySoundnessChecker {
         outputHandler.closePrintWriter();
     }
 
+    private void searchForValidTraces() {
+        outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.START_VALID_TRACES);
+
+        //Step 2.1 Compute all traces from start to sink
+        computeAllTracesStartToSink();
+
+        //Step 2.2 Build incompatibilityMap
+        buildIncompatibilityMap();
+
+
+        outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.STOP_VALID_TRACES);
+    }
+
+    private void computeAllTracesStartToSink() {
+        //1. Build the complete graph, meaning a combination of all public models
+        MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> completeGraph = buildCompleteGraph();
+
+        if (completeGraph != null) {
+            //2. Compute topological order using Kahns algorithm
+            List<IPublicNode> topologicalOrder = computeTopologicalOrder(completeGraph, completeGraph.getVertices().stream().filter(v -> v.getName().equals("startGlobal")).collect(Collectors.toList()).get(0));
+
+            outputHandler.printEasySoundness("----------------------------------------------");
+            outputHandler.printEasySoundness("Starting computation of traces to all nodes");
+            outputHandler.printEasySoundness("----------------------------------------------");
+            //3. For all nodes compute all paths that end at said node in topological order
+            Map<IPublicNode, List<List<Edge<IPublicNode>>>> tracesToAllNodes = computeTracesToAllNodes2(completeGraph, new ArrayList<>(topologicalOrder));
+
+            for (Map.Entry<IPublicNode, List<List<Edge<IPublicNode>>>> entry : tracesToAllNodes.entrySet()) {
+                outputHandler.printEasySoundness("Traces that end at: " + entry.getKey().getName());
+
+                for (List<Edge<IPublicNode>> trace : entry.getValue()) {
+                    outputHandler.printEasySoundness(trace.stream().map(Edge::toString).collect(Collectors.joining(" , ")));
+                }
+                outputHandler.printEasySoundness("\n");
+            }
+
+            IPublicNode endGlobal = tracesToAllNodes.keySet().stream().filter(t -> t.getName().equals("endGlobal")).collect(Collectors.toList()).get(0);
+
+            //removeAllIncompatibleTraces(incompatibilityMap, tracesToAllNodes.get(endGlobal));
+
+        } else {
+            outputHandler.printEasySoundness("No topological order able to be computed for a graph that is null");
+        }
+    }
+
+    /*private void removeAllIncompatibleTraces(Map<Edge<IPublicNode>, Set<Edge<IPublicNode>>> incomp, List<List<IPublicNode>> traces) {
+
+        List<List<IPublicNode>> toRemove = new ArrayList<>();
+
+        for (Map.Entry<Edge<IPublicNode>, Set<Edge<IPublicNode>>> incompEntry : incomp.entrySet()) {
+
+            Edge<IPublicNode> currNode = incompEntry.getKey();
+
+            for (List<IPublicNode> traceToCheck : traces) {
+                if (traceToCheck.contains(currNode)) {
+
+                    for (IPublicNode incompatibleWithCurr : incompEntry.getValue()) {
+                        if (traceToCheck.contains(incompatibleWithCurr)) {
+
+                            outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.NODE_DELIM);
+                            outputHandler.printEasySoundness("A trace has been found that contains incompatible nodes: " + currNode + " and " + incompatibleWithCurr);
+                            outputHandler.printEasySoundness("Therefore the following trace has been eliminated");
+                            outputHandler.printEasySoundness(traceToCheck.stream().map(IGObject::getName).collect(Collectors.joining(" -> ")));
+                            toRemove.add(traceToCheck);
+                            break;
+                        }
+                    }
+                }
+            }
+
+
+        }
+
+        for (List<IPublicNode> traceToRemove : toRemove) {
+            traces.remove(traceToRemove);
+        }
+    }*/
+
+    private Map<IPublicNode, List<List<Edge<IPublicNode>>>> computeTracesToAllNodes2(MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, List<IPublicNode> topOrder) {
+        Map<IPublicNode, List<List<Edge<IPublicNode>>>> rst = new HashMap<>();
+
+        //Remove global start as it has no parent elements
+        topOrder.remove(0);
+
+        for (IPublicNode currNode : topOrder) {
+
+            //Get all predecessors
+            List<IPublicNode> parents = new ArrayList<>(graph.getDirectPredecessors(currNode));
+
+            List<List<Edge<IPublicNode>>> tracesEndingAtCurrNode = new ArrayList<>();
+
+            if (parents.isEmpty()) {
+                throw new IllegalStateException("No parents found, there has to be something wrong with the topological order");
+            }
+
+            if (currNode instanceof XorGateway) {
+
+                for (IPublicNode parent : parents) {
+                    List<List<Edge<IPublicNode>>> tracesEndingAtParent = rst.get(parent);
+
+                    //Children of global start
+                    if (tracesEndingAtParent.isEmpty()) {
+                        List<Edge<IPublicNode>> newTrace = new ArrayList<>();
+                        newTrace.add(graph.getEdge(parent, currNode));
+                        tracesEndingAtCurrNode.add(newTrace);
+                        continue;
+                    }
+
+                    //Take the traces ending at parent, add the current node and add the new trace as trace ending at the current node
+                    for (List<Edge<IPublicNode>> singleTraceEndingAtParent : tracesEndingAtParent) {
+                        List<Edge<IPublicNode>> newTraceEndingAtCurr = new ArrayList<>(singleTraceEndingAtParent);
+                        newTraceEndingAtCurr.add(graph.getEdge(parent, currNode));
+                        tracesEndingAtCurrNode.add(newTraceEndingAtCurr);
+                    }
+                }
+
+            } else {
+                //Build list containing all traces ending at all parents
+                List<List<List<Edge<IPublicNode>>>> allTraces = new ArrayList<>();
+
+                for (IPublicNode parent : parents) {
+
+
+                    //startGlobal -> children
+                    if (rst.isEmpty()) {
+
+//                        List<Edge<IPublicNode>> startEdge = new ArrayList<>();
+//                        startEdge.add(graph.getEdge(parent, currNode));
+//                        List<List<Edge<IPublicNode>>> startTrace = new ArrayList<>();
+//                        startTrace.add(startEdge);
+//                        rst.put(parent, startTrace);
+//
+//                        allTraces.add(startTrace);
+                    } else {
+                        allTraces.add(rst.get(parent));
+                    }
+
+
+                }
+
+
+                //Get all edges to current node
+                List<Edge<IPublicNode>> edgesToCurr = parents.stream().map(p -> graph.getEdge(p, currNode)).collect(Collectors.toList());
+
+                //Build all combinations using a backtracking approach
+                List<List<Edge<IPublicNode>>> tracesEndingAtCurr = getTracesEndingAtNode2(allTraces, currNode, edgesToCurr);
+
+                //TODO: Sort elements according to topological order again or does this not matter at all?
+
+                tracesEndingAtCurrNode.addAll(tracesEndingAtCurr);
+            }
+
+            rst.put(currNode, tracesEndingAtCurrNode);
+        }
+
+        return rst;
+    }
+
+    private List<List<Edge<IPublicNode>>> getTracesEndingAtNode2(List<List<List<Edge<IPublicNode>>>> allTraces, IPublicNode node, List<Edge<IPublicNode>> edgesToNode) {
+        List<List<Edge<IPublicNode>>> rst = new ArrayList<>();
+
+        getTracesEndingAtNodeRec2(allTraces, node, edgesToNode, 0, new ArrayList<>(), rst);
+
+        return rst;
+    }
+
+    private void getTracesEndingAtNodeRec2(List<List<List<Edge<IPublicNode>>>> allTraces, IPublicNode node, List<Edge<IPublicNode>> edgesToNode, int ctr, List<Edge<IPublicNode>> currTrace, List<List<Edge<IPublicNode>>> rst) {
+
+        if (ctr == allTraces.size() || allTraces.stream().allMatch(Objects::isNull)) {
+            currTrace.addAll(edgesToNode);
+            rst.add(new ArrayList<>(currTrace));
+            return;
+        }
+
+        List<List<Edge<IPublicNode>>> tracesOfCurrParticipant = allTraces.get(ctr);
+        for (List<Edge<IPublicNode>> singleTraceOfCurrParticipant : tracesOfCurrParticipant) {
+
+            //Needed for the backtracking
+            int amountAddedElements = 0;
+
+            //Add all nodes that are not already in the trace
+            for (Edge<IPublicNode> nodeOfTrace : singleTraceOfCurrParticipant) {
+                if (!currTrace.contains(nodeOfTrace)) {
+                    currTrace.add(nodeOfTrace);
+                    amountAddedElements++;
+                }
+            }
+
+            getTracesEndingAtNodeRec2(allTraces, node, edgesToNode, ctr + 1, currTrace, rst);
+
+            //Remove the added trace of the current participant from the end of the current trace again
+            for (int i = 0; i < amountAddedElements; i++) {
+                currTrace.remove(currTrace.size() - 1);
+            }
+        }
+    }
+
+
+    /**
+     * Computes for all nodes the paths that stop at this node.
+     */
+    private Map<IPublicNode, List<List<IPublicNode>>> computeTracesToAllNodes(MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, List<IPublicNode> topOrder) {
+
+        Map<IPublicNode, List<List<IPublicNode>>> rst = new HashMap<>();
+
+        //Add the global start with a list containing only itself as the first element
+        IPublicNode startGlobal = topOrder.remove(0);
+        List<List<IPublicNode>> traces = new ArrayList<>();
+        traces.add(Collections.singletonList(startGlobal));
+        rst.put(startGlobal, traces);
+
+        for (IPublicNode currNode : topOrder) {
+
+            List<IPublicNode> parents = new ArrayList<>(graph.getDirectPredecessors(currNode));
+
+            List<List<IPublicNode>> tracesEndingAtCurrNode = new ArrayList<>();
+
+            if (parents.isEmpty()) {
+                throw new IllegalStateException("No parents found, there has to be something wrong with the topological order");
+            }
+
+            //If the currently visited node is an XOR_merge, the traces ending at that node are the traces ending at both parents plus the current node
+            //In all other cases, the traces ending at a node are the union of all traces ending at the parents plus the current node
+            if (currNode instanceof XorGateway) {
+
+                for (IPublicNode parent : parents) {
+
+                    List<List<IPublicNode>> tracesEndingAtParent = rst.get(parent);
+
+                    if (tracesEndingAtParent.isEmpty()) {
+                        throw new IllegalStateException("WTF");
+                    }
+
+                    //Take the traces ending at parent, add the current node and add the new trace as trace ending at the current node
+                    for (List<IPublicNode> singleTraceEndingAtParent : tracesEndingAtParent) {
+                        List<IPublicNode> newTraceEndingAtCurr = new ArrayList<>(singleTraceEndingAtParent);
+                        newTraceEndingAtCurr.add(currNode);
+                        tracesEndingAtCurrNode.add(newTraceEndingAtCurr);
+                    }
+                }
+
+            } else {
+
+                //Build list containing all traces ending at all parents
+                List<List<List<IPublicNode>>> allTraces = new ArrayList<>();
+
+                for (IPublicNode parent : parents) {
+                    allTraces.add(rst.get(parent));
+                }
+
+                //Build all combinations using a backtracking approach
+                List<List<IPublicNode>> tracesEndingAtCurr = getTracesEndingAtNode(allTraces, currNode);
+
+                //TODO: Sort elements according to topological order again or does this not matter at all?
+
+                tracesEndingAtCurrNode.addAll(tracesEndingAtCurr);
+            }
+
+            rst.put(currNode, tracesEndingAtCurrNode);
+        }
+
+        return rst;
+    }
+
+
+    private List<List<IPublicNode>> getTracesEndingAtNode(List<List<List<IPublicNode>>> allTraces, IPublicNode node) {
+        List<List<IPublicNode>> rst = new ArrayList<>();
+
+        getTracesEndingAtNodeRec(allTraces, node, 0, new ArrayList<>(), rst);
+
+        return rst;
+    }
+
+    private void getTracesEndingAtNodeRec(List<List<List<IPublicNode>>> allTraces, IPublicNode node, int ctr, List<IPublicNode> currTrace, List<List<IPublicNode>> rst) {
+
+        if (ctr == allTraces.size()) {
+            currTrace.add(node);
+            rst.add(new ArrayList<>(currTrace));
+            return;
+        }
+
+        List<List<IPublicNode>> tracesOfCurrParticipant = allTraces.get(ctr);
+        for (List<IPublicNode> singleTraceOfCurrParticipant : tracesOfCurrParticipant) {
+
+            //Needed for the backtracking
+            int amountAddedElements = 0;
+
+            //Add all nodes that are not already in the trace
+            for (IPublicNode nodeOfTrace : singleTraceOfCurrParticipant) {
+                if (!currTrace.contains(nodeOfTrace)) {
+                    currTrace.add(nodeOfTrace);
+                    amountAddedElements++;
+                }
+            }
+
+            getTracesEndingAtNodeRec(allTraces, node, ctr + 1, currTrace, rst);
+
+            //Remove the added trace of the current participant from the end of the current trace again
+            for (int i = 0; i < amountAddedElements; i++) {
+                currTrace.remove(currTrace.size() - 1);
+            }
+        }
+    }
+
+
+    /**
+     * Computes the topological ordering from our complete graph using Kahns algorithm
+     * The only node that has incoming degree of 0 is the globalStart
+     */
+    private List<IPublicNode> computeTopologicalOrder(MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, IPublicNode startGlobal) {
+        List<IPublicNode> rst = new ArrayList<>();
+
+        //Set of Connections that were removed for Kahns algorithm to work but need to be added again afterwards
+        Set<IPublicNode[]> toAddAfterTopOrder = new HashSet<>();
+
+        List<IPublicNode> queue = new ArrayList<>();
+        queue.add(startGlobal);
+
+        //Compute and store the amount of incoming edges for each vertex
+        Map<IPublicNode, Integer> amountInEdges = graph.getVertices().stream().collect(Collectors.toMap(v -> v, v -> graph.getDirectPredecessors(v).size()));
+
+        while (!queue.isEmpty()) {
+
+            IPublicNode currNode = queue.remove(0);
+            rst.add(currNode);
+            amountInEdges.remove(currNode);
+
+            //Decrement for each predecessor of the current node the amount of incoming edges by 1
+            for (IPublicNode child : graph.getDirectSuccessors(currNode)) {
+
+                /*
+                 * If child is of type resource share or synchronous task, that means that it basically has an undirected edge (two contrary directed edges)
+                 * This would break Kahns algorithm because it can never be resolved.
+                 * Therefore we modify it, so that once the sync. task or resource share is reached,
+                 * it gets treated as the sender and the incoming edge from its counterpart is removed
+                 */
+                if (child.getName().startsWith("S: ") || child.getName().startsWith("R: ")) {
+
+                    String counterpartNodeName = getCounterpartInteractionNameAndRole(child)[0];
+                    IPublicNode counterpart = graph.getVertices().stream().filter(v -> v.getName().equals(counterpartNodeName)).collect(Collectors.toList()).get(0);
+
+                    //If the edge from the counterpart to the currently visited child still exists it is removed and the in-degree is updated accordingly
+                    if (graph.getEdge(counterpart, child) != null) {
+                        toAddAfterTopOrder.add(new IPublicNode[]{counterpart, child});
+                        graph.removeEdge(graph.getEdge(counterpart, child));
+                        amountInEdges.computeIfPresent(child, (k, v) -> v - 1);
+                    }
+                }
+
+                amountInEdges.computeIfPresent(child, (k, v) -> v - 1);
+            }
+
+            queue.addAll(amountInEdges.entrySet().stream().filter(v -> v.getValue() == 0).filter(v -> !queue.contains(v.getKey())).map(v -> v.getKey()).collect(Collectors.toList()));
+
+            System.out.println("Current queue:");
+            System.out.println(queue.stream().map(IGObject::getName).collect(Collectors.joining(", ")));
+            System.out.println("---------------------------------------------------------");
+            System.out.println("Current Topological Ordering: ");
+            System.out.println(rst.stream().map(IGObject::getName).collect(Collectors.joining(", ")));
+            System.out.println("---------------------------------------------------------");
+
+        }
+
+        if (amountInEdges.entrySet().stream().anyMatch(v -> v.getValue() != 0)) {
+            throw new IllegalStateException("Congratulations, my cycle checking sucks because there still appears to be one");
+        }
+
+        outputHandler.printEasySoundness("The following topological order has been found for the complete graph:");
+        outputHandler.printEasySoundness(rst.stream().map(IGObject::getName).collect(Collectors.joining(",\n")));
+
+        for (IPublicNode[] toAdd : toAddAfterTopOrder) {
+            graph.addEdge(toAdd[0], toAdd[1]);
+        }
+
+
+        return rst;
+    }
+
+
+    private MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> buildCompleteGraph() {
+
+        Map<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> puMs = publicModelsByRole.entrySet().stream().filter(entry -> entry.getValue() != null).collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getdigraph()));
+
+        if (!puMs.isEmpty()) {
+
+            MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> rst = new MultiDirectedGraph<Edge<IPublicNode>, IPublicNode>();
+
+            //Add global start and end
+            Event startGlobal = new Event("startGlobal");
+            Event endGlobal = new Event("endGlobal");
+
+            rst.addVertex(startGlobal);
+            rst.addVertex(endGlobal);
+
+            for (Map.Entry<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> puM : puMs.entrySet()) {
+
+                Role currRole = puM.getKey();
+
+                for (IPublicNode vertex : puM.getValue().getVertices()) {
+
+                    if (vertex instanceof Event) {
+                        Event newEvent = new Event(getNameWithRole(vertex, currRole));
+                        rst.addVertex(newEvent);
+
+                        if (vertex.getName().startsWith("start")) {
+                            rst.addEdge(startGlobal, newEvent);
+                        } else {
+                            rst.addEdge(newEvent, endGlobal);
+                        }
+                    }
+
+                    if (vertex instanceof Gateway) {
+
+                        if (vertex instanceof XorGateway) {
+                            XorGateway newXor = new XorGateway(getNameWithRole(vertex, currRole));
+                            rst.addVertex(newXor);
+                        } else {
+                            AndGateway newAnd = new AndGateway(getNameWithRole(vertex, currRole));
+                            rst.addVertex(newAnd);
+                        }
+                    }
+
+                    if (vertex instanceof Send || vertex instanceof Receive) {
+                        rst.addVertex(vertex);
+                    }
+                }
+
+                for (Edge<IPublicNode> edge : puM.getValue().getEdges()) {
+
+                    IPublicNode source = edge.getSource(), target = edge.getTarget();
+
+                    if ((source instanceof Receive || source instanceof Send) && (target instanceof Receive || target instanceof Send)) {
+                        rst.addEdge(source, target);
+                    } else if (source instanceof Receive || source instanceof Send) {
+                        IPublicNode newTgt = rst.getVertices().stream().filter(vertex -> vertex.getName().equals(getNameWithRole(target, currRole))).collect(Collectors.toList()).get(0);
+                        rst.addEdge(source, newTgt);
+                    } else if (target instanceof Receive || target instanceof Send) {
+                        IPublicNode newSrc = rst.getVertices().stream().filter(vertex -> vertex.getName().equals(getNameWithRole(source, currRole))).collect(Collectors.toList()).get(0);
+                        rst.addEdge(newSrc, target);
+                    } else {
+                        IPublicNode newSrc = rst.getVertices().stream().filter(vertex -> vertex.getName().equals(getNameWithRole(source, currRole))).collect(Collectors.toList()).get(0);
+                        IPublicNode newTgt = rst.getVertices().stream().filter(vertex -> vertex.getName().equals(getNameWithRole(target, currRole))).collect(Collectors.toList()).get(0);
+
+                        rst.addEdge(newSrc, newTgt);
+                    }
+                }
+            }
+
+
+            /*
+             * Add all the crossreferences between interactions. To avoid duplicates we track what connections we already added
+             */
+
+            //Filter out only the interactions
+            List<IPublicNode> rstOnlyInteractions = rst.getVertices().stream().filter(v -> v instanceof Send || v instanceof Receive).collect(Collectors.toList());
+
+            Map<IPublicNode, Boolean> alreadyAdded = rstOnlyInteractions.stream().collect(Collectors.toMap(e -> e, e -> false));
+
+            //Iterate over all interactions
+            for (IPublicNode vertex : rstOnlyInteractions) {
+
+                //If the connection was not already added
+                if (!alreadyAdded.get(vertex)) {
+
+                    String counterpartNodeName = getCounterpartInteractionNameAndRole(vertex)[0];
+                    IPublicNode counterpart = rstOnlyInteractions.stream().filter(v -> v.getName().equals(counterpartNodeName)).collect(Collectors.toList()).get(0);
+
+                    //Find out what is source and what target
+                    //In case Sync. Task or Res. Share, there are two arcs between both participants
+                    if (vertex.getName().startsWith("S: ") || vertex.getName().startsWith("R: ")) {
+                        rst.addEdge(vertex, counterpart);
+                        rst.addEdge(counterpart, vertex);
+                    } else {
+
+                        //If Mess. Exch. or Handover, we check which participant it is
+                        if (vertex.getName().contains(("p1")) || vertex.getName().contains("(s)")) {
+                            rst.addEdge(vertex, counterpart);
+                        } else {
+                            rst.addEdge(counterpart, vertex);
+                        }
+                    }
+
+                    alreadyAdded.put(vertex, true);
+                    alreadyAdded.put(counterpart, true);
+
+                }
+            }
+
+
+            boolean printCompleteGraph = true;
+
+            if (printCompleteGraph) {
+                IOUtils.toFile(
+                        GlobalTimestamp.timestamp + "/EasySoundness/Test12345.dot",
+                        rst != null ? rst.toDOT() : "");
+            }
+
+            return rst;
+        }
+
+        return null;
+    }
+
+    private String getNameWithRole(IPublicNode vertex, Role role) {
+        return vertex.getName() + " " + role.getName();
+    }
+
+
+    private void buildIncompatibilityMap() {
+
+        for (Map.Entry<Role, List<XorGateway>> xors : xors.entrySet()) {
+
+            IPublicModel puM = publicModelsByRole.get(xors.getKey());
+
+            if (puM != null && puM.getdigraph() != null) {
+                //Get graph of the corresponding role
+                IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph = puM.getdigraph();
+
+                //Iterate over the XOR Gateways from that graph
+                for (XorGateway xor : xors.getValue()) {
+                    List<Set<Edge<IPublicNode>>> branchInteractions = findCompatibleEdgesForOneXOR(graph, xor);
+                    fillIncompatibilityMap(branchInteractions);
+                }
+            } else {
+                outputHandler.printEasySoundness("Graph for participant " + xors.getKey().getName() + " does not exist anymore, therefore no incompatibility check needs to be performed");
+            }
+        }
+
+        outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.TRACE_DELIM);
+        outputHandler.printEasySoundness("Computed the incompatibility map (interactions that can never be executed in the same trace)");
+        for (Map.Entry<Edge<IPublicNode>, Set<Edge<IPublicNode>>> incomp : incompatibilityMap.entrySet()) {
+            outputHandler.printEasySoundness("For " + incomp.getKey() + " incompatible operations are " + incomp.getValue().stream().map(Edge::toString).collect(Collectors.joining(", ")));
+        }
+    }
+
+
+    /**
+     * Takes the result of findCompatibleNodesForOneXOR and fills the incompatibility map with it
+     * e.g. an input of [{IA1->IA2,IA3->IA4}, {IA5->IA6, IA7->IA8}] leads to the following entries:
+     * {IA1->IA2} -> {IA5->IA6, IA7->IA8}
+     * {IA3->IA4} -> {IA5->IA6, IA7->IA8}
+     * {IA5->IA6} -> {IA1->A2, IA3->IA4}
+     * {IA7->IA8} -> {IA1->A2, IA3->IA4}
+     * <p>
+     * representing that if the key is executed, none of the entries in the value set can fire in the same execution
+     */
+    private void fillIncompatibilityMap(List<Set<Edge<IPublicNode>>> branchEdges) {
+
+        for (int i = 0; i < branchEdges.size(); i++) {
+            for (Edge<IPublicNode> currEdge : branchEdges.get(i)) {
+                for (int j = 0; j < branchEdges.size(); j++) {
+                    if (i == j)
+                        continue;
+
+                    incompatibilityMap.putIfAbsent(currEdge, new HashSet<>());
+                    incompatibilityMap.get(currEdge).addAll(branchEdges.get(j));
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns a list of sets, each set contains the interactions that are in one branch of the XOR gateway.
+     * e.g. a return value of [{IA1, IA2}, {IA3,IA4}] means that IA1, IA2 are on one branch of the XOR, IA3, IA4 on another
+     */
+    private List<Set<Edge<IPublicNode>>> findCompatibleEdgesForOneXOR(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, XorGateway xor) {
+        List<Set<Edge<IPublicNode>>> rst = new ArrayList<>();
+
+        List<IPublicNode> succ = new ArrayList<>(graph.getDirectSuccessors(xor));
+
+        for (IPublicNode successorOfInit : succ) {
+            Set<Edge<IPublicNode>> edgesOfBranch = new HashSet<>();
+            edgesOfBranch.add(graph.getEdge(xor, successorOfInit));
+
+            getAllNodesOfBranch(graph, xor, successorOfInit, edgesOfBranch);
+            rst.add(new HashSet<>(edgesOfBranch));
+            edgesOfBranch.clear();
+        }
+
+        return rst;
+    }
+
+    private void getAllNodesOfBranch(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, XorGateway xor, IPublicNode start, Set<Edge<IPublicNode>> workingSet) {
+
+        if (start.getName().equals(xor.getName() + "_m")) {
+            return;
+        }
+
+        for (IPublicNode child : new ArrayList<>(graph.getDirectSuccessors(start))) {
+
+            workingSet.add(graph.getEdge(start, child));
+            if (child.getName().equals(xor.getName() + "_m")) {
+                return;
+            }
+
+            getAllNodesOfBranch(graph, xor, child, workingSet);
+        }
+    }
+
+
     private void setupDeconstructionOfPuModels(Choreography choreo) {
+
+        //To fill xorsWithDirectEdgeToMerge
+        Set<IChoreographyNode> xorsWithDirectEdgeToMerge = new HashSet<>();
 
         for (Role role : choreo.collaboration.roles) {
             //Save role
             participantsByName.put(role.getName(), role);
 
             //Save mapping Role -> Digraph of public model
-            IDirectedGraph<Edge<IPublicNode>, IPublicNode> puModelGraph = choreo.collaboration.R2PuM.get(role).getdigraph();
-            publicModelsByRole.put(role, puModelGraph);
+//            IDirectedGraph<Edge<IPublicNode>, IPublicNode> puModelGraph = choreo.collaboration.R2PuM.get(role).getdigraph();
+//            publicModelsByRole.put(role, puModelGraph);
+
+            IRpstModel<Edge<IPublicNode>, IPublicNode> rpstModel = choreo.collaboration.R2PuM.get(role);
+            IDirectedGraph<Edge<IPublicNode>, IPublicNode> puModelGraph = rpstModel.getdigraph();
+
+            publicModelsByRole.put(role, choreo.collaboration.R2PuM.get(role));
 
             //Initialize the tracking map for elimination step as 1
             eliminationStepsForParticipantsGraph.put(role, 1);
@@ -84,9 +704,21 @@ public class EasySoundnessChecker {
             List<IPublicNode> nodes = new ArrayList<>(puModelGraph.getVertices());
 
             for (IPublicNode node : nodes) {
+                //Store XORs for later (incompatibility map)
+                if (node instanceof XorGateway && !node.getName().endsWith("_m")) {
+                    xors.putIfAbsent(role, new ArrayList<>());
+                    xors.get(role).add((XorGateway) node);
+
+                    //Check if direct edge to merge node is present
+                    for (IPublicNode child : puModelGraph.getDirectSuccessors(node)) {
+                        if (child.getName().equals(node.getName() + "_m")) {
+                            xorWithDirectEdgeToMerge.add((IChoreographyNode) node);
+                        }
+                    }
+                }
+
                 if (node.getName().equals("end")) {
                     endNodes.put(role, node);
-                    break;
                 }
             }
 
@@ -103,12 +735,13 @@ public class EasySoundnessChecker {
             }
 
         }
+
+
     }
 
     private void checkForCyclicWaits() throws IOException, InterruptedException {
 
-
-        outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.START);
+        outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.START_CYCLIC_WAITS);
 
         //TODO: Mechanism to dynamically stop when either all participants are eliminated or it could been shown that there are no more cycles and there are executable paths
         //--> check mechanism with visited again to ensure
@@ -156,15 +789,17 @@ public class EasySoundnessChecker {
                 outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.TRACE_DELIM);
             }
         }
-        outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.STOP);
+        outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.STOP_CYCLIC_WAITS);
 
 
         //After we have iterated all interactions and tried to find a way from them to a start node, while eliminating those that are contained in a cycle,
         //the graphs remaining are all the cyclefree paths
-        for (Map.Entry<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> entry : publicModelsByRole.entrySet()) {
+//        for (Map.Entry<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> entry : publicModelsByRole.entrySet()) {
+        for (Map.Entry<Role, IPublicModel> entry : publicModelsByRole.entrySet()) {
+            IDirectedGraph<Edge<IPublicNode>, IPublicNode> model = entry.getValue() != null ? entry.getValue().getdigraph() : null;
             IOUtils.toFile(
                     GlobalTimestamp.timestamp + "/EasySoundness/CycleFreePaths_" + entry.getKey().getName() + ".dot",
-                    entry.getValue() != null ? entry.getValue().toDOT() : "");
+                    model != null ? model.toDOT() : "");
         }
 
         if (visualize) {
@@ -210,7 +845,10 @@ public class EasySoundnessChecker {
             //Get the corresponding node that conditions the execution
             if (isSynchronousTask && startingNode instanceof Receive) {
                 //CurrNode is Receive of a synchronous task -> consider corresponding Send next
-                IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfOtherParticipant = publicModelsByRole.get(participantsByName.get(participant1));
+
+                IPublicModel puM = publicModelsByRole.get(participantsByName.get(participant1));
+                IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfOtherParticipant = puM != null ? puM.getdigraph() : null;
+
 
                 //If the graph of the other participant has already been eliminated, the interaction cannot be executed and we need to eliminate its context
                 if (graphOfOtherParticipant == null) {
@@ -232,8 +870,9 @@ public class EasySoundnessChecker {
                 }
             } else if (isSynchronousTask) {
                 //CurrNode is Send of a synchronous task -> consider corresponding Receive next
-                IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfOtherParticipant = publicModelsByRole.get(participantsByName.get(participant2));
 
+                IPublicModel puM = publicModelsByRole.get(participantsByName.get(participant2));
+                IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfOtherParticipant = puM != null ? puM.getdigraph() : null;
                 //If the graph of the other participant has already been eliminated, the interaction cannot be executed and we need to eliminate its context
                 if (graphOfOtherParticipant == null) {
 
@@ -256,7 +895,8 @@ public class EasySoundnessChecker {
             } else {
                 //CurrNode is Receive of a MX or HOW -> Conditioned by corresponding Send
                 if (isMessageExchangeOrHOW) {
-                    IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfOtherParticipant = publicModelsByRole.get(participantsByName.get(participant1));
+                    IPublicModel puM = publicModelsByRole.get(participantsByName.get(participant1));
+                    IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfOtherParticipant = puM != null ? puM.getdigraph() : null;
 
                     //If the graph of the other participant has already been eliminated, the interaction cannot be executed and we need to eliminate its context
                     if (graphOfOtherParticipant == null) {
@@ -374,10 +1014,11 @@ public class EasySoundnessChecker {
 
             outputHandler.printEasySoundness("All nodes of the participant " + participantOfNode.getName() + " are not executable");
             outputHandler.printEasySoundness("Remove the following nodes as starting points to find a path to a start node: ");
-            outputHandler.printEasySoundness(publicModelsByRole.get(participantOfNode).getVertices().stream().map(IGObject::getName).collect(Collectors.joining(",")) + "\n");
+//            outputHandler.printEasySoundness(publicModelsByRole.get(participantOfNode).getVertices().stream().map(IGObject::getName).collect(Collectors.joining(",")) + "\n");
+            outputHandler.printEasySoundness(publicModelsByRole.get(participantOfNode).getdigraph().getVertices().stream().map(IGObject::getName).collect(Collectors.joining(",")) + "\n");
 
             //As the whole graph will be eliminated, we can also eliminate all nodes from consideration for finding a path from the nodes to a start node
-            interactionsToCheck.removeAll(publicModelsByRole.get(participantOfNode).getVertices());
+            interactionsToCheck.removeAll(publicModelsByRole.get(participantOfNode).getdigraph().getVertices());
 
             //As the participant is not executable, set its graph to null
             publicModelsByRole.put(participantOfNode, null);
@@ -408,7 +1049,13 @@ public class EasySoundnessChecker {
             outputHandler.printEasySoundness("Nodes eliminated: " + toEliminate.stream().map(IGObject::getName).collect(Collectors.joining(",")));
             outputHandler.printEasySoundness("These nodes are also eliminated from consideration to find a path to a start node from");
 
-            publicModelsByRole.put(participantOfNode, graphOfNode);
+            //Do reduction of the graph
+            IPublicModel rpstModel = publicModelsByRole.get(participantOfNode);
+            rpstModel.setDiGraph(graphOfNode);
+            rpstModel.reduceGraph(xorWithDirectEdgeToMerge);
+
+//            publicModelsByRole.put(participantOfNode, graphOfNode);
+            publicModelsByRole.put(participantOfNode, rpstModel);
 
             outputHandler.printEasySoundness("Saved new graph for possible path finding to EasySoundness/");
 
@@ -530,18 +1177,21 @@ public class EasySoundnessChecker {
             boolean isParticipant2OrReceiver = node.getName().contains("(p2)") || node.getName().contains("(r)");
 
             if (isParticipant2OrReceiver) {
-                return publicModelsByRole.get(participantsByName.get(participants[1]));
+                IPublicModel puM = publicModelsByRole.get(participantsByName.get(participants[1]));
+                return puM != null ? puM.getdigraph() : null;
+
             } else {
-                return publicModelsByRole.get(participantsByName.get(participants[0]));
+                IPublicModel puM = publicModelsByRole.get(participantsByName.get(participants[0]));
+                return puM != null ? puM.getdigraph() : null;
             }
         } else if (node instanceof Event) {
-            return publicModelsByRole.get(((Event) node).getRole());
+            IPublicModel puM = publicModelsByRole.get(((Event) node).getRole());
+            return puM != null ? puM.getdigraph() : null;
         } else {
             throw new IllegalArgumentException("Node to get graph to must either be an interaction or an event");
         }
 
     }
-
 
     private IPublicNode getCounterpartNode(IPublicNode node) {
         String[] counterpartNameAndRole = getCounterpartInteractionNameAndRole(node);
@@ -549,7 +1199,8 @@ public class EasySoundnessChecker {
         String nameOfCounterpartInteraction = counterpartNameAndRole[0];
         String counterpartRole = counterpartNameAndRole[1];
 
-        IDirectedGraph<Edge<IPublicNode>, IPublicNode> counterpartGraph = publicModelsByRole.get(participantsByName.get(counterpartRole));
+        IPublicModel puM = publicModelsByRole.get(participantsByName.get(counterpartRole));
+        IDirectedGraph<Edge<IPublicNode>, IPublicNode> counterpartGraph = puM != null ? puM.getdigraph() : null;
 
         if (counterpartGraph == null) {
             outputHandler.printEasySoundness("Counterpart Graph has already been eliminated, cannot fetch the counterpart node anymore");

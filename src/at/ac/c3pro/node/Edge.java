@@ -12,4 +12,7 @@ public class Edge<N extends INode> extends AbstractDirectedEdge<N> implements ID
         super(g, source, target);
     }
 
+    public String toString() {
+        return this.getSource().getName() + "-->" + this.getTarget().getName();
+    }
 }

@@ -61,6 +61,10 @@ public class FragmentGenerator {
 
         privateModel = addFragment(randomNode);
 
+        if (privateModel == null) {
+            privateModel = addFragment(randomNode);
+        }
+
         IOUtils.toFile(GlobalTimestamp.timestamp + "/Insert_autogen_" + i + ".dot", privateModel.getdigraph().toDOT());
 
         return privateModel;

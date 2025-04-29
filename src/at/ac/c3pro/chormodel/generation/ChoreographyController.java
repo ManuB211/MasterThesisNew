@@ -48,7 +48,7 @@ public class ChoreographyController {
 
         JSONObject configObject = new JSONObject(configString);
 
-
+        runWrapper(dir, configObject, countCustomExceptions);
     }
 
     private static void runWrapper(File dir, JSONObject configObject, Map<CustomExceptionEnum, Integer> countCustomExceptions) throws IOException, InterruptedException {

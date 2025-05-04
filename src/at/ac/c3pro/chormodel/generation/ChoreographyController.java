@@ -2,6 +2,7 @@ package at.ac.c3pro.chormodel.generation;
 
 import at.ac.c3pro.chormodel.*;
 import at.ac.c3pro.chormodel.exceptions.CustomExceptionEnum;
+import at.ac.c3pro.chormodel.exceptions.NoTracesToEndFoundException;
 import at.ac.c3pro.chormodel.exceptions.PrivateModelDisconnectedException;
 import at.ac.c3pro.io.ChoreographyModel2Bpmn;
 import at.ac.c3pro.io.ChoreographyModelToCPN;
@@ -52,20 +53,46 @@ public class ChoreographyController {
     }
 
     private static void runWrapper(File dir, JSONObject configObject, Map<CustomExceptionEnum, Integer> countCustomExceptions) throws IOException, InterruptedException {
+
+        int retriesDisconnected = configObject.getJSONObject("exceptionRetries").getInt("privateModelDisconnected");
+        int retriesNoTraceToEnd = configObject.getJSONObject("exceptionRetries").getInt("noTraceToEndFound");
+
         try {
             run(dir, configObject);
         } catch (PrivateModelDisconnectedException e) {
             countCustomExceptions.putIfAbsent(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED, 0);
             countCustomExceptions.put(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED, countCustomExceptions.get(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED) + 1);
 
-            //TODO Retry dynamisch machen
-            if (countCustomExceptions.get(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED) <= 5) {
+            if (countCustomExceptions.get(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED) <= retriesDisconnected) {
+                System.err.println("Attempting another try");
+                removeFileDir(dir);
+                runWrapper(dir, configObject, countCustomExceptions);
+            }
+        } catch (NoTracesToEndFoundException e) {
+            countCustomExceptions.putIfAbsent(CustomExceptionEnum.NO_TRACES_TO_END_FOUND, 0);
+            countCustomExceptions.put(CustomExceptionEnum.NO_TRACES_TO_END_FOUND, countCustomExceptions.get(CustomExceptionEnum.NO_TRACES_TO_END_FOUND) + 1);
+
+            if (countCustomExceptions.get(CustomExceptionEnum.NO_TRACES_TO_END_FOUND) <= retriesNoTraceToEnd) {
+                removeFileDir(dir);
+                System.err.println("Attempting another try");
                 runWrapper(dir, configObject, countCustomExceptions);
             }
         }
     }
 
-    private static void run(File dir, JSONObject configObject) throws IOException, InterruptedException, PrivateModelDisconnectedException {
+    //When exception is thrown the directory needs to be cleared so that on a retry there is no exception
+    private static void removeFileDir(File dir) {
+        File[] content = dir.listFiles();
+
+        if (content != null) {
+            for (File file : content) {
+                removeFileDir(file);
+            }
+        }
+        dir.delete();
+    }
+
+    private static void run(File dir, JSONObject configObject) throws IOException, InterruptedException, PrivateModelDisconnectedException, NoTracesToEndFoundException {
 
 
         // MODEL GENERATOR PARAMETERS
@@ -148,11 +175,13 @@ public class ChoreographyController {
         //If the error with disconnectedness still persists (noticed by Janik in the scope of the paper) then it has have to do with the translation to CPN
         checkDisconnectedNess(privateModels);
 
+        EasySoundnessChecker2 easySoundnessChecker2 = new EasySoundnessChecker2(choreo, easySoundnessCheckVisualization);
+        easySoundnessChecker2.run();
 
-        if (useEasySoundnessChecker) {
-            EasySoundnessChecker easySoundnessChecker = new EasySoundnessChecker(choreo, easySoundnessCheckVisualization);
-            easySoundnessChecker.run();
-        }
+//        if (useEasySoundnessChecker) {
+//            EasySoundnessChecker easySoundnessChecker = new EasySoundnessChecker(choreo, easySoundnessCheckVisualization);
+//            easySoundnessChecker.run();
+//        }
 
         // Transform Private Models to a PNML file
         try {

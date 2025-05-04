@@ -151,12 +151,32 @@ public class ChoreographyGenerator {
             System.out.println("Node:" + node);
             if (node instanceof Event) {
                 Event eventNode = (Event) node;
-                eventNode.setRole(currentRole);
-                C2Pnode.put(node, eventNode);
+
+                //Create new event to enrich with participant information
+                Event eventNew = new Event(eventNode.getName());
+                eventNew.setRole(currentRole);
+                C2Pnode.put(node, eventNew);
+
+//                eventNode.setRole(currentRole);
+//                C2Pnode.put(node, eventNode);
             } else if (node instanceof Gateway) {
-                C2Pnode.put(node, (Gateway) node);
+
+                //Create new gateways to enrich with participant information
+                if (node instanceof XorGateway) {
+                    XorGateway gatewayNode = (XorGateway) node;
+                    XorGateway gatewayNew = new XorGateway(gatewayNode.getName());
+                    gatewayNew.setDescription(gatewayNode.getName() + " " + currentRole.getName());
+                    C2Pnode.put(node, gatewayNew);
+                } else {
+                    AndGateway gatewayNode = (AndGateway) node;
+                    AndGateway gatewayNew = new AndGateway(gatewayNode.getName());
+                    gatewayNew.setDescription(gatewayNode.getName() + " " + currentRole.getName());
+                    C2Pnode.put(node, gatewayNew);
+                }
             } else if (node instanceof Interaction) {
-                putNodeInC2PNode(C2Pnode, ((Interaction) node), currentRole);
+                Interaction iaNode = (Interaction) node;
+                iaNode.setDescription(node.getName());
+                putNodeInC2PNode(C2Pnode, iaNode, currentRole);
             } else {
                 System.out.println("Unknown type of node : " + node);
             }

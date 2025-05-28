@@ -122,6 +122,7 @@ public class ChoreographyController {
         boolean printVisualizationsForPubModels = configObject.getBoolean("visualizePubModels");
         boolean useEasySoundnessChecker = configObject.getBoolean("useEasySoundnessChecker");
         boolean easySoundnessCheckVisualization = configObject.getBoolean("easySoundnessCheckVisualization");
+        int debugLevelEasySoundnessChecker = configObject.getInt("easySoundnessCheckDebugLevel");
 
         if (amountHandoverOfWork >= participantCount) {
             throw new IllegalArgumentException(
@@ -175,7 +176,7 @@ public class ChoreographyController {
         //If the error with disconnectedness still persists (noticed by Janik in the scope of the paper) then it has have to do with the translation to CPN
         checkDisconnectedNess(privateModels);
 
-        EasySoundnessChecker2 easySoundnessChecker2 = new EasySoundnessChecker2(choreo, easySoundnessCheckVisualization);
+        EasySoundnessChecker2 easySoundnessChecker2 = new EasySoundnessChecker2(choreo, easySoundnessCheckVisualization, debugLevelEasySoundnessChecker);
         easySoundnessChecker2.run();
 
 //        if (useEasySoundnessChecker) {

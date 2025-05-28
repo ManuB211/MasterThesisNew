@@ -7,10 +7,12 @@ import java.io.PrintWriter;
 public class OutputHandler {
 
     private PrintWriter printWriter;
+    private DebugLevel debugLevel;
 
-    public OutputHandler(OutputType type) throws IOException {
+    public OutputHandler(OutputType type, DebugLevel debugLevel) throws IOException {
         createOutputFolder(type.getFolderName());
         this.printWriter = new PrintWriter("target/" + GlobalTimestamp.timestamp + "/" + type.getFolderName() + "/" + type.getFileName());
+        this.debugLevel = debugLevel;
     }
 
     /**
@@ -33,13 +35,17 @@ public class OutputHandler {
         return dir;
     }
 
-    public void printEasySoundness(String toWrite) {
-        printWriter.println(toWrite);
-        System.out.println(toWrite);
+    public void printEasySoundness(String toWrite, DebugLevel dLevel) {
+        if (dLevel.getLevel() <= debugLevel.getLevel()) {
+            printWriter.println(toWrite);
+            printWriter.flush();
+            System.out.println(toWrite);
+        }
     }
 
     public void printEasySoundness(EasySoundnessAnalyisBlocks toWrite) {
         printWriter.println(toWrite.getContent());
+        printWriter.flush();
         System.out.println(toWrite.getContent());
     }
 
@@ -94,6 +100,32 @@ public class OutputHandler {
 
         public String getContent() {
             return content;
+        }
+    }
+
+    //To handle how much is actually printed to the file, so that it does not become 15Gb
+    public enum DebugLevel {
+        INFO(1),
+        DEBUG(2);
+
+        private final int level;
+
+        DebugLevel(int level) {
+            this.level = level;
+        }
+
+        public int getLevel() {
+            return level;
+        }
+
+        public static DebugLevel getLevelByValue(int value) {
+            if (value == 1) {
+                return INFO;
+            } else if (value == 2) {
+                return DEBUG;
+            } else {
+                throw new IllegalArgumentException("No DebugLevel " + value + " found!");
+            }
         }
     }
 }

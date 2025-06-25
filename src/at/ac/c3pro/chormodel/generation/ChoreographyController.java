@@ -4,6 +4,7 @@ import at.ac.c3pro.chormodel.*;
 import at.ac.c3pro.chormodel.exceptions.CustomExceptionEnum;
 import at.ac.c3pro.chormodel.exceptions.NoTracesToEndFoundException;
 import at.ac.c3pro.chormodel.exceptions.PrivateModelDisconnectedException;
+import at.ac.c3pro.chormodel.exceptions.TwoHOWReceiveForOneParticipantException;
 import at.ac.c3pro.io.ChoreographyModel2Bpmn;
 import at.ac.c3pro.io.ChoreographyModelToCPN;
 import at.ac.c3pro.io.Collaboration2Bpmn;
@@ -57,6 +58,9 @@ public class ChoreographyController {
         int retriesDisconnected = configObject.getJSONObject("exceptionRetries").getInt("privateModelDisconnected");
         int retriesNoTraceToEnd = configObject.getJSONObject("exceptionRetries").getInt("noTraceToEndFound");
 
+        //Hardcoded as this rarely happens
+        int retriesTwoHOWReceivesForOneParticipant = 5;
+
         try {
             run(dir, configObject);
         } catch (PrivateModelDisconnectedException e) {
@@ -77,6 +81,21 @@ public class ChoreographyController {
                 System.err.println("Attempting another try");
                 runWrapper(dir, configObject, countCustomExceptions);
             }
+        } catch (TwoHOWReceiveForOneParticipantException e) {
+            countCustomExceptions.putIfAbsent(CustomExceptionEnum.TWO_HOW_RECEIVE_ONE_PARTICIPANT, 0);
+            countCustomExceptions.put(CustomExceptionEnum.TWO_HOW_RECEIVE_ONE_PARTICIPANT, countCustomExceptions.get(CustomExceptionEnum.TWO_HOW_RECEIVE_ONE_PARTICIPANT) + 1);
+
+            if (countCustomExceptions.get(CustomExceptionEnum.TWO_HOW_RECEIVE_ONE_PARTICIPANT) <= retriesTwoHOWReceivesForOneParticipant) {
+                removeFileDir(dir);
+                System.err.println("Attempting another try");
+                dir = OutputHandler.createOutputFolder(null);
+                runWrapper(dir, configObject, countCustomExceptions);
+            }
+
+        } catch (StackOverflowError e) {
+            System.err.println("Attempting another try");
+            removeFileDir(dir);
+            runWrapper(dir, configObject, countCustomExceptions);
         }
     }
 
@@ -92,7 +111,7 @@ public class ChoreographyController {
         dir.delete();
     }
 
-    private static void run(File dir, JSONObject configObject) throws IOException, InterruptedException, PrivateModelDisconnectedException, NoTracesToEndFoundException {
+    private static void run(File dir, JSONObject configObject) throws IOException, InterruptedException, PrivateModelDisconnectedException, NoTracesToEndFoundException, TwoHOWReceiveForOneParticipantException {
 
 
         // MODEL GENERATOR PARAMETERS

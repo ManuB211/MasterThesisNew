@@ -2,6 +2,7 @@ package at.ac.c3pro.chormodel.generation;
 
 import at.ac.c3pro.chormodel.MultiDirectedGraph;
 import at.ac.c3pro.chormodel.Role;
+import at.ac.c3pro.chormodel.exceptions.TwoHOWReceiveForOneParticipantException;
 import at.ac.c3pro.chormodel.generation.Branch.BranchState;
 import at.ac.c3pro.node.*;
 import at.ac.c3pro.node.Interaction.InteractionType;
@@ -68,7 +69,7 @@ public class ChorModelGenerator {
         setupParticipants();
     }
 
-    public MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> build() {
+    public MultiDirectedGraph<Edge<IChoreographyNode>, IChoreographyNode> build() throws TwoHOWReceiveForOneParticipantException {
 
         // check parameter
         if (getResInteractionsGateways() > remainingNodeCounts.get(NodeType.INTERACTION))
@@ -278,9 +279,8 @@ public class ChorModelGenerator {
                     if (InteractionType.HANDOVER_OF_WORK.equals(interactionType)) {
                         randomSelectionInteractionType.handleHandoverOfWorkAdded();
                     }
-                } else {
-
                 }
+
                 branch.close();
                 IChoreographyNode lastNode = branch.getLastNode();
                 IChoreographyNode mergeNode = split.getMergeNode();
@@ -327,10 +327,8 @@ public class ChorModelGenerator {
     /**
      * Creates a new node of the given node type and returns it
      *
-     * @param nodeType:                 The node type that the created node will
-     *                                  have
-     * @param possibleInteractionTypes: The interaction types a Interaction node can
-     *                                  have
+     * @param nodeType: The node type that the created node will
+     *                  have
      * @return the created node
      */
     private IChoreographyNode getNextNode(NodeType nodeType) {
@@ -379,7 +377,7 @@ public class ChorModelGenerator {
      * chosen according to the distribution the types had in the beginning
      * <p>
      * Although Handover-Of-Work can only be set, if its not the first interaction
-     * (for a participant) //TODO: Clear up properties of HOW and check validity of the check
+     * (for a participant)
      */
     private InteractionType getNodeTypeFromPossibleInteractionTypesOrAccordingToDistribution(Role receiver) {
 
@@ -688,7 +686,7 @@ public class ChorModelGenerator {
     /**
      * Adds the message flow to the generatedModel
      */
-    private void addMessageFlow() {
+    private void addMessageFlow() throws TwoHOWReceiveForOneParticipantException {
         System.out.println("----------------------------------------------------------------------");
         System.out.println("Start adding message flow");
         System.out.println("----------------------------------------------------------------------");
@@ -704,7 +702,7 @@ public class ChorModelGenerator {
      *               message flow
      *               <p>
      */
-    private void addMessageFlow(Split split) {
+    private void addMessageFlow(Split split) throws TwoHOWReceiveForOneParticipantException {
         if (split.getSplitNode() instanceof Event) {
             split.setFirstSender(getRandomParticipant());
         }
@@ -786,6 +784,15 @@ public class ChorModelGenerator {
                                 branch.setLastReceiver(receiver);
 
                             } else {
+
+                                Interaction currNodeInteraction = ((Interaction) currentNode);
+
+                                //Check if interaction is Handover-of-Work. If yes and additionally the receiver already has a receiving HOW,
+                                //the message flow conputation failed. Restart generation.
+                                if (currNodeInteraction.getInteractionType().equals(InteractionType.HANDOVER_OF_WORK) && handoverReceivers.contains(receiver)) {
+                                    throw new TwoHOWReceiveForOneParticipantException();
+                                }
+
                                 ((Interaction) currentNode).setParticipant1(sender);
                                 ((Interaction) currentNode).setParticipant2(receiver);
                                 createMessageAndSetToCurrNode(sender, receiver, ((Interaction) currentNode));

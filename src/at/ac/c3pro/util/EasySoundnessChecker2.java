@@ -108,17 +108,6 @@ public class EasySoundnessChecker2 {
 
     }
 
-    /**
-     * The interactions to check are filled based on a reversed BFS (BFS from end to start)
-     * This structures the rest of the process in a way where the deeper rooted nodes are considered first and
-     * therefore the necessity of additional checks is minimized
-     * Additional checks occur every time when a path is found from a node to a start node that goes through a graph/an XOR branch that gets eliminated afterwards
-     */
-    private List<IPublicNode> getInteractionsToCheckInOrderBFS(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, IPublicNode endNode) {
-        return GraphHelper.performBackwardsBFSPublic(graph, endNode, true);
-    }
-
-
     public void run() throws IOException, InterruptedException, NoTracesToEndFoundException {
         try {
 
@@ -164,7 +153,7 @@ public class EasySoundnessChecker2 {
                 outputHandler.printEasySoundness("The following interactions are all contained in a cycle and therefore need to be eliminated", INFO);
                 outputHandler.printEasySoundness(interactionsToRemove.stream().map(IGObject::getName).collect(Collectors.joining(", ")), INFO);
 
-                eliminateCyclesFromConsideration(interactionsToRemove);
+                eliminateNodesWithContext(interactionsToRemove);
 
             }
 
@@ -185,18 +174,18 @@ public class EasySoundnessChecker2 {
     }
 
 
-    private void eliminateCyclesFromConsideration(List<IPublicNode> interactionsToRemove) throws IOException, InterruptedException {
-        Set<IPublicNode> eliminateBecauseOfCycle = new HashSet<>();
+    private void eliminateNodesWithContext(List<IPublicNode> interactionsToRemove) throws IOException, InterruptedException {
+        Set<IPublicNode> eliminate = new HashSet<>();
 
         //If the node is a Resource Share we can ignore it, because counterpart can still be executed
         //Also we only need to add the counterparts of sending elements. This is, as although a message can never be received,
-        //the sender can still executes (sending into nirvana) TODO: Implement and take into account ST
+        //the sender can still executes (sending into nirvana)
         for (IPublicNode node : interactionsToRemove) {
-            eliminateBecauseOfCycle.add(node);
-            if (!node.getName().startsWith("R: ") /*&& !(node instanceof Receive)*/) {
+            eliminate.add(node);
+            if (!node.getName().startsWith("R: ") && ((node instanceof Send && (node.getName().startsWith("M: ") || node.getName().startsWith("H:"))) || node.getName().startsWith("S: "))) {
                 IPublicNode counterpartNode = getCounterpartNode(node);
-                if (counterpartNode != null) {
-                    eliminateBecauseOfCycle.add(counterpartNode);
+                if (counterpartNode != null && !eliminate.contains(counterpartNode)) {
+                    eliminate.add(counterpartNode);
                 } else {
                     outputHandler.printEasySoundness("Counterpart Graph was already null, no eliminations needed", INFO);
                 }
@@ -204,10 +193,10 @@ public class EasySoundnessChecker2 {
         }
 
         Set<IPublicNode> furtherEliminations = new HashSet<>();
-        for (IPublicNode nodeToBeEliminated : eliminateBecauseOfCycle) {
+        for (IPublicNode nodeToBeEliminated : eliminate) {
             outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.NODE_DELIM);
             outputHandler.printEasySoundness("Checking implications of interaction " + nodeToBeEliminated + " being eliminated\n", INFO);
-            furtherEliminations.addAll(eliminateContext(nodeToBeEliminated));
+            furtherEliminations.addAll(eliminateContext(nodeToBeEliminated, new ArrayList<>()));
         }
 
         //If a graph was eliminated completely, the relevant counterpart nodes have to be eliminated as well
@@ -219,7 +208,7 @@ public class EasySoundnessChecker2 {
             for (IPublicNode furtherNodeToBeEliminated : furtherNodesToBeEliminatedWorkingSet) {
                 outputHandler.printEasySoundness(OutputHandler.EasySoundnessAnalyisBlocks.NODE_DELIM);
                 outputHandler.printEasySoundness("Checking implications of interaction " + furtherNodeToBeEliminated + " being eliminated\n", INFO);
-                furtherEliminations.addAll(eliminateContext(furtherNodeToBeEliminated));
+                furtherEliminations.addAll(eliminateContext(furtherNodeToBeEliminated, new ArrayList<>()));
             }
         }
     }
@@ -235,7 +224,7 @@ public class EasySoundnessChecker2 {
 
         if (!puMs.isEmpty()) {
 
-            MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> rst = new MultiDirectedGraph<Edge<IPublicNode>, IPublicNode>();
+            MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> rst = new MultiDirectedGraph<>();
 
             //Add global start and end
             Event startGlobal = new Event("startGlobal");
@@ -489,13 +478,10 @@ public class EasySoundnessChecker2 {
         //Step 2.2 Compute incompatibility map
         buildIncompatibilityMap(combinedPuM);
 
-        //Step 2.3 Compute all traces from start to sink TODO while removing incompatible traces -> done??
+        //Step 2.3 Compute all traces from start to sink while removing incompatible traces
         List<List<Edge<IPublicNode>>> tracesToEndGlobal = computeAllTracesStartToSink(combinedPuM);
 
         if (tracesToEndGlobal != null) {
-            //Step 2.3 Eliminate all incompatible nodes
-//            removeAllIncompatibleTraces(incompatibilityMap, tracesToEndGlobal);
-
 
             if (tracesToEndGlobal.isEmpty()) {
                 outputHandler.printEasySoundness("\nAll traces to endGlobal are not valid. Therefore the model is not Easy-Sound", INFO);
@@ -527,15 +513,14 @@ public class EasySoundnessChecker2 {
         outputHandler.printEasySoundness("Starting computation of traces to all nodes", INFO);
         outputHandler.printEasySoundness("----------------------------------------------", INFO);
         //2. For all nodes compute all paths that end at said node in topological order
-        Map<IPublicNode, List<List<Edge<IPublicNode>>>> tracesToAllNodes = computeTracesToAllNodes2(combinedPuM, new ArrayList<>(topologicalOrder));
+        Map<IPublicNode, List<List<Edge<IPublicNode>>>> tracesToAllNodes = computeTracesToAllNodes(combinedPuM, new ArrayList<>(topologicalOrder));
 
 
         //Print traces ending at node for all nodes in topological order
         for (IPublicNode nodeTopOrder : topologicalOrder) {
             List<List<Edge<IPublicNode>>> tracesToNode = tracesToAllNodes.get(nodeTopOrder);
 
-            //TODO: VALID traces that end at:
-            outputHandler.printEasySoundness("Traces that end at: " + nodeTopOrder.getName() + " (" + (tracesToNode != null ? tracesToNode.size() : 0) + ")", INFO);
+            outputHandler.printEasySoundness("Realizable Traces that end at: " + nodeTopOrder.getName() + " (" + (tracesToNode != null ? tracesToNode.size() : 0) + ")", INFO);
 
             //For startGlobal its gonna be null
             if (tracesToNode != null) {
@@ -554,7 +539,7 @@ public class EasySoundnessChecker2 {
 
     }
 
-    private void removeAllIncompatibleTraces2(List<List<Edge<IPublicNode>>> traces, MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph) {
+    private void removeAllIncompatibleTraces(List<List<Edge<IPublicNode>>> traces, MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph) {
         Iterator<List<Edge<IPublicNode>>> tracesIterator = traces.iterator();
 
         //Iterate over traces
@@ -617,7 +602,6 @@ public class EasySoundnessChecker2 {
         //Events can be ignored, as neither start nor end can ever be on an XOR branch and thus never have incopmpatible edges.
 
         if (node instanceof Gateway) {
-            //TODO: Reverse Map or is the other direction needed elsewhere
             for (Map.Entry<IPublicNode, IPublicNode> gatewayMap : mappingPuMCombinedPuM.entrySet()) {
                 if (gatewayMap.getValue().equals(node))
                     return gatewayMap.getKey();
@@ -655,7 +639,7 @@ public class EasySoundnessChecker2 {
         }
     }
 
-    private Map<IPublicNode, List<List<Edge<IPublicNode>>>> computeTracesToAllNodes2(MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, List<IPublicNode> topOrder) {
+    private Map<IPublicNode, List<List<Edge<IPublicNode>>>> computeTracesToAllNodes(MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, List<IPublicNode> topOrder) {
         Map<IPublicNode, List<List<Edge<IPublicNode>>>> rst = new HashMap<>();
 
         //Remove global start as it has no parent elements
@@ -675,6 +659,8 @@ public class EasySoundnessChecker2 {
             outputHandler.printEasySoundness("Computation of traces that end at " + currNode.getName(), INFO);
             outputHandler.printEasySoundness("--------------------------------------\n", INFO);
 
+            //TODO: Edges ending at one parent is empty due to incompatibilities removed in prev step -> Test!
+
             if (currNode instanceof XorGateway) {
 
                 for (IPublicNode parent : parents) {
@@ -689,11 +675,11 @@ public class EasySoundnessChecker2 {
                                                     .collect(Collectors.joining(", ")))
                                     .collect(Collectors.joining("\n")), DEBUG);
 
-                    //Children of global start
+                    //In case the parent is not reachable, there can be no trace going through the currently visited parent
                     if (tracesEndingAtParent.isEmpty()) {
-                        List<Edge<IPublicNode>> newTrace = new ArrayList<>();
-                        newTrace.add(graph.getEdge(parent, currNode));
-                        tracesEndingAtCurrNode.add(newTrace);
+//                        List<Edge<IPublicNode>> newTrace = new ArrayList<>();
+//                        newTrace.add(graph.getEdge(parent, currNode));
+//                        tracesEndingAtCurrNode.add(newTrace);
                         continue;
                     }
 
@@ -712,10 +698,28 @@ public class EasySoundnessChecker2 {
                 //Build list containing all traces ending at all parents
                 List<List<List<Edge<IPublicNode>>>> allTraces = new ArrayList<>();
 
+                //Gets set when one of the parent is unexecutable (->no traces leading to it)
+                boolean unexecutable = false;
+
                 for (IPublicNode parent : parents) {
+
+                    if (unexecutable) {
+                        break;
+                    }
+
                     //startGlobal -> children is empty
                     if (!rst.isEmpty()) {
-                        allTraces.add(rst.get(parent));
+
+                        //If one of the parents cannot be reached (->empty entry) than the currently visited node can also never be reached
+                        List<List<Edge<IPublicNode>>> tracesToParent = rst.get(parent);
+
+                        //If parent is startGlobal, tracesToParent is null
+                        if (tracesToParent != null && tracesToParent.isEmpty()) {
+                            rst.put(currNode, new ArrayList<>());
+                            unexecutable = true;
+                            continue;
+                        }
+                        allTraces.add(tracesToParent);
                     }
 
                 }
@@ -729,7 +733,7 @@ public class EasySoundnessChecker2 {
                 tracesEndingAtCurrNode.addAll(tracesEndingAtCurr);
             }
 
-            removeAllIncompatibleTraces2(tracesEndingAtCurrNode, graph);
+            removeAllIncompatibleTraces(tracesEndingAtCurrNode, graph);
 
             rst.put(currNode, tracesEndingAtCurrNode);
 
@@ -752,12 +756,12 @@ public class EasySoundnessChecker2 {
 
         outputHandler.printEasySoundness("Combining parents traces to get traces ending at " + node.getName() + "\n", DEBUG);
 
-        getTracesEndingAtNodeRec2(allTraces, node, edgesToNode, 0, new ArrayList<>(), rst);
+        getTracesEndingAtNodeRec2(allTraces, edgesToNode, 0, new ArrayList<>(), rst);
 
         return rst;
     }
 
-    private int getTracesEndingAtNodeRec2(List<List<List<Edge<IPublicNode>>>> allTraces, IPublicNode node, List<Edge<IPublicNode>> edgesToNode, int ctr, List<Edge<IPublicNode>> currTrace, List<List<Edge<IPublicNode>>> rst) {
+    private int getTracesEndingAtNodeRec2(List<List<List<Edge<IPublicNode>>>> allTraces, List<Edge<IPublicNode>> edgesToNode, int ctr, List<Edge<IPublicNode>> currTrace, List<List<Edge<IPublicNode>>> rst) {
 
         if (ctr == allTraces.size() || allTraces.stream().allMatch(Objects::isNull)) {
             currTrace.addAll(edgesToNode);
@@ -779,9 +783,9 @@ public class EasySoundnessChecker2 {
             int amountAddedElements = 0;
 
             //Add all nodes that are not already in the trace
-            for (Edge<IPublicNode> nodeOfTrace : singleTraceOfCurrParticipant) {
-                if (!currTrace.contains(nodeOfTrace)) {
-                    currTrace.add(nodeOfTrace);
+            for (Edge<IPublicNode> edgeOfTrace : singleTraceOfCurrParticipant) {
+                if (!currTrace.contains(edgeOfTrace)) {
+                    currTrace.add(edgeOfTrace);
                     amountAddedElements++;
                 }
             }
@@ -791,7 +795,7 @@ public class EasySoundnessChecker2 {
             outputHandler.printEasySoundness("\nCurrent Working Trace:", DEBUG);
             outputHandler.printEasySoundness(currTrace.stream().map(Edge::toString).collect(Collectors.joining(", ")), DEBUG);
 
-            amountAddedElements += getTracesEndingAtNodeRec2(allTraces, node, edgesToNode, ctr + 1, currTrace, rst);
+            amountAddedElements += getTracesEndingAtNodeRec2(allTraces, edgesToNode, ctr + 1, currTrace, rst);
 
             outputHandler.printEasySoundness("Amount of added elements after rec call: " + amountAddedElements, DEBUG);
 
@@ -807,111 +811,6 @@ public class EasySoundnessChecker2 {
             outputHandler.printEasySoundness(currTrace.stream().map(Edge::toString).collect(Collectors.joining(", ")), DEBUG);
         }
         return 0;
-    }
-
-
-    /**
-     * Computes for all nodes the paths that stop at this node.
-     */
-    private Map<IPublicNode, List<List<IPublicNode>>> computeTracesToAllNodes(MultiDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, List<IPublicNode> topOrder) {
-
-        Map<IPublicNode, List<List<IPublicNode>>> rst = new HashMap<>();
-
-        //Add the global start with a list containing only itself as the first element
-        IPublicNode startGlobal = topOrder.remove(0);
-        List<List<IPublicNode>> traces = new ArrayList<>();
-        traces.add(Collections.singletonList(startGlobal));
-        rst.put(startGlobal, traces);
-
-        for (IPublicNode currNode : topOrder) {
-
-            List<IPublicNode> parents = new ArrayList<>(graph.getDirectPredecessors(currNode));
-
-            List<List<IPublicNode>> tracesEndingAtCurrNode = new ArrayList<>();
-
-            if (parents.isEmpty()) {
-                throw new IllegalStateException("No parents found, there has to be something wrong with the topological order");
-            }
-
-            //If the currently visited node is an XOR_merge, the traces ending at that node are the traces ending at both parents plus the current node
-            //In all other cases, the traces ending at a node are the union of all traces ending at the parents plus the current node
-            if (currNode instanceof XorGateway) {
-
-                for (IPublicNode parent : parents) {
-
-                    List<List<IPublicNode>> tracesEndingAtParent = rst.get(parent);
-
-                    if (tracesEndingAtParent.isEmpty()) {
-                        throw new IllegalStateException("WTF");
-                    }
-
-                    //Take the traces ending at parent, add the current node and add the new trace as trace ending at the current node
-                    for (List<IPublicNode> singleTraceEndingAtParent : tracesEndingAtParent) {
-                        List<IPublicNode> newTraceEndingAtCurr = new ArrayList<>(singleTraceEndingAtParent);
-                        newTraceEndingAtCurr.add(currNode);
-                        tracesEndingAtCurrNode.add(newTraceEndingAtCurr);
-                    }
-                }
-
-            } else {
-
-                //Build list containing all traces ending at all parents
-                List<List<List<IPublicNode>>> allTraces = new ArrayList<>();
-
-                for (IPublicNode parent : parents) {
-                    allTraces.add(rst.get(parent));
-                }
-
-                //Build all combinations using a backtracking approach
-                List<List<IPublicNode>> tracesEndingAtCurr = getTracesEndingAtNode(allTraces, currNode);
-
-                tracesEndingAtCurrNode.addAll(tracesEndingAtCurr);
-            }
-
-            rst.put(currNode, tracesEndingAtCurrNode);
-        }
-
-        return rst;
-    }
-
-
-    private List<List<IPublicNode>> getTracesEndingAtNode(List<List<List<IPublicNode>>> allTraces, IPublicNode node) {
-        List<List<IPublicNode>> rst = new ArrayList<>();
-
-        getTracesEndingAtNodeRec(allTraces, node, 0, new ArrayList<>(), rst);
-
-        return rst;
-    }
-
-    private void getTracesEndingAtNodeRec(List<List<List<IPublicNode>>> allTraces, IPublicNode node, int ctr, List<IPublicNode> currTrace, List<List<IPublicNode>> rst) {
-
-        if (ctr == allTraces.size()) {
-            currTrace.add(node);
-            rst.add(new ArrayList<>(currTrace));
-            return;
-        }
-
-        List<List<IPublicNode>> tracesOfCurrParticipant = allTraces.get(ctr);
-        for (List<IPublicNode> singleTraceOfCurrParticipant : tracesOfCurrParticipant) {
-
-            //Needed for the backtracking
-            int amountAddedElements = 0;
-
-            //Add all nodes that are not already in the trace
-            for (IPublicNode nodeOfTrace : singleTraceOfCurrParticipant) {
-                if (!currTrace.contains(nodeOfTrace)) {
-                    currTrace.add(nodeOfTrace);
-                    amountAddedElements++;
-                }
-            }
-
-            getTracesEndingAtNodeRec(allTraces, node, ctr + 1, currTrace, rst);
-
-            //Remove the added trace of the current participant from the end of the current trace again
-            for (int i = 0; i < amountAddedElements; i++) {
-                currTrace.remove(currTrace.size() - 1);
-            }
-        }
     }
 
     private String getNameWithRole(IPublicNode vertex, Role role) {
@@ -1101,7 +1000,7 @@ public class EasySoundnessChecker2 {
      * This needs to be done recursively; e.g. when eliminated node is on an AND-branch, and the and branch has a non-branching connection to the startnode
      * then the whole participant cannot work again
      */
-    private List<IPublicNode> eliminateContext(IPublicNode node) throws IOException, InterruptedException {
+    private List<IPublicNode> eliminateContext(IPublicNode node, List<IPublicNode> skip) throws IOException, InterruptedException {
 
         IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfNode = getGraphToNode(node);
 
@@ -1122,7 +1021,7 @@ public class EasySoundnessChecker2 {
         //Step 1: Traverse the graph backwards until you find either a XOR node or the start node
         //In case of XOR, the other branches of XOR can potentially be used to get from start to end
         //In case of start, the whole participant cannot execute
-        eliminateContextUntilXOROrStart(graphOfNode, node, toEliminate, new ArrayList<>());
+        findNodesToEliminateInStep(graphOfNode, node, toEliminate, skip);
 
         IPublicNode stopNode = toEliminate.remove(toEliminate.size() - 1);
 
@@ -1172,7 +1071,7 @@ public class EasySoundnessChecker2 {
         return furtherEliminate;
     }
 
-    private List<IPublicNode> handleEliminateXORBranch(List<IPublicNode> toEliminate, IPublicNode stopNode, IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfNode, Role participantOfNode) {
+    private List<IPublicNode> handleEliminateXORBranch(List<IPublicNode> toEliminate, IPublicNode stopNode, IDirectedGraph<Edge<IPublicNode>, IPublicNode> graphOfNode, Role participantOfNode) throws IOException, InterruptedException {
         //Get the first element on the XOR branch
         IPublicNode firstNodeOnXORbranch = toEliminate.get(toEliminate.size() - 1);
         String xorMergeName = stopNode.getName() + "_m";
@@ -1186,16 +1085,10 @@ public class EasySoundnessChecker2 {
             outputHandler.printEasySoundness("Eliminating the XOR branch containing " + firstNodeOnXORbranch.getName() + " would lead to the XOR being disconnected", INFO);
             outputHandler.printEasySoundness("The branch on which the XOR is present needs to be eliminated", INFO);
 
-            //Only one parent possible, otherwise somethings fucked up
-            //IPublicNode xorParent = new ArrayList<>(graphOfNode.getDirectPredecessors(stopNode)).get(0);
-
             ArrayList<IPublicNode> skip = new ArrayList<>();
             skip.add(stopNode);
 
-            eliminateContextUntilXOROrStart(graphOfNode, stopNode, toEliminate, skip);
-
-//                return eliminateContext(xorParent);
-
+            return eliminateContext(firstNodeOnXORbranch, skip);
         }
 
         outputHandler.printEasySoundness("Eliminating nodes on the XOR branch that cannot be executed", INFO);
@@ -1277,7 +1170,7 @@ public class EasySoundnessChecker2 {
      * Skip is a list with gateways that need to be skipped during the traversal.
      * This is for instances where an XOR gateway becomes disconnected and thus the traversal needs to continue.
      */
-    private void eliminateContextUntilXOROrStart(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, IPublicNode node, List<IPublicNode> toEliminate, List<IPublicNode> skip) {
+    private void findNodesToEliminateInStep(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph, IPublicNode node, List<IPublicNode> toEliminate, List<IPublicNode> skip) {
 
         //If we arrive at the start event we return
         if (node.getName().equals("start")) {
@@ -1303,7 +1196,7 @@ public class EasySoundnessChecker2 {
          * */
         IPublicNode singleParent = new ArrayList<>(graph.getDirectPredecessors(node)).get(0);
 
-        eliminateContextUntilXOROrStart(graph, singleParent, toEliminate, new ArrayList<>());
+        findNodesToEliminateInStep(graph, singleParent, toEliminate, skip);
     }
 
 

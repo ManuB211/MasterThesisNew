@@ -84,25 +84,70 @@ public class HOWHandler {
         if (printDebugGraphs)
             printGraphsDebug("AfterCropOutBeforeClean");
 
+        //Check for instances where XOR->XORm are only connections between the two
+//        this.eliminateOnlyDirectXORtoMergeConnections(this.graph);
+
         //Setze den digraph zurück ins RPSTModel
         this.graphRpstModel.setDiGraph(this.graph);
 
+        //We can't (only?) use the normal reduceGraph Method, as the HOW was only moved in the diGraph but is still reflected in the graphRpstModel.
+        //In there mutation is hard due to the models structure. Hence we check the
         this.graphRpstModel.reduceGraph(this.xorsWithDirectConnectionToMerge);
 
-        /*
-        int cleanCtr = 1;
-        while (this.cleanNecessary) {
-            this.cleanGraph();
+        //Remove instances where gateways have only one child connection
+        this.cleanSingleChildGateways();
+        this.graphRpstModel.setDiGraph(this.graph);
 
-            if (printDebugGraphs) {
-                String cleanCounterTimeInfo = "AfterClean" + cleanCtr;
-                printGraphsDebug(cleanCounterTimeInfo);
+    }
+
+    private void cleanSingleChildGateways() {
+        for (IChoreographyNode node : this.graph.getVertices()) {
+
+            if (node instanceof Gateway && !node.getName().endsWith("_m")) {
+                IChoreographyNode mergeNode = getMergeNode(node.getName());
+
+                List<IChoreographyNode> children = new ArrayList<>(graph.getDirectSuccessors(node));
+
+                //If only child is the merge node itself, connect pred of node with succ of mergeNode.
+                //Remove connection pred of node -> node, node -> mergeNode, mergeNode -> succ of mergeNode
+                if (children.size() == 1 && children.get(0).equals(mergeNode)) {
+
+                    //There can only be one pred of node and one succ of mergeNode, otherwise the graph would be shit
+                    IChoreographyNode predOfNode = new ArrayList<>(this.graph.getDirectPredecessors(node)).get(0);
+                    IChoreographyNode succOfMergeNode = new ArrayList<>(this.graph.getDirectSuccessors(mergeNode)).get(0);
+
+                    this.graph.removeEdge(this.graph.getEdge(predOfNode, node));
+                    this.graph.removeEdge(this.graph.getEdge(node, mergeNode));
+                    this.graph.removeEdge(this.graph.getEdge(mergeNode, succOfMergeNode));
+
+                    this.graph.removeVertex(node);
+                    this.graph.removeVertex(mergeNode);
+
+                    this.graph.addEdge(predOfNode, succOfMergeNode);
+
+                } else if (children.size() == 1) {
+                    //Only child of the gateway fork is not the merge node.
+                    //Remove nodePred -> node, node -> nodeSucc, add nodePred -> nodeSucc
+                    //Remove mergeNodeSucc -> mergeNode, mergeNode -> mergeNodeSucc, add mergeNodePred -> mergeNodeSucc
+
+                    IChoreographyNode predOfNode = new ArrayList<>(this.graph.getDirectPredecessors(node)).get(0);
+                    IChoreographyNode succOfNode = new ArrayList<>(this.graph.getDirectSuccessors(node)).get(0);
+                    IChoreographyNode predOfMergeNode = new ArrayList<>(this.graph.getDirectPredecessors(mergeNode)).get(0);
+                    IChoreographyNode succOfMergeNode = new ArrayList<>(this.graph.getDirectSuccessors(mergeNode)).get(0);
+
+                    this.graph.removeEdge(this.graph.getEdge(predOfNode, node));
+                    this.graph.removeEdge(this.graph.getEdge(node, succOfNode));
+                    this.graph.addEdge(predOfNode, succOfNode);
+                    this.graph.removeVertex(node);
+
+                    this.graph.removeEdge(this.graph.getEdge(predOfMergeNode, mergeNode));
+                    this.graph.removeEdge(this.graph.getEdge(mergeNode, succOfMergeNode));
+                    this.graph.addEdge(predOfMergeNode, succOfMergeNode);
+                    this.graph.removeVertex(mergeNode);
+                }
+
             }
-            cleanCtr++;
-        }*/
-
-        // TODO Comment in again when problem that graph is split up in case of HOW
-        // this.removeOrphanParents();
+        }
     }
 
     private void printGraphsDebug(String timeInfo) {
@@ -170,7 +215,6 @@ public class HOWHandler {
                     this.graph.addEdge(this.start, target);
                     this.graph.addEdge(target, startSucc);
 
-                    // (TODO: Add to MessageFlow )As a participant can only be receiver of one
                     // handover of work (has to be first), break
                     this.cleanNecessary = true;
                     break;
@@ -178,69 +222,6 @@ public class HOWHandler {
             }
 
         }
-
-    }
-
-    private void cleanGraph() {
-
-        ArrayList<IChoreographyNode> queue = new ArrayList<>();
-        queue.addAll(this.graph.getDirectSuccessors(this.start));
-
-        boolean foundSomethingToClean = false;
-
-        while (queue.size() > 0) {
-
-            if (queue.size() == 1 && queue.get(0).getName().equals("end")) {
-                break;
-            }
-
-            IChoreographyNode currentNode = queue.remove(0);
-
-            // Check if node is a fork and if it has only one child (cf HOW was taken off
-            // here)
-            if (currentNode instanceof Gateway && !currentNode.getName().endsWith("_m")) {
-
-                List<IChoreographyNode> currentNodeSuccessors = new ArrayList<>(
-                        this.graph.getDirectSuccessors(currentNode));
-
-                // Only one child present
-                if (currentNodeSuccessors.size() == 1) {
-
-                    IChoreographyNode forkSuccessor = currentNodeSuccessors.get(0);
-                    IChoreographyNode forkPredecessor = new ArrayList<>(this.graph.getDirectPredecessors(currentNode))
-                            .get(0);
-
-                    // Get Merge node dynamically, as we could have multiple interactions on the
-                    // only child branch of fork
-                    IChoreographyNode mergeNode = this.getMergeNode(currentNode.getName());
-
-                    IChoreographyNode mergePredecessor = new ArrayList<>(this.graph.getDirectPredecessors(mergeNode))
-                            .get(0);
-                    IChoreographyNode mergeSuccessor = new ArrayList<>(this.graph.getDirectSuccessors(mergeNode))
-                            .get(0);
-
-                    // Update edges accordingly
-                    this.graph.removeEdge(this.graph.getEdge(forkSuccessor, currentNode));
-                    this.graph.removeEdge(this.graph.getEdge(currentNode, forkSuccessor));
-                    this.graph.addEdge(forkPredecessor, forkSuccessor);
-
-                    this.graph.removeVertex(currentNode);
-
-                    this.graph.removeEdge(this.graph.getEdge(mergePredecessor, mergeNode));
-                    this.graph.removeEdge(this.graph.getEdge(mergeNode, mergeSuccessor));
-                    this.graph.addEdge(mergePredecessor, mergeSuccessor);
-
-                    this.graph.removeVertex(mergeNode);
-
-                    // Ensure that another run of clean is made until graph is completely clean
-                    foundSomethingToClean = true;
-                }
-            }
-
-            queue.addAll(this.graph.getDirectSuccessors(currentNode));
-        }
-
-        this.cleanNecessary = foundSomethingToClean;
 
     }
 
@@ -253,7 +234,7 @@ public class HOWHandler {
         }
 
         throw new IllegalArgumentException(
-                "Could not find corresponding merge node. Something has to have been wrong before");
+                "Could not find corresponding merge node to " + name + ". Something has to have been wrong before");
 
     }
 

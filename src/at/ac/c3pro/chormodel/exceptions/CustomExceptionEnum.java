@@ -5,5 +5,6 @@ package at.ac.c3pro.chormodel.exceptions;
  */
 public enum CustomExceptionEnum {
     PRIVATE_MODEL_DISCONNECTED,
-    NO_TRACES_TO_END_FOUND;
+    NO_TRACES_TO_END_FOUND,
+    TWO_HOW_RECEIVE_ONE_PARTICIPANT;
 }

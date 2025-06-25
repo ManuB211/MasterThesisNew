@@ -1,15 +1,20 @@
 {
-  "participantCount": 2,
-  "xorSplitCount": 1,
+  "participantCount": 4,
+  "xorSplitCount": 4,
   "andSplitCount": 1,
   "maxBranching": 2,
-  "amountMessageExchange": 3,
-  "amountHandoverOfWork": 0,
-  "amountRessourceSharing": 0,
-  "amountSynchronousActivity": 0,
+  "amountMessageExchange": 7,
+  "amountHandoverOfWork": 1,
+  "amountRessourceSharing": 3,
+  "amountSynchronousActivity": 2,
   "visualizeAllCPNs": true,
   "visualizePrivModels": false,
   "visualizePubModels": true,
   "useEasySoundnessChecker": true,
-  "easySoundnessCheckVisualization": true
+  "easySoundnessCheckVisualization": true,
+  "exceptionRetries": {
+    "privateModelDisconnected": 1,
+    "noTraceToEndFound": 1
+  },
+  "easySoundnessCheckDebugLevel": 1
 }

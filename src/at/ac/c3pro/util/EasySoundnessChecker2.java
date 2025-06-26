@@ -450,13 +450,6 @@ public class EasySoundnessChecker2 {
 
             queue.addAll(amountNeighboringEdges.entrySet().stream().filter(v -> v.getValue() == 0).filter(v -> !queue.contains(v.getKey())).map(Map.Entry::getKey).collect(Collectors.toList()));
 
-            System.out.println("Current queue:");
-            System.out.println(queue.stream().map(IGObject::getName).collect(Collectors.joining(", ")));
-            System.out.println("---------------------------------------------------------");
-            System.out.println("Current Topological Ordering: ");
-            System.out.println(rst.stream().map(IGObject::getName).collect(Collectors.joining(", ")));
-            System.out.println("---------------------------------------------------------");
-
         }
 
         if (amountNeighboringEdges.entrySet().stream().anyMatch(v -> v.getValue() != 0)) {

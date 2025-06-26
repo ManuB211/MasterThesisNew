@@ -5,15 +5,14 @@ import at.ac.c3pro.chormodel.exceptions.CustomExceptionEnum;
 import at.ac.c3pro.chormodel.exceptions.NoTracesToEndFoundException;
 import at.ac.c3pro.chormodel.exceptions.PrivateModelDisconnectedException;
 import at.ac.c3pro.chormodel.exceptions.TwoHOWReceiveForOneParticipantException;
-import at.ac.c3pro.io.ChoreographyModel2Bpmn;
-import at.ac.c3pro.io.ChoreographyModelToCPN;
-import at.ac.c3pro.io.Collaboration2Bpmn;
-import at.ac.c3pro.io.PrivateModel2Bpmn;
+import at.ac.c3pro.io.*;
 import at.ac.c3pro.node.Edge;
 import at.ac.c3pro.node.IChoreographyNode;
+import at.ac.c3pro.node.IPublicNode;
 import at.ac.c3pro.node.Interaction.InteractionType;
 import at.ac.c3pro.util.*;
 import at.ac.c3pro.util.VisualizationHandler.VisualizationType;
+import org.jbpt.graph.abs.IDirectedGraph;
 import org.jbpt.utils.IOUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -113,7 +112,6 @@ public class ChoreographyController {
 
     private static void run(File dir, JSONObject configObject) throws IOException, InterruptedException, PrivateModelDisconnectedException, NoTracesToEndFoundException, TwoHOWReceiveForOneParticipantException {
 
-
         // MODEL GENERATOR PARAMETERS
         int participantCount = configObject.getInt("participantCount"); // number of participants
         int xorSplitCount = configObject.getInt("xorSplitCount"); // number of XOR gateways
@@ -142,6 +140,8 @@ public class ChoreographyController {
         boolean useEasySoundnessChecker = configObject.getBoolean("useEasySoundnessChecker");
         boolean easySoundnessCheckVisualization = configObject.getBoolean("easySoundnessCheckVisualization");
         int debugLevelEasySoundnessChecker = configObject.getInt("easySoundnessCheckDebugLevel");
+
+        boolean doCPEEExportBeforeEasySoundnessCheck = configObject.getBoolean("doCPEEExportBeforeEasySoundnessCheck");
 
         if (amountHandoverOfWork >= participantCount) {
             throw new IllegalArgumentException(
@@ -195,13 +195,21 @@ public class ChoreographyController {
         //If the error with disconnectedness still persists (noticed by Janik in the scope of the paper) then it has have to do with the translation to CPN
         checkDisconnectedNess(privateModels);
 
+        //Specify option to do ADDITIONAL CPEE Export before Easy-Soundness-Check
+        if (doCPEEExportBeforeEasySoundnessCheck) {
+            Map<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> puMbyRole = new HashMap<>();
+            for (Role role : choreo.collaboration.roles) {
+                puMbyRole.put(role, choreo.collaboration.R2PuM.get(role).getdigraph());
+            }
+        }
+
+
+        ChoreographyModelToCPEE cpeeGenerator = new ChoreographyModelToCPEE(puMbyRole);
+        cpeeGenerator.run();
+
         EasySoundnessChecker2 easySoundnessChecker2 = new EasySoundnessChecker2(choreo, easySoundnessCheckVisualization, debugLevelEasySoundnessChecker);
         easySoundnessChecker2.run();
 
-//        if (useEasySoundnessChecker) {
-//            EasySoundnessChecker easySoundnessChecker = new EasySoundnessChecker(choreo, easySoundnessCheckVisualization);
-//            easySoundnessChecker.run();
-//        }
 
         // Transform Private Models to a PNML file
         try {

@@ -1,10 +1,10 @@
 {
-  "participantCount": 4,
+  "participantCount": 3,
   "xorSplitCount": 4,
   "andSplitCount": 1,
   "maxBranching": 2,
   "amountMessageExchange": 7,
-  "amountHandoverOfWork": 1,
+  "amountHandoverOfWork": 0,
   "amountRessourceSharing": 3,
   "amountSynchronousActivity": 2,
   "visualizeAllCPNs": true,
@@ -16,5 +16,6 @@
     "privateModelDisconnected": 1,
     "noTraceToEndFound": 1
   },
-  "easySoundnessCheckDebugLevel": 1
+  "easySoundnessCheckDebugLevel": 1,
+  "doCPEEExportBeforeEasySoundnessCheck": true
 }

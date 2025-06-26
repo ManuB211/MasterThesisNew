@@ -201,11 +201,10 @@ public class ChoreographyController {
             for (Role role : choreo.collaboration.roles) {
                 puMbyRole.put(role, choreo.collaboration.R2PuM.get(role).getdigraph());
             }
+
+            ChoreographyModelToCPEE cpeeGenerator = new ChoreographyModelToCPEE(puMbyRole);
+            cpeeGenerator.run();
         }
-
-
-        ChoreographyModelToCPEE cpeeGenerator = new ChoreographyModelToCPEE(puMbyRole);
-        cpeeGenerator.run();
 
         EasySoundnessChecker2 easySoundnessChecker2 = new EasySoundnessChecker2(choreo, easySoundnessCheckVisualization, debugLevelEasySoundnessChecker);
         easySoundnessChecker2.run();

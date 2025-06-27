@@ -39,11 +39,6 @@ public class ChoreographyModelToPNML {
     private List<String> localEndIDs;
 
 
-    //Used to store the input and output points of private model elements in CPN representation
-    private Map<IPrivateNode, String> inputPointsGlobal;
-    private Map<IPrivateNode, String> outputPointsGlobal;
-
-
     public ChoreographyModelToPNML(Map<Role, PrivateModel> privateModelsByRole) throws IOException {
         this.privateModels = privateModelsByRole;
         this.privateNets = new HashMap<>();
@@ -65,9 +60,6 @@ public class ChoreographyModelToPNML {
 
         this.netCompleteElementsWithoutRelevantSync = new ArrayList<>();
         this.netCompleteElementsRelevantSync = new ArrayList<>();
-
-        this.inputPointsGlobal = new HashMap<>();
-        this.outputPointsGlobal = new HashMap<>();
 
         // Generate petri model for each private model of the participants
         for (Map.Entry<Role, PrivateModel> entry : this.privateModels.entrySet()) {
@@ -124,7 +116,6 @@ public class ChoreographyModelToPNML {
                 if (pred instanceof Event) {
                     createTransition(curr.getName(), rstNet);
                     createArc(outputPointsLocal.get(pred), curr.getName(), rstNet);
-                    updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
                 } else if (pred instanceof Send || pred instanceof Receive || pred instanceof PrivateActivity || pred instanceof AndGateway) {
 
                     String placeId = outputPointsLocal.get(pred) + "_to_" + curr.getName();
@@ -134,19 +125,15 @@ public class ChoreographyModelToPNML {
                     createArc(outputPointsLocal.get(pred), placeId, rstNet);
                     createArc(placeId, curr.getName(), rstNet);
 
-                    updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
                 } else if (pred instanceof XorGateway) {
 
                     createTransition(curr.getName(), rstNet);
                     createArc(outputPointsLocal.get(pred), curr.getName(), rstNet);
 
-                    updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
+                    outputPointsLocal.put(curr, curr.getName());
 
                 }
-
-
-                //Add corresponding template to the string builder
-//                addInteraction(curr);
+                outputPointsLocal.put(curr, curr.getName());
 
                 System.out.println("Interaction " + curr.getName());
                 queue.addAll(graph.getDirectSuccessors(curr));
@@ -174,7 +161,7 @@ public class ChoreographyModelToPNML {
                                 createArc(outputPointsLocal.get(p), curr.getName(), rstNet);
                             }
                         }
-                        updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
+                        outputPointsLocal.put(curr, curr.getName());
 
                         queue.addAll(graph.getDirectSuccessors(curr));
                     }
@@ -195,7 +182,7 @@ public class ChoreographyModelToPNML {
                         createArc(outputPointsLocal.get(pred), placeId, rstNet);
                         createArc(placeId, curr.getName(), rstNet);
 
-                        updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
+                        outputPointsLocal.put(curr, curr.getName());
                     } else if (pred instanceof AndGateway) {
                         String placeId = outputPointsLocal.get(pred) + "_to_" + curr.getName();
 
@@ -205,7 +192,7 @@ public class ChoreographyModelToPNML {
                         createArc(outputPointsLocal.get(pred), placeId, rstNet);
                         createArc(placeId, curr.getName(), rstNet);
 
-                        updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
+                        outputPointsLocal.put(curr, curr.getName());
 
                     } else if (pred instanceof XorGateway) {
                         //Only fork possible
@@ -213,10 +200,10 @@ public class ChoreographyModelToPNML {
                         createTransition(curr.getName(), rstNet);
                         createArc(outputPointsLocal.get(pred), curr.getName(), rstNet);
 
-                        updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
+                        outputPointsLocal.put(curr, curr.getName());
                     } else if (pred instanceof Send || pred instanceof Receive || pred instanceof PrivateActivity) {
                         //No additional elements needed, as the child connections will go out of the Send/Receive/PA
-                        updateInputOutputPoints(curr, pred.getName(), pred.getName(), inputPointsLocal, outputPointsLocal);
+                        outputPointsLocal.put(curr, pred.getName());
                     }
 
                     queue.addAll(graph.getDirectSuccessors(curr));
@@ -252,7 +239,7 @@ public class ChoreographyModelToPNML {
 
                         }
 
-                        updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
+                        outputPointsLocal.put(curr, curr.getName());
 
                         queue.addAll(graph.getDirectSuccessors(curr));
                     } else {
@@ -267,16 +254,13 @@ public class ChoreographyModelToPNML {
                     //Only start possible
                     if (pred instanceof Event) {
                         //No additional place needed, the successors will be connected to start directly
-                        updateInputOutputPoints(curr, pred.getName(), pred.getName(), inputPointsLocal, outputPointsLocal);
-
+                        outputPointsLocal.put(curr, pred.getName());
                     } else if (pred instanceof Send || pred instanceof Receive || pred instanceof PrivateActivity || pred instanceof AndGateway) {
 
                         createPlace(curr.getName(), rstNet);
                         createArc(outputPointsLocal.get(pred), curr.getName(), rstNet);
 
-                        updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
-
-
+                        outputPointsLocal.put(curr, curr.getName());
                     } else if (pred instanceof XorGateway) {
 
                         String transId = outputPointsLocal.get(pred) + "_to_" + curr.getName();
@@ -287,7 +271,7 @@ public class ChoreographyModelToPNML {
                         createArc(outputPointsLocal.get(pred), transId, rstNet);
                         createArc(transId, curr.getName(), rstNet);
 
-                        updateInputOutputPoints(curr, curr.getName(), curr.getName(), inputPointsLocal, outputPointsLocal);
+                        outputPointsLocal.put(curr, curr.getName());
 
                     }
 
@@ -316,7 +300,7 @@ public class ChoreographyModelToPNML {
                 if (curr.getName().equals("start")) {
 
                     createPlace("start", rstNet);
-                    updateInputOutputPoints(curr, "start", "start", inputPointsLocal, outputPointsLocal);
+                    outputPointsLocal.put(curr, "start");
 
                     localStartIDs.add(localIdToGlobalId("start"));
 
@@ -332,7 +316,7 @@ public class ChoreographyModelToPNML {
                         createPlace("end", rstNet);
                         createArc(outputPointsLocal.get(pred), "end", rstNet);
 
-                        updateInputOutputPoints(curr, "end", "end", inputPointsLocal, outputPointsLocal);
+                        outputPointsLocal.put(curr, "end");
                         localEndIDs.add(localIdToGlobalId("end"));
                     } else if (pred instanceof XorGateway) {
 
@@ -345,7 +329,7 @@ public class ChoreographyModelToPNML {
                         createArc(outputPointsLocal.get(pred), transId, rstNet);
                         createArc(transId, "end", rstNet);
 
-                        updateInputOutputPoints(curr, "end", "end", inputPointsLocal, outputPointsLocal);
+                        outputPointsLocal.put(curr, "end");
                         localEndIDs.add(localIdToGlobalId("end"));
                     }
 
@@ -356,15 +340,6 @@ public class ChoreographyModelToPNML {
         }
 
         return null;
-    }
-
-
-    private void updateInputOutputPoints(IPrivateNode node, String iNew, String oNew, Map<IPrivateNode, String> i, Map<IPrivateNode, String> o) {
-        i.put(node, iNew);
-        o.put(node, oNew);
-
-        inputPointsGlobal.put(node, localIdToGlobalId(iNew));
-        outputPointsGlobal.put(node, localIdToGlobalId(oNew));
     }
 
     private void trackNodeForBuildingOverallPetriNet(String name) {

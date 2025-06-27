@@ -189,11 +189,11 @@ public class ChoreographyController {
 
         // Export Models
         exportPublicModels(choreo, printVisualizationsForPubModels);
-        List<PrivateModel> privateModels = exportPrivateModels(choreo, printVisualizationsForPrivModels);
+        Map<Role, PrivateModel> privateModelsByRole = exportPrivateModels(choreo, printVisualizationsForPrivModels);
 
         //Additional Check if any of the private models is disconnected. If yes an exception is thrown and the generation is started again.
         //If the error with disconnectedness still persists (noticed by Janik in the scope of the paper) then it has have to do with the translation to CPN
-        checkDisconnectedNess(privateModels);
+        checkDisconnectedNess(new ArrayList<>(privateModelsByRole.values()));
 
         //Specify option to do ADDITIONAL CPEE Export before Easy-Soundness-Check
         if (doCPEEExportBeforeEasySoundnessCheck) {
@@ -202,7 +202,7 @@ public class ChoreographyController {
                 puMbyRole.put(role, choreo.collaboration.R2PuM.get(role).getdigraph());
             }
 
-            ChoreographyModelToCPEE cpeeGenerator = new ChoreographyModelToCPEE(puMbyRole);
+            ChoreographyModelToCPEE cpeeGenerator = new ChoreographyModelToCPEE(puMbyRole, true);
             cpeeGenerator.run();
         }
 
@@ -211,12 +211,20 @@ public class ChoreographyController {
 
 
         // Transform Private Models to a PNML file
+//        try {
+//            ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModelsByRole);
+//            choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
+//        } catch (IOException | InterruptedException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
+
+
         try {
-            ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModels);
+            ChoreographyModelToPNML choreoToCPN = new ChoreographyModelToPNML(privateModelsByRole);
             choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
         } catch (IOException | InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.err.println("Something went wrong during the generation of the PNML representation of the private models");
         }
 
         // Transform Models to bpmn
@@ -269,10 +277,10 @@ public class ChoreographyController {
      * Exports the public models to the target folder, named after the timestamp the
      * generation was started
      */
-    private static List<PrivateModel> exportPrivateModels(Choreography choreo, boolean visualize) throws IOException, InterruptedException {
+    private static Map<Role, PrivateModel> exportPrivateModels(Choreography choreo, boolean visualize) throws IOException, InterruptedException {
         FragmentGenerator fragGen = null;
 
-        List<PrivateModel> rst = new ArrayList<>();
+        Map<Role, PrivateModel> rst = new HashMap<>();
 
         // Sort roles so we can be sure that the returned list of private models is in
         // order
@@ -288,7 +296,7 @@ public class ChoreographyController {
             IPrivateModel prModel = choreo.R2PrM.get(role);
             fragGen = new FragmentGenerator((PrivateModel) prModel);
             prModel = fragGen.enhance();
-            rst.add((PrivateModel) prModel);
+            rst.put(role, (PrivateModel) prModel);
 
             String filename = "prModel_" + role.name + ".dot";
 

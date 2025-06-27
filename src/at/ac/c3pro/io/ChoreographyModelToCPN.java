@@ -16,6 +16,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
+@Deprecated
 public class ChoreographyModelToCPN {
 
     private final List<PrivateModel> privateModels;
@@ -151,10 +152,6 @@ public class ChoreographyModelToCPN {
 
         createPetriNetInteractionsSharedResource(resourceShare);
 
-//        List<String> synchronousTask = this.interactionTransitions.get(InteractionType.SYNCHRONOUS_ACTIVITY);
-//        Collections.sort(synchronousTask);
-//
-//        createPetriNetInteractionsSynchronousTask(synchronousTask);
     }
 
     /**
@@ -204,14 +201,6 @@ public class ChoreographyModelToCPN {
         }
     }
 
-//    private void createPetriNetInteractionsSynchronousTask(List<String> interactions) {
-//
-//        for (int i = 0; i < interactions.size() - 2; i += 2) {
-//            String participant1 = interactions.get(i), participant2 = interactions.get(i+1);
-//
-//            this.netComplete.remove
-//        }
-//    }
 
     /**
      * Builds the PNML model for a single participant

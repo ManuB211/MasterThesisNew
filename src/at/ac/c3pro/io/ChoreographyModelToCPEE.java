@@ -23,13 +23,15 @@ public class ChoreographyModelToCPEE {
     Random rand;
 
     String outputPath;
+    String namePrefix;
 
-    public ChoreographyModelToCPEE(Map<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> input) throws IOException {
+    public ChoreographyModelToCPEE(Map<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> input, boolean beforeCycleElimination) throws IOException {
         this.role2PublicModel = input;
         this.sb = new StringBuilder();
         this.rand = new Random();
         OutputHandler.createOutputFolder("CPEE");
         outputPath = GlobalTimestamp.timestamp + "/CPEE/";
+        namePrefix = beforeCycleElimination ? "BeforeCycleElimination" : "AfterCycleElimination";
     }
 
     public void run() {
@@ -41,7 +43,7 @@ public class ChoreographyModelToCPEE {
             System.out.println("=============================================");
             String cpeeContent = createCPEEFile(entry.getValue());
 
-            String filename = "cpee_" + entry.getKey().name + ".xml";
+            String filename = "cpee_" + namePrefix + "_" + entry.getKey().name + ".xml";
             IOUtils.toFile(outputPath + filename, cpeeContent);
             sb = new StringBuilder();
 
@@ -53,7 +55,7 @@ public class ChoreographyModelToCPEE {
     }
 
     /**
-     * Do an aapted DFS to traverse the graph in the order needed to insert CPEE elements "on the fly"
+     * Do an adapted DFS to traverse the graph in the order needed to insert CPEE elements "on the fly"
      */
     private String createCPEEFile(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph) {
         IPublicNode beginNode = graph.getVertices().stream().filter(v -> v.getName().equals("start")).collect(Collectors.toList()).get(0);

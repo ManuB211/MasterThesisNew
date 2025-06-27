@@ -431,6 +431,9 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
                         exitEdgesWithOtherEntry, xorsWithDirectEdgeToMerge);
                 // System.out.println("#### RETURN TRUE ####");
                 return true;
+            } else if (directConnection == 1 && entryEdgesWithOtherExit.size() > 1) {
+                //New case, before the routine removed And gateways having a direct edge but also multiple intact children
+                this.diGraph.removeEdges(directEntryExitEdges);
             } else if (directConnection == 1) {
                 // AND EITHER case
 
@@ -506,9 +509,12 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
                         exitEdgesWithOtherEntry, xorsWithDirectEdgeToMerge);
                 // System.out.println("#### RETURN TRUE ####");
                 return true;
-            } else {
-                //TODO: wrong XOR connection with one direct edge?
+            } else if (directConnection == 1) {
+
+                //TODO: is that the case where the wrong optional edge stems from?
                 // System.out.println("\tXOR case (staying intact)");
+            } else {
+
             }
         } else {
             // sequence ?

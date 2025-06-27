@@ -21,8 +21,6 @@ import java.util.stream.Collectors;
 public class ChoreographyModelToPNML {
 
     private final Map<Role, PrivateModel> privateModels;
-
-
     private final Map<String, Element> privateNets;
 
     //Needed for the creation of the global petri net
@@ -32,12 +30,10 @@ public class ChoreographyModelToPNML {
     private List<Element> netCompleteElementsRelevantSync;
 
     private Map<InteractionType, List<String>> interactionTransitions;
-
     private String currentParticipant;
 
     private List<String> localStartIDs;
     private List<String> localEndIDs;
-
 
     public ChoreographyModelToPNML(Map<Role, PrivateModel> privateModelsByRole) throws IOException {
         this.privateModels = privateModelsByRole;
@@ -73,8 +69,6 @@ public class ChoreographyModelToPNML {
 
         createPetriNetInteractions();
         buildGlobalPetriNet();
-
-
     }
 
 
@@ -177,10 +171,8 @@ public class ChoreographyModelToPNML {
                         //pred is start node
                         String placeId = outputPointsLocal.get(pred) + "_to_" + curr.getName();
 
-                        createPlace(placeId, rstNet);
                         createTransition(curr.getName(), rstNet);
-                        createArc(outputPointsLocal.get(pred), placeId, rstNet);
-                        createArc(placeId, curr.getName(), rstNet);
+                        createArc(outputPointsLocal.get(pred), curr.getName(), rstNet);
 
                         outputPointsLocal.put(curr, curr.getName());
                     } else if (pred instanceof AndGateway) {
@@ -703,6 +695,4 @@ public class ChoreographyModelToPNML {
 
         return localId + "(" + this.currentParticipant + ")";
     }
-
-
 }

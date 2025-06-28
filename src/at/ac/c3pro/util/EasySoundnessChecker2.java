@@ -1085,6 +1085,11 @@ public class EasySoundnessChecker2 {
             ArrayList<IPublicNode> skip = new ArrayList<>();
             skip.add(stopNode);
 
+            //If firstNodeOnXORBranch is an XOR gateway again, it needs to be added to skip as well, because otherwise the routine would stop at it directly.
+            if (firstNodeOnXORbranch instanceof XorGateway) {
+                skip.add(firstNodeOnXORbranch);
+            }
+
             return eliminateContext(firstNodeOnXORbranch, skip);
         }
 

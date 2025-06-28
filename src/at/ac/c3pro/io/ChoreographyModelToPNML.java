@@ -388,7 +388,10 @@ public class ChoreographyModelToPNML {
         String path = "target/" + GlobalTimestamp.timestamp + "/CPNs_private/";
         String cpnName = "/" + name + ".pnml";
 
-        xmlOutput.output(doc, new FileWriter(path + cpnName));
+
+        try (FileWriter writer = new FileWriter(path + cpnName)) {
+            xmlOutput.output(doc, writer);
+        }
     }
 
     private void buildGlobalPetriNet() {

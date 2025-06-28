@@ -17,7 +17,8 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -54,12 +55,14 @@ public class ChoreographyController {
 
         int retriesDisconnected = configObject.getJSONObject("exceptionRetries").getInt("privateModelDisconnected");
         int retriesNoTraceToEnd = configObject.getJSONObject("exceptionRetries").getInt("noTraceToEndFound");
+        int retriesTwoHOWReceivesForOneParticipant = configObject.getJSONObject("exceptionRetries").getInt("twoHOWReceivesForOneParticipant");
+        int retriesNotEasySound = configObject.getJSONObject("exceptionRetries").getInt("twoHOWReceivesForOneParticipant");
 
-        //Hardcoded as this rarely happens
-        int retriesTwoHOWReceivesForOneParticipant = 5;
+        //Compute if we are on the first try
+        boolean firstTry = countCustomExceptions.values().stream().anyMatch(x -> x == 0);
 
         try {
-            run(dir, configObject);
+            run(dir, configObject, firstTry);
         } catch (PrivateModelDisconnectedException e) {
             countCustomExceptions.putIfAbsent(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED, 0);
             countCustomExceptions.put(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED, countCustomExceptions.get(CustomExceptionEnum.PRIVATE_MODEL_DISCONNECTED) + 1);
@@ -93,7 +96,7 @@ public class ChoreographyController {
             countCustomExceptions.putIfAbsent(CustomExceptionEnum.NOT_EASY_SOUND, 0);
             countCustomExceptions.put(CustomExceptionEnum.NOT_EASY_SOUND, countCustomExceptions.get(CustomExceptionEnum.NOT_EASY_SOUND) + 1);
 
-            if (countCustomExceptions.get(CustomExceptionEnum.NOT_EASY_SOUND) <= retriesTwoHOWReceivesForOneParticipant) {
+            if (countCustomExceptions.get(CustomExceptionEnum.NOT_EASY_SOUND) <= retriesNotEasySound) {
                 removeFileDir(dir);
                 System.err.println("Attempting another try");
                 dir = OutputHandler.createOutputFolder(null);
@@ -108,18 +111,28 @@ public class ChoreographyController {
     }
 
     //When exception is thrown the directory needs to be cleared so that on a retry there is no exception
-    private static void removeFileDir(File dir) {
-        File[] content = dir.listFiles();
+    private static void removeFileDir(File dir) throws IOException {
+        Path root = Paths.get(dir.getAbsolutePath());
 
-        if (content != null) {
-            for (File file : content) {
-                removeFileDir(file);
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
             }
-        }
-        dir.delete();
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+
+
     }
 
-    private static void run(File dir, JSONObject configObject) throws IOException, InterruptedException, PrivateModelDisconnectedException, NoTracesToEndFoundException, TwoHOWReceiveForOneParticipantException, NotEasySoundException {
+    private static void run(File dir, JSONObject configObject, boolean firstTry) throws IOException, InterruptedException, PrivateModelDisconnectedException, NoTracesToEndFoundException, TwoHOWReceiveForOneParticipantException, NotEasySoundException {
 
         // MODEL GENERATOR PARAMETERS
         int participantCount = configObject.getInt("participantCount"); // number of participants
@@ -151,8 +164,8 @@ public class ChoreographyController {
         int debugLevelEasySoundnessChecker = configObject.getInt("easySoundnessCheckDebugLevel");
 
         boolean doExportsBeforeEasySoundnessCheck = configObject.getBoolean("doExportsBeforeEasySoundnessCheck");
-
         boolean exportBPMN = configObject.getBoolean("exportBPMN_UntouchedFromPreviousImplementation");
+        boolean continueGenerationProcessUntilEasySoundModelFound = configObject.getBoolean("continueUntilEasySoundModel");
 
         if (amountHandoverOfWork >= participantCount) {
             throw new IllegalArgumentException(
@@ -161,6 +174,13 @@ public class ChoreographyController {
 
         ChorModelGenerator modelGen;
         SplitTracking splitTracking = SplitTracking.getInstance();
+
+        //If at that point a instance is present that means its from a previous try and still holds information about it
+        //Thus we terminate and redo it.
+        if (!firstTry) {
+            splitTracking.terminate();
+            splitTracking = SplitTracking.getInstance();
+        }
 
         modelGen = new ChorModelGenerator(participantCount, interactionCount, xorSplitCount, andSplitCount,
                 loopCount, maxBranching, remainingInteractionTypes);
@@ -265,7 +285,7 @@ public class ChoreographyController {
                     false
             );
             cpeeGenerator.run();
-        } else {
+        } else if (continueGenerationProcessUntilEasySoundModelFound) {
             throw new NotEasySoundException();
         }
 

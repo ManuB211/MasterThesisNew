@@ -1,12 +1,12 @@
 {
   "participantCount": 3,
   "xorSplitCount": 4,
-  "andSplitCount": 1,
+  "andSplitCount": 2,
   "maxBranching": 2,
-  "amountMessageExchange": 7,
-  "amountHandoverOfWork": 0,
-  "amountRessourceSharing": 3,
-  "amountSynchronousActivity": 2,
+  "amountMessageExchange": 8,
+  "amountHandoverOfWork": 2,
+  "amountRessourceSharing": 5,
+  "amountSynchronousActivity": 4,
   "visualizeAllCPNs": true,
   "visualizePrivModels": false,
   "visualizePubModels": true,
@@ -14,8 +14,12 @@
   "easySoundnessCheckVisualization": true,
   "exceptionRetries": {
     "privateModelDisconnected": 1,
-    "noTraceToEndFound": 1
+    "noTraceToEndFound": 1,
+    "notEasySound": 10,
+    "twoHOWReceivesForOneParticipant": 1
   },
   "easySoundnessCheckDebugLevel": 1,
-  "doCPEEExportBeforeEasySoundnessCheck": true
+  "doExportsBeforeEasySoundnessCheck": true,
+  "exportBPMN_UntouchedFromPreviousImplementation": false,
+  "continueUntilEasySoundModel": true
 }

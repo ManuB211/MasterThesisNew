@@ -1,8 +1,6 @@
 package at.ac.c3pro.chormodel;
 
-import at.ac.c3pro.node.Edge;
-import at.ac.c3pro.node.IPublicNode;
-import at.ac.c3pro.node.InteractionActivity;
+import at.ac.c3pro.node.*;
 import org.jbpt.graph.abs.IDirectedGraph;
 
 public class PublicModel extends RpstModel<Edge<IPublicNode>, IPublicNode> implements IPublicModel {
@@ -18,5 +16,26 @@ public class PublicModel extends RpstModel<Edge<IPublicNode>, IPublicNode> imple
     public PublicModel reloadFromGraph(IDirectedGraph<Edge<IPublicNode>, IPublicNode> graph) {
         return new PublicModel((MultiDirectedGraph<Edge<IPublicNode>, IPublicNode>) graph, this.name);
     }
+
+    public PrivateModel convertToPrivateModel() {
+
+        PrivateModel prM = null;
+
+        MultiDirectedGraph<Edge<IPrivateNode>, IPrivateNode> graph = new MultiDirectedGraph<>();
+
+        for (IPublicNode node : this.diGraph.getVertices()) {
+            if ((node instanceof Event) || (node instanceof Gateway) || (node instanceof InteractionActivity)) {
+                graph.addVertex((IPrivateNode) node);
+
+                for (IPublicNode succ : this.diGraph.getDirectSuccessors(node)) {
+                    graph.addEdge((IPrivateNode) node, (IPrivateNode) succ);
+                }
+            }
+        }
+
+        prM = new PrivateModel(graph, "privateModelParsedFromPublic");
+        return prM;
+    }
+
 
 }

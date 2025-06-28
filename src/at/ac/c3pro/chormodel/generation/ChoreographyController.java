@@ -1,10 +1,7 @@
 package at.ac.c3pro.chormodel.generation;
 
 import at.ac.c3pro.chormodel.*;
-import at.ac.c3pro.chormodel.exceptions.CustomExceptionEnum;
-import at.ac.c3pro.chormodel.exceptions.NoTracesToEndFoundException;
-import at.ac.c3pro.chormodel.exceptions.PrivateModelDisconnectedException;
-import at.ac.c3pro.chormodel.exceptions.TwoHOWReceiveForOneParticipantException;
+import at.ac.c3pro.chormodel.exceptions.*;
 import at.ac.c3pro.io.*;
 import at.ac.c3pro.node.Edge;
 import at.ac.c3pro.node.IChoreographyNode;
@@ -24,6 +21,7 @@ import java.nio.file.Files;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ChoreographyController {
 
@@ -91,6 +89,17 @@ public class ChoreographyController {
                 runWrapper(dir, configObject, countCustomExceptions);
             }
 
+        } catch (NotEasySoundException e) {
+            countCustomExceptions.putIfAbsent(CustomExceptionEnum.NOT_EASY_SOUND, 0);
+            countCustomExceptions.put(CustomExceptionEnum.NOT_EASY_SOUND, countCustomExceptions.get(CustomExceptionEnum.NOT_EASY_SOUND) + 1);
+
+            if (countCustomExceptions.get(CustomExceptionEnum.NOT_EASY_SOUND) <= retriesTwoHOWReceivesForOneParticipant) {
+                removeFileDir(dir);
+                System.err.println("Attempting another try");
+                dir = OutputHandler.createOutputFolder(null);
+                runWrapper(dir, configObject, countCustomExceptions);
+            }
+
         } catch (StackOverflowError e) {
             System.err.println("Attempting another try");
             removeFileDir(dir);
@@ -110,7 +119,7 @@ public class ChoreographyController {
         dir.delete();
     }
 
-    private static void run(File dir, JSONObject configObject) throws IOException, InterruptedException, PrivateModelDisconnectedException, NoTracesToEndFoundException, TwoHOWReceiveForOneParticipantException {
+    private static void run(File dir, JSONObject configObject) throws IOException, InterruptedException, PrivateModelDisconnectedException, NoTracesToEndFoundException, TwoHOWReceiveForOneParticipantException, NotEasySoundException {
 
         // MODEL GENERATOR PARAMETERS
         int participantCount = configObject.getInt("participantCount"); // number of participants
@@ -141,7 +150,9 @@ public class ChoreographyController {
         boolean easySoundnessCheckVisualization = configObject.getBoolean("easySoundnessCheckVisualization");
         int debugLevelEasySoundnessChecker = configObject.getInt("easySoundnessCheckDebugLevel");
 
-        boolean doCPEEExportBeforeEasySoundnessCheck = configObject.getBoolean("doCPEEExportBeforeEasySoundnessCheck");
+        boolean doExportsBeforeEasySoundnessCheck = configObject.getBoolean("doExportsBeforeEasySoundnessCheck");
+
+        boolean exportBPMN = configObject.getBoolean("exportBPMN_UntouchedFromPreviousImplementation");
 
         if (amountHandoverOfWork >= participantCount) {
             throw new IllegalArgumentException(
@@ -196,50 +207,84 @@ public class ChoreographyController {
         checkDisconnectedNess(new ArrayList<>(privateModelsByRole.values()));
 
         //Specify option to do ADDITIONAL CPEE Export before Easy-Soundness-Check
-        if (doCPEEExportBeforeEasySoundnessCheck) {
+        if (doExportsBeforeEasySoundnessCheck) {
             Map<Role, IDirectedGraph<Edge<IPublicNode>, IPublicNode>> puMbyRole = new HashMap<>();
             for (Role role : choreo.collaboration.roles) {
                 puMbyRole.put(role, choreo.collaboration.R2PuM.get(role).getdigraph());
+            }
+
+            // Transform Private Models to a PNML file
+            try {
+                ChoreographyModelToPNML choreoToCPN = new ChoreographyModelToPNML(privateModelsByRole);
+                choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
+            } catch (IOException | InterruptedException e) {
+                System.err.println("Something went wrong during the generation of the PNML representation of the private models");
             }
 
             ChoreographyModelToCPEE cpeeGenerator = new ChoreographyModelToCPEE(puMbyRole, true);
             cpeeGenerator.run();
         }
 
+
         EasySoundnessChecker2 easySoundnessChecker2 = new EasySoundnessChecker2(choreo, easySoundnessCheckVisualization, debugLevelEasySoundnessChecker);
-        easySoundnessChecker2.run();
+        Map<Role, IPublicModel> easySoundSubgraphs = easySoundnessChecker2.run();
+
+        //Remove null-elements (graphs that are not executable at all)
+        Map<Role, IPublicModel> easySoundSubgraphsFiltered = easySoundSubgraphs.entrySet().stream()
+                .filter(x -> x.getValue() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (!easySoundSubgraphsFiltered.isEmpty()) {
+            // Transform Private Models to a PNML file
+
+            //Cast Public Model to private one (downwards compatibility pls)
+            Map<Role, PrivateModel> publicModelsCastedToPrivate = new HashMap<>();
+
+            for (Map.Entry<Role, IPublicModel> entry : easySoundSubgraphs.entrySet()) {
+
+                PublicModel puMToRole = (PublicModel) entry.getValue();
+
+                publicModelsCastedToPrivate.put(entry.getKey(), puMToRole.convertToPrivateModel());
+            }
 
 
-        // Transform Private Models to a PNML file
-//        try {
-//            ChoreographyModelToCPN choreoToCPN = new ChoreographyModelToCPN(privateModelsByRole);
-//            choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
-//        } catch (IOException | InterruptedException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
+            try {
+                ChoreographyModelToPNML choreoToCPN = new ChoreographyModelToPNML(publicModelsCastedToPrivate);
+                choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
+            } catch (IOException | InterruptedException e) {
+                System.err.println("Something went wrong during the generation of the PNML representation of the private models");
+            }
 
-
-        try {
-            ChoreographyModelToPNML choreoToCPN = new ChoreographyModelToPNML(privateModelsByRole);
-            choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
-        } catch (IOException | InterruptedException e) {
-            System.err.println("Something went wrong during the generation of the PNML representation of the private models");
+            //Transform to a CPEE representation again
+            ChoreographyModelToCPEE cpeeGenerator = new ChoreographyModelToCPEE(
+                    easySoundSubgraphs.entrySet().stream()
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    entry -> entry.getValue().getdigraph())
+                            ),
+                    false
+            );
+            cpeeGenerator.run();
+        } else {
+            throw new NotEasySoundException();
         }
 
-        // Transform Models to bpmn
-        Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
-                "autogen_collab_" + GlobalTimestamp.timestamp, folder);
 
-        for (Role role : choreo.collaboration.roles) {
-            IPrivateModel prModel = choreo.R2PrM.get(role);
-            PrivateModel2Bpmn prModel2bpmn = new PrivateModel2Bpmn(prModel,
-                    "autogen_prModel_" + role.name + "_" + GlobalTimestamp.timestamp + ".bpmn", folder);
-            prModel2bpmn.buildXML();
+        if (exportBPMN) {
+            // Transform Models to bpmn
+            Collaboration2Bpmn collab2bpmnIO = new Collaboration2Bpmn(choreo.collaboration,
+                    "autogen_collab_" + GlobalTimestamp.timestamp, folder);
+
+            for (Role role : choreo.collaboration.roles) {
+                IPrivateModel prModel = choreo.R2PrM.get(role);
+                PrivateModel2Bpmn prModel2bpmn = new PrivateModel2Bpmn(prModel,
+                        "autogen_prModel_" + role.name + "_" + GlobalTimestamp.timestamp + ".bpmn", folder);
+                prModel2bpmn.buildXML();
+            }
+
+            choreo2bpmnIO.buildXML();
+            collab2bpmnIO.buildXML();
         }
-
-        choreo2bpmnIO.buildXML();
-        collab2bpmnIO.buildXML();
 
 //        complianceController.printComplianceData();
         modelGen.printInteractions();
@@ -337,21 +382,9 @@ public class ChoreographyController {
             String[] prModelNameSplit = prModel.getName().split("_");
             String roleName = prModelNameSplit[0] + "_" + prModelNameSplit[1];
 
-            //TODO Check if trustworthy
             if (!prModel.getDisconnectedVertices().isEmpty()) {
                 throw new PrivateModelDisconnectedException(roleName, "Disconnected Nodes found");
             }
-
-            /*
-            IDirectedGraph<Edge<IPrivateNode>, IPrivateNode> graph = prModel.getdigraph();
-            List<IPrivateNode> nodes = new ArrayList<>(graph.getVertices());
-
-            IPrivateNode endNode = nodes.stream().filter(node -> node instanceof Event && node.getName().equals("end")).collect(Collectors.toList()).get(0);
-
-            List<IPrivateNode> bfsResult = GraphHelper.performBackwardsBFSPrivate(graph, endNode, false);
-            */
-
-
         }
     }
 }

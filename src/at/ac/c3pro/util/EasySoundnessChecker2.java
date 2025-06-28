@@ -108,7 +108,7 @@ public class EasySoundnessChecker2 {
 
     }
 
-    public void run() throws IOException, InterruptedException, NoTracesToEndFoundException {
+    public Map<Role, IPublicModel> run() throws IOException, InterruptedException, NoTracesToEndFoundException {
         try {
 
             //Step 1: Build combined public model
@@ -171,6 +171,10 @@ public class EasySoundnessChecker2 {
             throw e;
         }
         outputHandler.closePrintWriter();
+
+        //Here we can simply return the remaining public models. The cycles have been eliminated in the cycle elimination routine
+        //and if no valid traces to endGlobal were found, a NoTracesToEndFoundException is thrown.
+        return this.publicModelsByRole;
     }
 
 

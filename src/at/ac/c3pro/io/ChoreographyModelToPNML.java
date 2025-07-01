@@ -35,12 +35,17 @@ public class ChoreographyModelToPNML {
     private List<String> localStartIDs;
     private List<String> localEndIDs;
 
-    public ChoreographyModelToPNML(Map<Role, PrivateModel> privateModelsByRole) throws IOException {
+    //Tracks if export is done before or after cycle detection and repair (to distinguish)
+    private boolean beforeCDR;
+
+    public ChoreographyModelToPNML(Map<Role, PrivateModel> privateModelsByRole, boolean beforeCDR) throws IOException {
         this.privateModels = privateModelsByRole;
         this.privateNets = new HashMap<>();
 
         localStartIDs = new ArrayList<>();
         localEndIDs = new ArrayList<>();
+
+        this.beforeCDR = beforeCDR;
 
         //Initialize the datastructure to save the interaction-transitions
         this.interactionTransitions = new HashMap<>();
@@ -386,7 +391,7 @@ public class ChoreographyModelToPNML {
         xmlOutput.setFormat(Format.getPrettyFormat());
 
         String path = "target/" + GlobalTimestamp.timestamp + "/CPNs_private/";
-        String cpnName = "/" + name + ".pnml";
+        String cpnName = "/" + name + "_" + (beforeCDR ? "beforePotentialElimination" : "afterPotentialElimination") + "_" + ".pnml";
 
 
         try (FileWriter writer = new FileWriter(path + cpnName)) {

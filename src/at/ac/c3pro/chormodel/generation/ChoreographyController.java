@@ -293,7 +293,7 @@ public class ChoreographyController {
 
             // Transform Private Models to a PNML file
             try {
-                ChoreographyModelToPNML choreoToCPN = new ChoreographyModelToPNML(privateModelsByRole);
+                ChoreographyModelToPNML choreoToCPN = new ChoreographyModelToPNML(privateModelsByRole, true);
                 choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
             } catch (IOException | InterruptedException e) {
                 System.err.println("Something went wrong during the generation of the PNML representation of the private models");
@@ -326,7 +326,7 @@ public class ChoreographyController {
 
 
             try {
-                ChoreographyModelToPNML choreoToCPN = new ChoreographyModelToPNML(publicModelsCastedToPrivate);
+                ChoreographyModelToPNML choreoToCPN = new ChoreographyModelToPNML(publicModelsCastedToPrivate, false);
                 choreoToCPN.printXMLs(printPetriNetVisualizationsSeparateParticipants);
             } catch (IOException | InterruptedException e) {
                 System.err.println("Something went wrong during the generation of the PNML representation of the private models");

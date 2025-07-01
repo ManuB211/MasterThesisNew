@@ -65,7 +65,6 @@ public class HOWHandler {
     // For debug purposes
     private final boolean printDebugGraphs = false;
 
-    //TODO: entferne weil deprecated
     public HOWHandler(IRpstModel<Edge<IChoreographyNode>, IChoreographyNode> pGraphRpstModel, Role pCurrentRole) {
         this.graphRpstModel = pGraphRpstModel;
         this.graph = pGraphRpstModel.getdigraph();

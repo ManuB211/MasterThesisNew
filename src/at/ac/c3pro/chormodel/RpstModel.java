@@ -267,26 +267,6 @@ public class RpstModel<E extends Edge<N>, N extends INode> extends RPST<E, N> im
         return preReducedGraph;
     }
 
-    public RpstModel<E, N> reduceGraphXORs(List<IChoreographyNode> xorsWithDirectEdgeToMerge,
-                                           Integer reduceCtr, String roleName) {
-        RpstModel<E, N> model = this;
-        // recursively reduce the graph until there are no more graph reductions
-        // possible
-        for (IRPSTNode<E, N> e : this.getFragmentsBottomUp()) {
-            if (model.reduceGraph(xorsWithDirectEdgeToMerge, e)) {
-
-                IOUtils.toFile(GlobalTimestamp.timestamp + "/Reductions/Reductions_" + roleName + "/Reduction" + reduceCtr + "_" + roleName + ".dot", model.getdigraph().toDOT());
-
-                // System.out.println("the reduced graph: "+model.getdigraph());
-
-                return model.reloadFromGraph(model.getdigraph()).reduceGraph(xorsWithDirectEdgeToMerge,
-                        reduceCtr + 1, roleName);
-            }
-        }
-        // no more graph reductions possible
-        return model;
-    }
-
 
     /**
      * Reduce the graph of the model by identifying fragments where reduction is

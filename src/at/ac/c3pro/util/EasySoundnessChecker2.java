@@ -50,6 +50,8 @@ public class EasySoundnessChecker2 {
 
     OutputHandler outputHandler;
 
+    Integer combinedPublicModelCounter;
+
     public EasySoundnessChecker2(Choreography choreography, boolean visualize, int debugLevel) throws IOException {
 
         outputHandler = new OutputHandler(OutputHandler.OutputType.EASY_SOUNDNESS, OutputHandler.DebugLevel.getLevelByValue(debugLevel));
@@ -65,6 +67,7 @@ public class EasySoundnessChecker2 {
         xorWithDirectEdgeToMerge = new ArrayList<>();
         mapCommonSynchronousTasksToIndividualParts = new HashMap<>();
         mapSynchronousTasksToCommonOne = new HashMap<>();
+        combinedPublicModelCounter = 1;
         setupDeconstructionOfPuModels(choreography);
     }
 
@@ -123,9 +126,9 @@ public class EasySoundnessChecker2 {
 
             //If a topological order has already been found, we dont need to check the backwards direction or eliminate any cycles (there are none)
             if (!topOrderResult.first) {
-
                 //Compute the inverse topological order starting at endGlobal
                 computeTopologicalOrder(combinedPuM, endGlobal, false, true);
+
 
                 outputHandler.printEasySoundness("Cycles found; can be found in /EasySoundness/CombinedPublicModelCycles.dot", INFO);
                 IOUtils.toFile(
@@ -161,6 +164,7 @@ public class EasySoundnessChecker2 {
             if (publicModelsByRole.values().stream().anyMatch(Objects::nonNull)) {
                 searchForValidTraces();
             }
+
 
             if (visualize) {
                 VisualizationHandler.visualize(VisualizationHandler.VisualizationType.EASY_SOUNDNESS);
@@ -400,10 +404,10 @@ public class EasySoundnessChecker2 {
 
 
             IOUtils.toFile(
-                    GlobalTimestamp.timestamp + "/EasySoundness/CombinedPublicModel2.dot",
+                    GlobalTimestamp.timestamp + "/EasySoundness/CombinedPublicModel" + combinedPublicModelCounter + ".dot",
                     rst != null ? rst.toDOT() : "");
 
-
+            combinedPublicModelCounter++;
             return rst;
         } else {
             throw new IllegalStateException("Public Models are null");
@@ -459,6 +463,8 @@ public class EasySoundnessChecker2 {
         if (amountNeighboringEdges.entrySet().stream().anyMatch(v -> v.getValue() != 0)) {
             return new Pair<>(false, new ArrayList<>());
         }
+
+        //TODO adapt message, since computeTopologicalOrder is now called multiple times
 
         outputHandler.printEasySoundness("No Cycle has been found in the graph, topological order is:", INFO);
         outputHandler.printEasySoundness(rst.stream().map(IGObject::getName).collect(Collectors.joining(", ")), INFO);
@@ -721,26 +727,36 @@ public class EasySoundnessChecker2 {
 
                 }
 
-                //Get all edges to current node
-                List<Edge<IPublicNode>> edgesToCurr = parents.stream().map(p -> graph.getEdge(p, currNode)).collect(Collectors.toList());
+                /*If unexecuted = true at this position, that means that at least one parent does not have edges leading to it
+                 * However as currNode is conditioned by ALL of its parent being reachable, that means, that currNode cannot be reached.
+                 * Thus we can forego the computation of any traces for this node and simply set it empty.
+                 */
 
-                //Build all combinations using a backtracking approach
-                List<List<Edge<IPublicNode>>> tracesEndingAtCurr = getTracesEndingAtNode2(allTraces, currNode, edgesToCurr);
+                if (!unexecutable) {
+                    //Get all edges to current node
+                    List<Edge<IPublicNode>> edgesToCurr = parents.stream().map(p -> graph.getEdge(p, currNode)).collect(Collectors.toList());
 
-                tracesEndingAtCurrNode.addAll(tracesEndingAtCurr);
+                    //Build all combinations using a backtracking approach
+                    List<List<Edge<IPublicNode>>> tracesEndingAtCurr = getTracesEndingAtNode2(allTraces, currNode, edgesToCurr);
+                    tracesEndingAtCurrNode.addAll(tracesEndingAtCurr);
+                }
+
             }
 
             removeAllIncompatibleTraces(tracesEndingAtCurrNode, graph);
 
             rst.put(currNode, tracesEndingAtCurrNode);
 
-            outputHandler.printEasySoundness("The traces ending at " + currNode.getName() + " are:", INFO);
-            outputHandler.printEasySoundness(tracesEndingAtCurrNode.stream()
-                    .map(trace -> trace.stream()
-                            .map(Edge::toString)
-                            .collect(Collectors.joining(",", "{", "}")))
-                    .collect(Collectors.joining(", \n")), INFO);
-
+            if (tracesEndingAtCurrNode.isEmpty()) {
+                outputHandler.printEasySoundness("No traces ending at " + currNode.getName() + "!", INFO);
+            } else {
+                outputHandler.printEasySoundness("The traces ending at " + currNode.getName() + " are (" + tracesEndingAtCurrNode.size() + ")", INFO);
+                outputHandler.printEasySoundness(tracesEndingAtCurrNode.stream()
+                        .map(trace -> trace.stream()
+                                .map(Edge::toString)
+                                .collect(Collectors.joining(",", "{", "}")))
+                        .collect(Collectors.joining(", \n")), INFO);
+            }
 
             outputHandler.printEasySoundness("\n", INFO);
         }
@@ -774,7 +790,8 @@ public class EasySoundnessChecker2 {
         List<List<Edge<IPublicNode>>> tracesOfCurrParticipant = allTraces.get(ctr);
         for (List<Edge<IPublicNode>> singleTraceOfCurrParticipant : tracesOfCurrParticipant) {
 
-            outputHandler.printEasySoundness("\nElement to add to combination:", DEBUG);
+
+            outputHandler.printEasySoundness("\nElement to add to combination ( trace" + tracesOfCurrParticipant.indexOf(singleTraceOfCurrParticipant) + " of participant " + ctr + ":", DEBUG);
             outputHandler.printEasySoundness(singleTraceOfCurrParticipant.stream().map(Edge::toString).collect(Collectors.joining(", ")) + "\n", DEBUG);
             //Needed for the backtracking
             int amountAddedElements = 0;

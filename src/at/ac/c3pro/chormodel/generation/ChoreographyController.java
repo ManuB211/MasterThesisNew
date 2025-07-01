@@ -15,6 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
@@ -36,6 +37,8 @@ public class ChoreographyController {
 
         File dir = OutputHandler.createOutputFolder(null);
 
+        //randomizeConfig(6);
+
         // Read config file
         String configString = "";
         InputStream fileStream = Files.newInputStream(new File("config/config.json").toPath());
@@ -49,6 +52,62 @@ public class ChoreographyController {
         JSONObject configObject = new JSONObject(configString);
 
         runWrapper(dir, configObject, countCustomExceptions);
+    }
+
+    //TODO remove
+
+    static String template = "{\r\n" + //
+            "  \"participantCount\": [p],\r\n" + //
+            "  \"xorSplitCount\": [x],\r\n" + //
+            "  \"andSplitCount\": [a],\r\n" + //
+            "  \"maxBranching\": 2,\r\n" + //
+            "  \"amountMessageExchange\": x1,\r\n" + //
+            "  \"amountHandoverOfWork\": x2,\r\n" + //
+            "  \"amountRessourceSharing\": x3,\r\n" + //
+            "  \"amountSynchronousActivity\": x4,\r\n" + //
+            "  \"visualizeAllCPNs\": false,\r\n" + //
+            "  \"visualizePrivModels\": false,\r\n" + //
+            "  \"visualizePubModels\": false,\r\n" + //
+            "  \"useEasySoundnessChecker\": true,\r\n" + //
+            "  \"easySoundnessCheckVisualization\": true,\r\n" + //
+            "  \"exceptionRetries\": {\r\n" + //
+            "    \"privateModelDisconnected\": 1,\r\n" + //
+            "    \"noTraceToEndFound\": 1,\r\n" + //
+            "    \"notEasySound\": 10,\r\n" + //
+            "    \"twoHOWReceivesForOneParticipant\": 1\r\n" + //
+            "  },\r\n" + //
+            "  \"easySoundnessCheckDebugLevel\": 1,\r\n" + //
+            "  \"doExportsBeforeEasySoundnessCheck\": false,\r\n" + //
+            "  \"exportBPMN_UntouchedFromPreviousImplementation\": false,\r\n" + //
+            "  \"continueUntilEasySoundModel\": false\r\n" + //
+            "}";
+
+    private static Random rand = new Random();
+
+    private static void randomizeConfig(int p) throws IOException {
+
+        int gwBound = p <= 7 ? p <= 4 ? 6 : 8 : 10;
+
+        int xCount = rand.nextInt(gwBound), andCount = rand.nextInt(gwBound);
+
+        int boundInteraction = (xCount + andCount) * 3 + 1;
+
+        String newConfig = template;
+
+        newConfig = newConfig.replace("[a]", andCount + "");
+        newConfig = newConfig.replace("[p]", p + "");
+        newConfig = newConfig.replace("[x]", xCount + "");
+
+        newConfig = newConfig.replace("x1", rand.nextInt(boundInteraction) + "");
+        newConfig = newConfig.replace("x2", (rand.nextInt(p - 1) + 1) + "");
+        newConfig = newConfig.replace("x3", rand.nextInt(boundInteraction) + "");
+        newConfig = newConfig.replace("x4", rand.nextInt(boundInteraction) + "");
+
+        File configFile = new File("config/config.json");
+        FileOutputStream fo = new FileOutputStream(configFile, false);
+
+        fo.write(newConfig.getBytes());
+        fo.close();
     }
 
     private static void runWrapper(File dir, JSONObject configObject, Map<CustomExceptionEnum, Integer> countCustomExceptions) throws IOException, InterruptedException {
@@ -217,7 +276,6 @@ public class ChoreographyController {
         // Generate Choreography (incl. all public models / private models)
         Choreography choreo = ChoreographyGenerator.generateChoreographyFromModel(choreoModel, xorNodeWithDirectConnectionToMerge);
 
-
         // Export Models
         exportPublicModels(choreo, printVisualizationsForPubModels);
         Map<Role, PrivateModel> privateModelsByRole = exportPrivateModels(choreo, printVisualizationsForPrivModels);
@@ -245,7 +303,6 @@ public class ChoreographyController {
             cpeeGenerator.run();
         }
 
-
         EasySoundnessChecker2 easySoundnessChecker2 = new EasySoundnessChecker2(choreo, easySoundnessCheckVisualization, debugLevelEasySoundnessChecker);
         Map<Role, IPublicModel> easySoundSubgraphs = easySoundnessChecker2.run();
 
@@ -260,7 +317,7 @@ public class ChoreographyController {
             //Cast Public Model to private one (downwards compatibility pls)
             Map<Role, PrivateModel> publicModelsCastedToPrivate = new HashMap<>();
 
-            for (Map.Entry<Role, IPublicModel> entry : easySoundSubgraphs.entrySet()) {
+            for (Map.Entry<Role, IPublicModel> entry : easySoundSubgraphsFiltered.entrySet()) {
 
                 PublicModel puMToRole = (PublicModel) entry.getValue();
 
@@ -277,7 +334,7 @@ public class ChoreographyController {
 
             //Transform to a CPEE representation again
             ChoreographyModelToCPEE cpeeGenerator = new ChoreographyModelToCPEE(
-                    easySoundSubgraphs.entrySet().stream()
+                    easySoundSubgraphsFiltered.entrySet().stream()
                             .collect(Collectors.toMap(
                                     Map.Entry::getKey,
                                     entry -> entry.getValue().getdigraph())
@@ -306,7 +363,6 @@ public class ChoreographyController {
             collab2bpmnIO.buildXML();
         }
 
-//        complianceController.printComplianceData();
         modelGen.printInteractions();
 
         splitTracking.terminate();

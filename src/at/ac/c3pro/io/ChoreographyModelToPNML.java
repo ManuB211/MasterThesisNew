@@ -509,18 +509,25 @@ public class ChoreographyModelToPNML {
      */
     private void createPetriNetInteractionsSharedResource(List<String> interactions) {
 
-        for (int i = 0; i < interactions.size() - 2; i += 2) {
-            String participant1 = interactions.get(i), participant2 = interactions.get(i + 1);
+        while (!interactions.isEmpty()) {
 
-            //Create the place
-            String idGlobalPlace = participant1.split("\\(")[0];
-            createPlaceGlobal(idGlobalPlace);
+            String p1 = interactions.remove(0);
 
-            //Create the arcs: p1 -> sr, sr -> p1, p2 -> sr, sr -> p2
-            createArcGlobal(participant1, idGlobalPlace);
-            createArcGlobal(idGlobalPlace, participant1);
-            createArcGlobal(participant2, idGlobalPlace);
-            createArcGlobal(idGlobalPlace, participant2);
+            //Two adjacent belong together
+            if (interactions.get(0).split("\\(")[0].equals(p1.split("\\(")[0])) {
+
+                String p2 = interactions.remove(0);
+
+                //Create the place
+                String idGlobalPlace = p1.split("\\(")[0];
+                createPlaceGlobal(idGlobalPlace);
+
+                //Create the arcs: p1 -> sr, sr -> p1, p2 -> sr, sr -> p2
+                createArcGlobal(p1, idGlobalPlace);
+                createArcGlobal(idGlobalPlace, p1);
+                createArcGlobal(p2, idGlobalPlace);
+                createArcGlobal(idGlobalPlace, p2);
+            }
 
         }
     }
